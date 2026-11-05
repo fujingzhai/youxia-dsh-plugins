@@ -1,0 +1,66 @@
+{
+  "name": "dsh-session-cost",
+  "version": "0.4.0",
+  "description": "在 DSH 输入框下显示当前会话（含子代理）按市面 token 价折算的费用：自维护价格表（别名、峰闲时、节假日、限时、长上下文阶梯）＋ pi-ai 模型目录兜底。",
+  "author": "youxia",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fujingzhai/youxia-dsh-plugins.git",
+    "directory": "dsh-session-cost"
+  },
+  "homepage": "https://github.com/fujingzhai/youxia-dsh-plugins/tree/main/dsh-session-cost#readme",
+  "bugs": {
+    "url": "https://github.com/fujingzhai/youxia-dsh-plugins/issues"
+  },
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "lib/*.js",
+    "cordis.patch.yml",
+    "prices.json",
+    "prices.example.json",
+    "PRICES.md",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-api-session-controller",
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ]
+    }
+  },
+  "scripts": {
+    "check": "node --check index.js && node --check client.js && node --check lib/pricing.js && node --check lib/catalog.js && node --check lib/config.js && node --check lib/projection.js && node --check lib/reload.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=24.9",
+    "dsh": ">=0.2.1-rc.5"
+  },
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "token",
+    "cost",
+    "pricing"
+  ],
+  "license": "MIT"
+}

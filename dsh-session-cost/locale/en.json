@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Session Cost",
+    "description": "Shows what the current session (including subagents) would cost at market token prices, below the composer; per-model runs, per-currency, with a details panel."
+  }
+}

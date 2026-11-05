@@ -8,6 +8,7 @@
 |---|---|---|
 | [dsh-pi-mode](dsh-pi-mode) | 0.1.1 | 以 Pi 为蓝本，精简工具与系统提示词 |
 | [dsh-zh-slash](dsh-zh-slash) | 0.1.0 | 用「、」唤出原生 `/` 命令菜单 |
+| [dsh-session-cost](dsh-session-cost) | 0.4.0 | 统计条显示会话（含子代理）按市面 token 价折算的费用 |
 
 兼容要求与使用说明见各插件目录。
 
@@ -29,14 +30,21 @@ git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-zh-slash@0.1.0&path
 git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.1.1&path:/dsh-pi-mode
 ```
 
-安装后重启 DSH。Pi 模式需新建会话并在模式菜单中选择；顿号触发无需选模式，在已选工作区的会话输入框开头敲「、」即可。
+**会话费用：**
+
+```text
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-cost@0.4.0&path:/dsh-session-cost
+```
+
+安装后重启 DSH。Pi 模式需新建会话并在模式菜单中选择；顿号触发无需选模式，在已选工作区的会话输入框开头敲「、」即可；会话费用在有 token 用量的会话统计条里自动出现。
 
 ### 命令行
 
 ```sh
-# 两条互相独立，按需执行；Web 版将 desktop 换成 web
+# 各条互相独立，按需执行；Web 版将 desktop 换成 web
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-zh-slash@0.1.0&path:/dsh-zh-slash"
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.1.1&path:/dsh-pi-mode"
+dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-cost@0.4.0&path:/dsh-session-cost"
 ```
 
 若终端找不到 `dsh`，macOS 官方桌面版可把命令名替换成带引号的完整路径：
@@ -54,17 +62,18 @@ git clone https://github.com/fujingzhai/youxia-dsh-plugins.git
 cd youxia-dsh-plugins
 dsh plugin --profile desktop add "link:$PWD/dsh-zh-slash"
 # 或：dsh plugin --profile desktop add "link:$PWD/dsh-pi-mode"
+# 或：dsh plugin --profile desktop add "link:$PWD/dsh-session-cost"
 ```
 
-链接安装依赖本地目录，请勿移走或删除目录。Pi 模式的个性化提示词、工具屏蔽名单应留在自己的副本，不要覆盖公共默认值。
+链接安装依赖本地目录，请勿移走或删除目录。Pi 模式的个性化提示词、工具屏蔽名单应留在自己的副本，不要覆盖公共默认值；会话费用的自定义价格表放在插件目录之外，用配置 `priceBook` 指过去（见其 README）。
 
 ## 更新与卸载
 
 - **版本安装**：查看 [Releases](https://github.com/fujingzhai/youxia-dsh-plugins/releases)，在插件页更新来源到新版地址，或重新执行该版本的安装命令。版本标签固定，不会自动跟随 `main`。
-- **跟随开发版**：将地址里的 `#dsh-zh-slash@0.1.0` 或 `#dsh-pi-mode@0.1.1` 换成 `#main`。这是滚动版本；需要最新提交时重新安装，不能保证 DSH 自动更新分支引用。
+- **跟随开发版**：将地址里的 `#<插件名>@<版本>`（如 `#dsh-session-cost@0.4.0`）换成 `#main`。这是滚动版本；需要最新提交时重新安装，不能保证 DSH 自动更新分支引用。
 - **本地链接**：先保存自己的改动，再在克隆目录执行 `git pull --ff-only`；有冲突先合并，不要强制重置。
-- **卸载**：在插件页卸载对应插件；也可执行 `dsh plugin --profile desktop remove dsh-zh-slash`（或 `dsh-pi-mode`）。
-- 每次安装、更新、卸载后重启 DSH；插件是各自独立的，卸载一个不影响另一个。
+- **卸载**：在插件页卸载对应插件；也可执行 `dsh plugin --profile desktop remove <插件名>`，如 `dsh-zh-slash`。
+- 每次安装、更新、卸载后重启 DSH；插件各自独立，卸载一个不影响其他。
 
 ## 维护与反馈
 

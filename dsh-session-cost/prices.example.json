@@ -1,0 +1,71 @@
+{
+  "version": 2,
+  "note": "写法示例，金额均为虚构，不是实际报价。",
+  "timeZone": "Asia/Shanghai",
+  "dateSets": {
+    "holidays": ["2026-10-01..2026-10-07", "2026-12-25"]
+  },
+  "models": [
+    {
+      "name": "示例国产模型（多个路由共用一份价格）",
+      "match": [
+        "your-provider/internal-key",
+        "another-relay/example-chat",
+        "*/example-chat"
+      ],
+      "rules": [
+        {
+          "name": "工作日高峰（虚构）",
+          "currency": "CNY",
+          "input": 4,
+          "cacheRead": 0.4,
+          "cacheWrite": 0,
+          "output": 8,
+          "when": {
+            "weekdays": [1, 2, 3, 4, 5],
+            "excludeDates": ["@holidays"],
+            "intervals": [{ "start": "09:00", "end": "12:00" }, { "start": "14:00", "end": "18:00" }]
+          }
+        },
+        {
+          "name": "每日深夜（虚构，跨午夜）",
+          "currency": "CNY",
+          "input": 1,
+          "cacheRead": 0.1,
+          "cacheWrite": 0,
+          "output": 2,
+          "when": { "intervals": [{ "start": "22:00", "end": "08:00" }] }
+        },
+        { "name": "常规（虚构）", "currency": "CNY", "input": 2, "cacheRead": 0.2, "cacheWrite": 0, "output": 4 }
+      ]
+    },
+    {
+      "name": "示例美国模型（限时价＋长上下文阶梯）",
+      "match": ["*/example-pro*"],
+      "rules": [
+        {
+          "name": "首发限时（虚构）",
+          "currency": "USD",
+          "input": 1,
+          "cacheRead": 0.1,
+          "output": 5,
+          "when": { "to": "2026-12-01T00:00:00+08:00" },
+          "tiers": [{ "above": 200000, "input": 2, "cacheRead": 0.2, "output": 7.5 }]
+        },
+        {
+          "name": "标准（虚构）",
+          "currency": "USD",
+          "input": 2,
+          "cacheRead": 0.2,
+          "output": 10,
+          "tiers": [{ "above": 200000, "input": 4, "cacheRead": 0.4, "output": 15 }]
+        }
+      ]
+    },
+    {
+      "name": "怪名字的路由借用 pi-ai 目录里的价格",
+      "match": ["antigravity/gemini-3.1-pro-high"],
+      "catalog": "google/gemini-3.1-pro-preview"
+    }
+  ]
+}
