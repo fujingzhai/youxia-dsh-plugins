@@ -7,7 +7,7 @@
 | 插件 | 当前版本 | 作用 |
 |---|---|---|
 | [dsh-pi-mode](dsh-pi-mode) | 0.2.0 | 以 Pi 为蓝本，精简工具与系统提示词；另带 IM 版 Pi-IM |
-| [dsh-session-cost](dsh-session-cost) | 0.4.0 | 在统计条显示会话（含子代理）按市面 token 价折算的费用 |
+| [dsh-session-cost](dsh-session-cost) | 0.4.1 | 在统计条显示会话（含子代理）按市面 token 价折算的费用 |
 | [dsh-zh-slash](dsh-zh-slash) | 0.1.0 | 用「、」唤出原生 `/` 命令菜单 |
 
 兼容要求与使用说明见各插件目录。
@@ -27,7 +27,7 @@ git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.2.0&path:
 **会话费用：**
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-cost@0.4.0&path:/dsh-session-cost
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-cost@0.4.1&path:/dsh-session-cost
 ```
 
 **顿号触发：**
@@ -43,7 +43,7 @@ git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-zh-slash@0.1.0&path
 ```sh
 # 各条互相独立，按需执行；Web 版将 desktop 换成 web
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.2.0&path:/dsh-pi-mode"
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-cost@0.4.0&path:/dsh-session-cost"
+dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-cost@0.4.1&path:/dsh-session-cost"
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-zh-slash@0.1.0&path:/dsh-zh-slash"
 ```
 
@@ -70,7 +70,7 @@ dsh plugin --profile desktop add "link:$PWD/dsh-pi-mode"
 ## 更新与卸载
 
 - **版本安装**：查看 [Releases](https://github.com/fujingzhai/youxia-dsh-plugins/releases)，在插件页更新来源到新版地址，或重新执行该版本的安装命令。版本标签固定，不会自动跟随 `main`。
-- **跟随开发版**：将地址里的 `#<插件名>@<版本>`（如 `#dsh-session-cost@0.4.0`）换成 `#main`。这是滚动版本；需要最新提交时重新安装，不能保证 DSH 自动更新分支引用。
+- **跟随开发版**：将地址里的 `#<插件名>@<版本>`（如 `#dsh-session-cost@0.4.1`）换成 `#main`。这是滚动版本；需要最新提交时重新安装，不能保证 DSH 自动更新分支引用。
 - **本地链接**：先保存自己的改动，再在克隆目录执行 `git pull --ff-only`；有冲突先合并，不要强制重置。
 - **卸载**：在插件页卸载对应插件；也可执行 `dsh plugin --profile desktop remove <插件名>`，如 `dsh-zh-slash`。
 - 每次安装、更新、卸载后重启 DSH；插件各自独立，卸载一个不影响其他。
