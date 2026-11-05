@@ -14,21 +14,15 @@ const HOOK = Symbol.for('dsh-pi-mode.web-tools')
 // DSH 自带工具时用的搜索规矩（与 pi 默认一致）
 const DEFAULT_RULES = ['- 外文资料更全的话题，另用英文搜一次。', '- 用网络资料作答时，文末列出来源链接。'].join('\n')
 
-// 与 DSH 标准模式的 tool-web 行一致（插件自身默认值＋标准模式的 searchTimeoutMs）
-const BUILTIN_CONFIG = {
-  search: true,
-  fetch: true,
-  searchMaxResults: 8,
-  searchMaxQueries: 4,
-  fetchTimeoutMs: 30_000,
-  searchTimeoutMs: 60_000,
-  fetchMaxOutputChars: 200_000,
-}
+// 与 DSH 标准模式的 tool-web 行一致：只写标准模式改过的两项，其余交给 tool-web 自己的 Config 补默认值
+// （DSH 0.2.2 新增必填的 searchSummaryMaxChars，手抄全量配置会漏）。
+const BUILTIN_OVERRIDES = { fetch: true, searchTimeoutMs: 60_000 }
 
 export async function apply(ctx, config) {
   const hook = globalThis[HOOK]
   if (config?.prefer !== 'builtin' && typeof hook?.apply === 'function') return hook.apply(ctx)
   const builtin = await import('@deepseek-ai/dsh-tool-web')
-  builtin.apply(ctx, BUILTIN_CONFIG)
+  const resolved = typeof builtin.Config === 'function' ? builtin.Config(BUILTIN_OVERRIDES) : BUILTIN_OVERRIDES
+  builtin.apply(ctx, resolved)
   ctx.systemPrompt.variable('web_rules', () => DEFAULT_RULES)
 }

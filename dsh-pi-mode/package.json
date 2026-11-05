@@ -1,6 +1,6 @@
 {
   "name": "dsh-pi-mode",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "author": "youxia",
   "repository": {
     "type": "git",
@@ -9,7 +9,7 @@
   },
   "homepage": "https://github.com/fujingzhai/youxia-dsh-plugins/tree/main/dsh-pi-mode#readme",
   "bugs": { "url": "https://github.com/fujingzhai/youxia-dsh-plugins/issues" },
-  "description": "DSH 的 Pi 模式：工具与系统提示词以 pi 为蓝本（13 个工具，无子代理、目标与计划；系统提示词只有一句身份和规矩）。",
+  "description": "DSH 的 Pi 模式：工具与系统提示词以 pi 为蓝本（13 个工具，无子代理、目标与计划；系统提示词只有一句身份和规矩）；另带给 IM 机器人用的 Pi-IM。",
   "type": "module",
   "main": "index.js",
   "license": "MIT",

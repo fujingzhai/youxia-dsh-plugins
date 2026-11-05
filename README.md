@@ -6,7 +6,7 @@
 
 | 插件 | 当前版本 | 作用 |
 |---|---|---|
-| [dsh-pi-mode](dsh-pi-mode) | 0.1.2 | 以 Pi 为蓝本，精简工具与系统提示词 |
+| [dsh-pi-mode](dsh-pi-mode) | 0.2.0 | 以 Pi 为蓝本，精简工具与系统提示词；另带 IM 版 Pi-IM |
 | [dsh-session-cost](dsh-session-cost) | 0.4.0 | 在统计条显示会话（含子代理）按市面 token 价折算的费用 |
 | [dsh-zh-slash](dsh-zh-slash) | 0.1.0 | 用「、」唤出原生 `/` 命令菜单 |
 
@@ -21,7 +21,7 @@
 **Pi 模式：**
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.1.2&path:/dsh-pi-mode
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.2.0&path:/dsh-pi-mode
 ```
 
 **会话费用：**
@@ -42,7 +42,7 @@ git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-zh-slash@0.1.0&path
 
 ```sh
 # 各条互相独立，按需执行；Web 版将 desktop 换成 web
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.1.2&path:/dsh-pi-mode"
+dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.2.0&path:/dsh-pi-mode"
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-cost@0.4.0&path:/dsh-session-cost"
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-zh-slash@0.1.0&path:/dsh-zh-slash"
 ```
