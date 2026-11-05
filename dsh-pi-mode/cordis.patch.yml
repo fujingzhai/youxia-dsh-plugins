@@ -1,6 +1,7 @@
 # Pi 模式：对齐 pi 的工具与系统提示词。只插入一个预设声明，DSH 自带的几个模式原样不动。
 # 与标准模式相比去掉了：glob/grep（改用 bash）、子代理与 workflow、目标、计划模式、todo、定时提醒；
-# 联网由本包 web.js 接入（默认 DSH 自带工具，可被 pi 同款工具接管）；全局工具只挡点名的（目前为空），由本包 index.js 过滤。
+# 联网由本包 web.js 接入（默认 DSH 自带工具，可被 pi 同款工具接管）；全局工具只挡点名的（默认为空），由本包 index.js 过滤，
+# 个人名单写在自己 profile 补丁的 pi-mode-settings 条目（本文件末尾）里，见 README。
 # 系统提示词以 pi 为蓝本、按 DSH 改写（一句身份＋规矩；中文；工具说明里已有的不重复），完整替换 DSH 拼装的提示词，
 # 因此不再有「源码在 app.asar」「Web GUI」那几段；AGENTS.md、技能清单、时间、当前目录照常注入。
 - insert:
@@ -76,8 +77,13 @@
           - id: web-tools
             name: 'dsh-pi-mode/web.js'
           # 只挡点名的全局工具，其余全局工具（含以后新装插件带来的）照常给模型。
-          # 通用版默认不屏蔽全局工具；需要过滤时按 README 在 deny 中添加工具名。
+          # 通用版默认不屏蔽全局工具；个人名单写在 profile 补丁的 pi-mode-settings 条目里，这里不用改。
           - id: global-tool-mask
             name: 'dsh-pi-mode'
             config:
               deny: []
+    # 个人设置入口：在自己 profile 的 cordis.patch.yml 里用同一 id 覆盖 config（如 deny），改完无需重启。
+    - id: pi-mode-settings
+      name: 'dsh-pi-mode/settings.js'
+      config:
+        deny: []

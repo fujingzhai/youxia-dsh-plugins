@@ -10,10 +10,15 @@
 export const name = 'pi-mode-tool-mask'
 export const inject = ['tools', 'systemPrompt']
 
+// 个人名单由 settings.js（profile 补丁里的 pi-mode-settings 条目）登记，见该文件说明。
+const SETTINGS = Symbol.for('dsh-pi-mode.settings')
+
 export function apply(ctx, config) {
-  const deny = new Set(Array.isArray(config?.deny) ? config.deny : [])
+  const own = Array.isArray(config?.deny) ? config.deny : []
   ctx.on('system-prompt/assemble', async (_assembly, _context, next) => {
     const assembly = await next()
+    const personal = globalThis[SETTINGS]?.deny
+    const deny = new Set([...own, ...(Array.isArray(personal) ? personal : [])])
     if (deny.size === 0) return assembly
     assembly.tools = assembly.tools.filter((tool) => !(deny.has(tool.name) && ctx.tools.get(tool.name) !== undefined))
     return assembly

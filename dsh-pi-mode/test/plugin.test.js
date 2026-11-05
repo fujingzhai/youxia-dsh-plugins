@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import { apply } from '../index.js'
 import { apply as applyWeb } from '../web.js'
+import { apply as applySettings } from '../settings.js'
 
 function mask(config, globals = []) {
   let handler
@@ -35,6 +36,19 @@ test('无效 deny 配置按空名单处理', async () => {
   assert.equal(result.tools.length, 1)
 })
 
+test('个人名单由 pi-mode-settings 登记并与预设 deny 合并，卸载后失效', async () => {
+  const effects = []
+  applySettings({ effect: (fn) => effects.push(fn()) }, { deny: ['im_tool', '', 7] })
+  try {
+    const result = await mask({ deny: ['global'] }, ['global', 'im_tool'])(['read', 'global', 'im_tool'])
+    assert.deepEqual(result.tools.map(tool => tool.name), ['read'])
+  } finally {
+    for (const dispose of effects) dispose()
+  }
+  const after = await mask(undefined, ['im_tool'])(['im_tool'])
+  assert.deepEqual(after.tools.map(tool => tool.name), ['im_tool'])
+})
+
 test('可选联网 hook 可以接管，公共包不需要作者的私有工具', async () => {
   const key = Symbol.for('dsh-pi-mode.web-tools')
   const previous = globalThis[key]
@@ -53,6 +67,7 @@ test('可选联网 hook 可以接管，公共包不需要作者的私有工具',
 test('组合补丁保持通用默认值，不带 IM 定制名单', () => {
   const patch = readFileSync(new URL('../cordis.patch.yml', import.meta.url), 'utf8')
   assert.match(patch, /deny: \[\]/)
+  assert.match(patch, /- id: pi-mode-settings\n\s+name: 'dsh-pi-mode\/settings\.js'\n\s+config:\n\s+deny: \[\]/)
   assert(!patch.includes('dsh_im_'))
   assert(patch.includes("name: 'dsh-pi-mode/web.js'"))
   assert(patch.includes('@deepseek-ai/dsh-agent-preset'))

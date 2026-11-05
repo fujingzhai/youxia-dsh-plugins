@@ -1,6 +1,6 @@
 {
   "name": "dsh-pi-mode",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "author": "youxia",
   "repository": {
     "type": "git",
@@ -18,7 +18,7 @@
     "dsh": ">=0.2.1-rc.5"
   },
   "scripts": {
-    "check": "node --check index.js && node --check web.js",
+    "check": "node --check index.js && node --check web.js && node --check settings.js",
     "test": "node --test"
   },
   "dsh": {
@@ -29,6 +29,7 @@
   "files": [
     "index.js",
     "web.js",
+    "settings.js",
     "cordis.patch.yml",
     "README.md",
     "LICENSE"

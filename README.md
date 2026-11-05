@@ -6,7 +6,7 @@
 
 | 插件 | 当前版本 | 作用 |
 |---|---|---|
-| [dsh-pi-mode](dsh-pi-mode) | 0.1.1 | 以 Pi 为蓝本，精简工具与系统提示词 |
+| [dsh-pi-mode](dsh-pi-mode) | 0.1.2 | 以 Pi 为蓝本，精简工具与系统提示词 |
 | [dsh-session-cost](dsh-session-cost) | 0.4.0 | 在统计条显示会话（含子代理）按市面 token 价折算的费用 |
 | [dsh-zh-slash](dsh-zh-slash) | 0.1.0 | 用「、」唤出原生 `/` 命令菜单 |
 
@@ -21,7 +21,7 @@
 **Pi 模式：**
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.1.1&path:/dsh-pi-mode
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.1.2&path:/dsh-pi-mode
 ```
 
 **会话费用：**
@@ -42,7 +42,7 @@ git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-zh-slash@0.1.0&path
 
 ```sh
 # 各条互相独立，按需执行；Web 版将 desktop 换成 web
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.1.1&path:/dsh-pi-mode"
+dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.1.2&path:/dsh-pi-mode"
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-cost@0.4.0&path:/dsh-session-cost"
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-zh-slash@0.1.0&path:/dsh-zh-slash"
 ```
@@ -65,7 +65,7 @@ dsh plugin --profile desktop add "link:$PWD/dsh-pi-mode"
 # 或：dsh plugin --profile desktop add "link:$PWD/dsh-zh-slash"
 ```
 
-链接安装依赖本地目录，请勿移走或删除目录。个人定制不要覆盖公共默认值：Pi 模式的个性化提示词、工具屏蔽名单留在自己的副本；会话费用的自定义价格表放在插件目录之外，用配置 `priceBook` 指过去（见其 README）。
+链接安装依赖本地目录，请勿移走或删除目录。个人定制不要覆盖公共默认值：Pi 模式的工具屏蔽名单写在自己 profile 补丁的 `pi-mode-settings` 条目里，个性化提示词留在自己的副本；会话费用的自定义价格表放在插件目录之外，用配置 `priceBook` 指过去（各见其 README）。
 
 ## 更新与卸载
 

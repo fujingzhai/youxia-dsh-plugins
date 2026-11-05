@@ -25,13 +25,13 @@ AGENTS.md、技能清单、时间照常注入；自动压缩、后台任务照�
 桌面版「插件」→「添加插件」，粘贴下面的 Git 地址（只装本插件，不装仓库里的其他插件）：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.1.1&path:/dsh-pi-mode
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.1.2&path:/dsh-pi-mode
 ```
 
 也可以使用命令行（Web 版将 `desktop` 换成 `web`）：
 
 ```sh
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.1.1&path:/dsh-pi-mode"
+dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.1.2&path:/dsh-pi-mode"
 ```
 
 若终端找不到 `dsh`，macOS 官方桌面版可使用完整路径 `"/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh"` 替代命令名。也可参照[仓库首页](../README.md)克隆后安装本子目录，不要把整个仓库根目录当成插件。
@@ -70,15 +70,17 @@ DSH 的工具分两类：模式（预设）里各行注册的，和全局插件�
 | session_search 等 5 个 | 插件页的「会话搜索」（实验） | 不需要就在插件页关掉；它还会往系统提示词加一段说明，Pi 模式里那段会缺失 |
 | 其他插件的工具（IM、MCP 等） | 各插件 | 默认照常可用 |
 
-Pi 模式默认**不挡任何全局工具**。想在 Pi 模式里挡掉某个、又不想在全局关掉，把名字写进 `cordis.patch.yml` 里 `global-tool-mask` 行的 `deny`，再重启：
+Pi 模式默认**不挡任何全局工具**。想在 Pi 模式里挡掉某个、又不想在全局关掉，在自己 profile 的 `cordis.patch.yml`（桌面版在 `~/.dsh/profiles/desktop/`）末尾加一条，保存即生效，无需重启：
 
 ```yaml
-          - id: global-tool-mask
-            name: 'dsh-pi-mode'
-            config:
-              deny:
-                - session_search
+- id: pi-mode-settings
+  name: dsh-pi-mode/settings.js
+  config:
+    deny:
+      - session_search
 ```
+
+名单写在自己的 profile 里，插件更新不会覆盖；不要去改插件目录里的 `cordis.patch.yml`。
 
 ## 给安装代理的适配步骤
 
@@ -89,7 +91,7 @@ Pi 模式默认**不挡任何全局工具**。想在 Pi 模式里挡掉某个、
    - `request/header` 事件的 `data.header.tools[].name`：发给模型的工具。除上文 13 个（以及按平台二选一的 bash / PowerShell）之外，都是全局工具。
    - `system/message` 事件：系统提示词，确认 `{{web_rules}}` 已展开。
    - `user/message` 事件：附带的 AGENTS.md、当前目录、技能清单、时间。
-3. 对照「全局工具」一节，列出用户装了哪些全局工具，问清哪些要在 Pi 模式里挡掉（能在全局关的优先建议去全局关），写进 `deny`，重启。
+3. 对照「全局工具」一节，列出用户装了哪些全局工具，问清哪些要在 Pi 模式里挡掉（能在全局关的优先建议去全局关），写进用户 profile 里 `pi-mode-settings` 条目的 `deny`。
 4. 联网：确认 DSH 设置里配了搜索服务；没有就提醒用户去配，或接入登记了上述接口的插件。
 5. 用户在 Windows 上：改写系统提示词里 bash、rg、find 的说法。用户不用中文：翻译系统提示词。
 6. 改完重启，再按第 2 步核对一遍。
@@ -103,6 +105,7 @@ Pi 模式默认**不挡任何全局工具**。想在 Pi 模式里挡掉某个、
 - `cordis.patch.yml`：插入预设 `pi`（显示名「Pi 模式」），含系统提示词与插件清单。
 - `web.js`：联网工具入口与 `{{web_rules}}`。
 - `index.js`：全局工具屏蔽（`deny`）。
+- `settings.js`：个人设置入口（`pi-mode-settings`），在 profile 补丁里覆盖。
 
 ## 许可
 
