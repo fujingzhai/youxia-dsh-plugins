@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Output speed (two readings)",
+    "description": "Shows the composer speed as X(Y) tok/s: outside is the pure decode speed after the first token (DSH's own reading), inside is the end-to-end speed from request sent to done, including the first-token wait (the pi footer reading)."
+  }
+}

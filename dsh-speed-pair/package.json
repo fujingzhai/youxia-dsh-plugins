@@ -1,0 +1,60 @@
+{
+  "name": "dsh-speed-pair",
+  "version": "0.1.0",
+  "description": "把 DSH 底栏的输出速度改成双口径：括号外为纯解码速度（首 token 之后），括号内为整段速度（请求发出→收完，含首字延迟），即 pi 底栏口径。",
+  "author": "youxia",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fujingzhai/youxia-dsh-plugins.git",
+    "directory": "dsh-speed-pair"
+  },
+  "homepage": "https://github.com/fujingzhai/youxia-dsh-plugins/tree/main/dsh-speed-pair#readme",
+  "bugs": {
+    "url": "https://github.com/fujingzhai/youxia-dsh-plugins/issues"
+  },
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ]
+    }
+  },
+  "scripts": {
+    "check": "node --check index.js && node --check client.js"
+  },
+  "engines": {
+    "node": ">=24.9",
+    "dsh": ">=0.2.1-rc.5"
+  },
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "token",
+    "throughput",
+    "tps"
+  ],
+  "license": "MIT"
+}
