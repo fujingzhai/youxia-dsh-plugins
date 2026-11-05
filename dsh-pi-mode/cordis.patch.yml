@@ -104,15 +104,15 @@
         plugins:
           # 与 Pi 模式共用的整组（YAML 别名），不要在这里另抄一份
           - *pi-core
-          # IM 里看不到 present 卡片和本机文件链接，所以不挂 present；个人名单取 pi-mode-settings 的 imDeny
+          # IM 里看不到 present 卡片和本机文件链接，所以不挂 present；个人名单取 pi-mode-settings 的 imDeny。
+          # 规矩只写 IM 工具的用法，不在系统提示词里交代"用户在用某个 IM"：渠道由 dsh-im 的「上下文增强」逐条消息附带（见 README）。
           - id: channel
             name: 'dsh-pi-mode'
             config:
               channel: im
               deny: []
               rules: |-
-                - 用户通过即时通讯软件和你对话，看不到本机文件链接与预览卡片：回复要短，适合手机阅读。
-                - 要把文件或图片发给用户，用 dsh_im_return_file 登记路径（已有文件直接登记，不必为发送重建或改名）；本轮结束后才发出，回复里说"已备好"，不说"已发送"。
+                - 要把文件或图片交给用户，用 dsh_im_return_file 登记路径（已有文件直接登记，不必为发送重建或改名）；本轮结束后才发出，回复里说"已备好"，不说"已发送"。
     # 个人设置入口：在自己 profile 的 cordis.patch.yml 里用同一 id 覆盖 config（deny 管 Pi 模式、imDeny 管 Pi-IM），改完无需重启。
     - id: pi-mode-settings
       name: 'dsh-pi-mode/settings.js'

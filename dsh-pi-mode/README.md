@@ -27,13 +27,13 @@ AGENTS.md、技能清单、时间照常注入；自动压缩、后台任务照�
 桌面版「插件」→「添加插件」，粘贴下面的 Git 地址（只装本插件，不装仓库里的其他插件）：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.2.0&path:/dsh-pi-mode
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.2.1&path:/dsh-pi-mode
 ```
 
 也可以使用命令行（Web 版将 `desktop` 换成 `web`）：
 
 ```sh
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.2.0&path:/dsh-pi-mode"
+dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.2.1&path:/dsh-pi-mode"
 ```
 
 若终端找不到 `dsh`，macOS 官方桌面版可使用完整路径 `"/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh"` 替代命令名。也可参照[仓库首页](../README.md)克隆后安装本子目录，不要把整个仓库根目录当成插件。
@@ -46,12 +46,14 @@ IM 里看不到 present 卡片和本机文件链接，文件要靠 IM 插件回�
 
 | | Pi 模式 | Pi-IM |
 |---|---|---|
-| 交付 | present 卡片、Markdown 文件链接 | 不挂 present；规矩改为「回复要短、适合手机读」「发文件用 dsh_im_return_file」 |
+| 交付 | present 卡片、Markdown 文件链接 | 不挂 present；规矩改为「发文件用 dsh_im_return_file」 |
 | 全局工具屏蔽 | 个人名单 `deny` | 个人名单 `imDeny` |
 
 用法：在「设置 → IM机器人」的机器人卡片里把 Agent Preset 选为「Pi-IM」，或在聊天里发 `/preset pi-im`；已有会话要先发 `/new` 再发消息才换上。
 
-Pi 模式与 Pi-IM 关掉了 DSH 的可选运行时上下文，dsh-im 自己附带的英文提示（发文件、群记录、来源说明）也随之不出现；前两条已写进 Pi-IM 的规矩，若在 dsh-im 里配了「来源说明」，Pi-IM 中不会生效。
+**建议同时打开该机器人的「上下文增强」**（机器人卡片 → 上下文增强 → 私聊／群聊），来源字段至少勾「渠道 channel」，增强提示词留空。这样每条消息前会附一行 `<dsh_im_source>{"channel":"weixin"}</dsh_im_source>`，模型从消息本身知道用户在哪个 IM，系统提示词里就不必另作交代。群聊可再勾发送者昵称等。
+
+Pi 模式与 Pi-IM 关掉了 DSH 的可选运行时上下文，dsh-im 以系统上下文形式附带的提示（发文件、群记录的英文说明，以及上下文增强里的「增强提示词」）也随之不出现；发文件一条已写进 Pi-IM 的规矩，来源字段是随消息走的，不受影响。
 
 ## 联网
 
