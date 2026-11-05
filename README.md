@@ -2,14 +2,14 @@
 
 [![检查](https://github.com/fujingzhai/youxia-dsh-plugins/actions/workflows/check.yml/badge.svg)](https://github.com/fujingzhai/youxia-dsh-plugins/actions/workflows/check.yml)
 
-自己日常在用的 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）插件，整理成通用版本后陆续收录。**一个仓库、多个独立插件**，按需单装，不需要安装整个合集，也不依赖作者的本机配置。
+自用并持续维护的 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）插件合集。
 
 | 插件 | 当前版本 | 作用 |
 |---|---|---|
-| [dsh-pi-mode](dsh-pi-mode) | 0.1.1 | 新增「Pi 模式」：工具与系统提示词以 [pi](https://github.com/earendil-works/pi) 为蓝本，精简直接；需留意系统提示词与平台适配 |
-| [dsh-zh-slash](dsh-zh-slash) | 0.1.0 | 中文输入法下用「、」唤出原生 `/` 命令菜单，不切输入法，不另造菜单 |
+| [dsh-pi-mode](dsh-pi-mode) | 0.1.1 | 以 Pi 为蓝本，精简工具与系统提示词 |
+| [dsh-zh-slash](dsh-zh-slash) | 0.1.0 | 用「、」唤出原生 `/` 命令菜单 |
 
-两个插件可以一起用，也可单独用。最低 DSH 版本均为 `0.2.1-rc.5`；具体已测环境、限制见各插件说明。没有发布到 npm，下列地址直接安装 GitHub 子目录。
+兼容要求与使用说明见各插件目录。
 
 ## 安装
 
