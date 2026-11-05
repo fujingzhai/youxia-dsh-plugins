@@ -7,10 +7,11 @@
 - 每个 `dsh-*` 子目录是独立包，必须包含 `package.json`、README、MIT 许可、组合补丁及测试。
 - 插件不能依赖作者的路径、密钥、私有插件或未公开服务。可选适配必须有可用的公共默认值。
 - 本机定制和公共默认值分开；不要把其他工作目录里的未提交修改顺手同步进来。
+- `dsh-settings-customizer` 的公开规则必须为空、自动排序默认关闭；实际排序、名称和图标只写仓库外的 DSH profile，不得写进源码、示例、测试或发布截图。
 
 ## 修改与验证
 
-1. 只修改本次涉及的插件；运行 `npm run check`。
+1. 只修改本次涉及的插件；首次检查先在 `dsh-settings-customizer` 目录运行 `npm install --ignore-scripts --package-lock=false`，再在根目录运行 `npm run check`。
 2. 影响输入、菜单或预设加载时，额外用对应版本的 DSH 在隔离 profile 做安装／GUI 验证。不得覆盖正在使用的 profile。
 3. 新增依赖、提高最低 DSH 版本或改变提示词时，在插件 README 和 CHANGELOG 写明影响。
 4. 安装文档必须给出可复制的 Git 子目录地址（`&path:/<插件名>`），禁止放作者本机安装路径。

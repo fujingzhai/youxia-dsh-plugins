@@ -1,0 +1,4 @@
+# 个人规则必须放到仓库外的 DSH profile；以下仅为误放时的防线。
+*.local.*
+personal.*
+profiles/

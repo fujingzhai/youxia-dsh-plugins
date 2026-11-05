@@ -23,5 +23,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - name: 安装设置导航插件的配置定义依赖
+        working-directory: dsh-settings-customizer
+        run: npm install --ignore-scripts --package-lock=false --no-audit --no-fund
       - name: 校验清单、文档、语法、测试及打包内容
         run: npm run check

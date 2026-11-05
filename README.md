@@ -8,6 +8,7 @@
 |---|---|---|
 | [dsh-pi-mode](dsh-pi-mode) | 0.2.1 | 以 Pi 为蓝本，精简工具与系统提示词；另带 IM 版 Pi-IM |
 | [dsh-session-cost](dsh-session-cost) | 0.4.1 | 在统计条显示会话（含子代理）按市面 token 价折算的费用 |
+| [dsh-settings-customizer](dsh-settings-customizer) | 0.3.0 | 用个人配置覆盖设置导航的顺序、名称、图标；公共默认为空 |
 | [dsh-zh-slash](dsh-zh-slash) | 0.1.0 | 用「、」唤出原生 `/` 命令菜单 |
 
 兼容要求与使用说明见各插件目录。
@@ -30,6 +31,12 @@ git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.2.1&path:
 git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-cost@0.4.1&path:/dsh-session-cost
 ```
 
+**设置导航定制：**
+
+```text
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-settings-customizer@0.3.0&path:/dsh-settings-customizer
+```
+
 **顿号触发：**
 
 ```text
@@ -44,6 +51,7 @@ git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-zh-slash@0.1.0&path
 # 各条互相独立，按需执行；Web 版将 desktop 换成 web
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.2.1&path:/dsh-pi-mode"
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-cost@0.4.1&path:/dsh-session-cost"
+dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-settings-customizer@0.3.0&path:/dsh-settings-customizer"
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-zh-slash@0.1.0&path:/dsh-zh-slash"
 ```
 
@@ -65,7 +73,7 @@ dsh plugin --profile desktop add "link:$PWD/dsh-pi-mode"
 # 或：dsh plugin --profile desktop add "link:$PWD/dsh-zh-slash"
 ```
 
-链接安装依赖本地目录，请勿移走或删除目录。个人定制不要覆盖公共默认值：Pi 模式的工具屏蔽名单写在自己 profile 补丁的 `pi-mode-settings` 条目里，个性化提示词留在自己的副本；会话费用的自定义价格表放在插件目录之外，用配置 `priceBook` 指过去（各见其 README）。
+链接安装依赖本地目录，请勿移走或删除目录。个人定制不要覆盖公共默认值：Pi 模式的工具屏蔽名单写在自己 profile 补丁的 `pi-mode-settings` 条目里，个性化提示词留在自己的副本；会话费用的自定义价格表放在插件目录之外，用配置 `priceBook` 指过去；设置导航定制的规则写在自己 profile 的 `settings-customizer` 条目中，源码默认不含任何个人规则（各见其 README）。
 
 ## 更新与卸载
 
@@ -79,7 +87,7 @@ dsh plugin --profile desktop add "link:$PWD/dsh-pi-mode"
 
 - [变更记录](CHANGELOG.md) · [维护约定](CONTRIBUTING.md) · [问题反馈](https://github.com/fujingzhai/youxia-dsh-plugins/issues)
 - 各插件独立版本、独立标签：`<插件名>@<版本>`。不会为新增插件强制升级其他插件。
-- 根目录执行 `npm run check`：校验清单、入口、安装文档、语法、测试及打包内容。检查无需额外 npm 依赖；GitHub Actions 在 Linux、macOS、Windows 运行 Node 24 检查。这不等于各平台已做过完整 DSH GUI 实测。
+- 先在 `dsh-settings-customizer` 中执行 `npm install --ignore-scripts --package-lock=false`，再在根目录执行 `npm run check`：校验清单、入口、安装文档、语法、测试及打包内容。检查需要设置导航插件的配置定义依赖；GitHub Actions 在 Linux、macOS、Windows 运行 Node 24 检查。这不等于各平台已做过完整 DSH GUI 实测。
 - 报错时请提供 DSH 版本、操作系统、插件版本、安装来源及复现步骤；不要上传账号密钥、完整会话日志或私人配置。
 
 ## 许可

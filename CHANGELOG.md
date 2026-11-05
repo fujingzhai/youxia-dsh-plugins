@@ -4,6 +4,12 @@
 
 ## 2026-11-05
 
+### dsh-settings-customizer 0.3.0
+
+- 首个公开版（原本地插件名 `dsh-settings-order`）。以个人 DSH profile 配置覆盖设置导航的顺序、名称、图标，不修改其他插件源码；未配置时不改变界面。
+- 公共代码默认空规则，实际配置留在仓库外的 Host profile；支持 DSH 原生 live 配置同步、内置图标与数据式 SVG、清除规则和卸载恢复。发布包不含作者实际规则。
+- 新增依赖 `@deepseek-ai/schemastery ~3.19.0`，最低 DSH 版本为 0.2.2-rc.1。25 项回归测试通过，并在 macOS DSH 0.2.2-rc.1 的隔离 Web profile 实测空默认、名称／顺序／图标覆盖、配置热更新和清除恢复；其他系统未做 GUI 实测。
+
 ### dsh-pi-mode 0.2.1
 
 - Pi-IM 的系统提示词不再交代「用户通过即时通讯和你对话」，只留 `dsh_im_return_file` 的用法；渠道改由 dsh-im「上下文增强」逐条消息附带（README 补了建议设置）。

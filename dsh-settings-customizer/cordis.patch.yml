@@ -1,0 +1,7 @@
+- insert:
+    - id: settings-customizer
+      name: dsh-settings-customizer
+      config:
+        rules: {}
+        autoOrder: false
+        extraStart: 40

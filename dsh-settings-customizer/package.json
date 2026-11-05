@@ -1,0 +1,34 @@
+{
+  "name": "dsh-settings-customizer",
+  "version": "0.3.0",
+  "description": "通过个人 DSH 配置统一定制设置导航的顺序、名称和图标，公共默认不含作者规则。",
+  "author": "youxia",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fujingzhai/youxia-dsh-plugins.git",
+    "directory": "dsh-settings-customizer"
+  },
+  "homepage": "https://github.com/fujingzhai/youxia-dsh-plugins/tree/main/dsh-settings-customizer#readme",
+  "bugs": { "url": "https://github.com/fujingzhai/youxia-dsh-plugins/issues" },
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./package.json": "./package.json"
+  },
+  "files": ["index.js", "client.js", "cordis.patch.yml", "README.md", "LICENSE"],
+  "dsh": {
+    "bundle": { "patch": "./cordis.patch.yml" },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": ["@deepseek-ai/dsh-client-ui-settings"]
+    }
+  },
+  "dependencies": { "@deepseek-ai/schemastery": "~3.19.0" },
+  "scripts": { "test": "node --test" },
+  "engines": { "node": ">=24.9", "dsh": ">=0.2.2-rc.1" },
+  "keywords": ["dsh-plugin", "deepseek-harness", "settings", "customization"],
+  "license": "MIT"
+}
