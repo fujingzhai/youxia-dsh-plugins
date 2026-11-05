@@ -17,37 +17,33 @@ window.__ModuleLoader__.load({
     };
 
     const zh = {
-      "cost.aria": "Session 费用：{cost}，点击查看明细",
-      "cost.title": "Session 费用",
-      "cost.note": "按市面 token 价折算，不是实际扣费。括号里是其中子代理的花费。",
-      "cost.noteNoSub": "按市面 token 价折算，不是实际扣费。",
-      "cost.own": "本会话",
-      "cost.subagents": "子代理（{count} 个）",
+      "cost.aria": "Tokens 成本（按市价）：{cost}，点击查看明细",
+      "cost.title": "Tokens 成本（按市价）",
+      "cost.own": "主会话",
+      "cost.route": "{route}（{names}）",
+      "cost.sep": "、",
       "cost.unknownRoute": "未知模型",
-      "cost.calls": "{count} 次调用",
       "cost.unknown": "{count} 次未定价，需在 prices.json 为 {route} 配价格",
       "cost.subagents.pill": "({amounts})",
-      "cost.subagents.loading": "读取中",
-      "cost.subagents.unavailable": "无数据",
-      "cost.subagents.none": "未调用模型"
+      "cost.loading": "读取中",
+      "cost.unavailable": "无数据",
+      "cost.none": "未调用模型"
     };
     const en = {
-      "cost.aria": "Session cost: {cost}. Click for details",
-      "cost.title": "Session cost",
-      "cost.note": "At market token prices, not your actual bill. Parentheses show the part spent by subagents.",
-      "cost.noteNoSub": "At market token prices, not your actual bill.",
-      "cost.own": "This session",
-      "cost.subagents": "Subagents ({count})",
+      "cost.aria": "Token cost (market price): {cost}. Click for details",
+      "cost.title": "Token cost (market price)",
+      "cost.own": "Main session",
+      "cost.route": "{route} ({names})",
+      "cost.sep": ", ",
       "cost.unknownRoute": "Unknown model",
-      "cost.calls": "{count} calls",
       "cost.unknown": "{count} unpriced: add {route} to prices.json",
       "cost.subagents.pill": "({amounts})",
-      "cost.subagents.loading": "loading",
-      "cost.subagents.unavailable": "no data",
-      "cost.subagents.none": "no model calls"
+      "cost.loading": "loading",
+      "cost.unavailable": "no data",
+      "cost.none": "no model calls"
     };
 
-    const css = ".dshsc_anchor{min-width:0;font-size:calc(var(--dsh-content-font-size-secondary,13px) - 1px);line-height:calc(20px + var(--dsh-content-font-delta-secondary,0px));display:inline-flex}.dshsc_pill{box-sizing:border-box;border-radius:var(--dsw-radius-sm);max-width:min(460px,42vw);color:var(--dsw-alias-label-tertiary);font:inherit;font-variant-numeric:tabular-nums;line-height:inherit;white-space:nowrap;background:0 0;border:none;cursor:pointer;align-items:center;gap:6px;padding:1px 8px;display:inline-flex}.dshsc_pill:hover,.dshsc_pill[aria-expanded=true]{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary)}.dshsc_pill svg{flex:none;width:14px;height:14px}.dshsc_label{text-overflow:ellipsis;min-width:0;overflow:hidden}[data-composer-dock]>span{order:1}[data-composer-dock] [data-composer-stat=cost]{order:2}.dshsc_panel{z-index:1100;box-sizing:border-box;border-radius:var(--dsw-radius-lg);background:var(--dsw-specific-menu);width:max-content;min-width:min(300px,100vw - 24px);max-width:min(440px,100vw - 24px);max-height:min(70vh,560px);overflow:auto;backdrop-filter:var(--dsw-menu-backdrop-filter);--dsw-elevation-stroke-color:var(--dsw-alias-border-l1);box-shadow:var(--dsw-elevation-prominent);color:var(--dsw-alias-label-secondary);cursor:default;border:0;padding:16px;font-size:12px;line-height:18px;position:fixed}.dshsc_title{color:var(--dsw-alias-label-primary);justify-content:space-between;gap:16px;margin-bottom:8px;font-weight:500;display:flex}.dshsc_titleLabel{align-items:center;gap:6px;min-width:0;display:inline-flex}.dshsc_titleLabel svg{flex:none;width:14px;height:14px}.dshsc_titleValue{font-variant-numeric:tabular-nums;text-align:right}.dshsc_rule{border-top:.5px solid var(--dsw-alias-border-l2);margin:10px 0}.dshsc_rule:first-child{margin-top:0}.dshsc_details{color:var(--dsw-alias-label-tertiary);grid-template-columns:minmax(76px,auto) minmax(0,1fr);gap:6px 16px;margin:0;display:grid}.dshsc_details dt,.dshsc_details dd{min-width:0;margin:0}.dshsc_details dt{overflow-wrap:anywhere}.dshsc_details dd{color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}.dshsc_meta{grid-column:1/-1;margin-top:-4px;color:var(--dsw-alias-label-tertiary);opacity:.85}.dshsc_strong{color:var(--dsw-alias-label-secondary)}.dshsc_note{color:var(--dsw-alias-label-tertiary)}";
+    const css = ".dshsc_anchor{min-width:0;font-size:calc(var(--dsh-content-font-size-secondary,13px) - 1px);line-height:calc(20px + var(--dsh-content-font-delta-secondary,0px));display:inline-flex}.dshsc_pill{box-sizing:border-box;border-radius:var(--dsw-radius-sm);max-width:min(460px,42vw);color:var(--dsw-alias-label-tertiary);font:inherit;font-variant-numeric:tabular-nums;line-height:inherit;white-space:nowrap;background:0 0;border:none;cursor:pointer;align-items:center;gap:6px;padding:1px 8px;display:inline-flex}.dshsc_pill:hover,.dshsc_pill[aria-expanded=true]{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary)}.dshsc_pill svg{flex:none;width:14px;height:14px}.dshsc_label{text-overflow:ellipsis;min-width:0;overflow:hidden}[data-composer-dock]>span{order:1}[data-composer-dock] [data-composer-stat=cost]{order:2}.dshsc_panel{z-index:1100;box-sizing:border-box;border-radius:var(--dsw-radius-lg);background:var(--dsw-specific-menu);width:max-content;min-width:min(300px,100vw - 24px);max-width:min(440px,100vw - 24px);max-height:min(70vh,560px);overflow:auto;backdrop-filter:var(--dsw-menu-backdrop-filter);--dsw-elevation-stroke-color:var(--dsw-alias-border-l1);box-shadow:var(--dsw-elevation-prominent);color:var(--dsw-alias-label-secondary);cursor:default;border:0;padding:16px;font-size:12px;line-height:18px;position:fixed}.dshsc_title{color:var(--dsw-alias-label-primary);justify-content:space-between;gap:16px;margin-bottom:8px;font-weight:500;display:flex}.dshsc_titleLabel{align-items:center;gap:6px;min-width:0;display:inline-flex}.dshsc_titleLabel svg{flex:none;width:14px;height:14px}.dshsc_titleValue{font-variant-numeric:tabular-nums;text-align:right}.dshsc_rule{border-top:.5px solid var(--dsw-alias-border-l2);margin:10px 0}.dshsc_rule:first-child{margin-top:0}.dshsc_details{color:var(--dsw-alias-label-tertiary);grid-template-columns:minmax(76px,auto) minmax(0,1fr);gap:6px 16px;margin:0;display:grid}.dshsc_details dt,.dshsc_details dd{min-width:0;margin:0}.dshsc_details dt{overflow-wrap:anywhere}.dshsc_details dd{color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}.dshsc_meta{grid-column:1/-1;overflow-wrap:anywhere;margin-top:-4px;color:var(--dsw-alias-label-tertiary);opacity:.85}.dshsc_details .dshsc_route{margin-top:-4px;color:var(--dsw-alias-label-tertiary);opacity:.85}.dshsc_details .dshsc_spaced{margin-top:6px}.dshsc_strong{color:var(--dsw-alias-label-secondary)}";
 
     function decimal(amount) {
       const maximumFractionDigits = amount > 0 && amount < 0.01 ? 6 : 4;
@@ -73,7 +69,14 @@ window.__ModuleLoader__.load({
 
     const sumsText = (sums) => [...sums].map(([currency, amount]) => money(currency, amount)).join(" + ");
     const hasUnknown = (value) => (value?.segments ?? []).some((segment) => segment.unknownCalls > 0);
-    const callsOf = (value) => (value?.segments ?? []).reduce((total, segment) => total + segment.calls, 0);
+    /** Amounts of a cost view per currency, plus "--" when some calls are unpriced. */
+    const viewText = (value) => [sumsText(addAmounts(new Map(), value)), hasUnknown(value) ? "--" : ""].filter((part) => part !== "").join(" + ");
+
+    /** "provider/model（price names）" for one model run. */
+    function routeLabel(segment, t) {
+      const route = routeName(segment, t);
+      return segment.rules.length === 0 ? route : t("cost.route", { route, names: segment.rules.join(t("cost.sep")) });
+    }
 
     /** Own segments in call order: one amount per model run, "--" where a run has unpriced calls. */
     function ownLabel(value) {
@@ -183,47 +186,29 @@ window.__ModuleLoader__.load({
     }
 
     /**
-     * Rows for the details panel: totals, the session's own model runs, then
-     * one row per subagent (indented by depth). Each row is { kind, label, value }.
+     * Rows for the details panel: the main session, then each subagent
+     * (indented by depth). An entry is its name and amount, then its model
+     * run as "provider/model（price names）"; runs show their own amounts only
+     * when the entry switched models. Kinds: entry, route, meta, rule.
      */
     function dialogRows(own, tree, t) {
       const rows = [];
-      const ownSums = addAmounts(new Map(), own);
-      const segments = own?.segments ?? [];
-      if (tree.nodes.length > 0) {
-        const subValue = [sumsText(tree.sums), tree.unknown ? "--" : "", tree.sums.size === 0 && tree.pending > 0 ? t("cost.subagents.loading") : ""]
-          .filter((part) => part !== "").join(" + ");
-        rows.push({ kind: "strong", label: t("cost.own"), value: sumsText(ownSums) || (hasUnknown(own) ? "--" : "") });
-        rows.push({ kind: "strong", label: t("cost.subagents", { count: tree.nodes.length }), value: subValue });
-        rows.push({ kind: "rule" });
-      }
-      for (const segment of segments) {
-        const route = routeName(segment, t);
-        const amounts = segment.amounts.map((entry) => money(entry.currency, entry.amount));
-        if (segment.unknownCalls > 0) amounts.push("--");
-        rows.push({ kind: "row", label: route, value: amounts.join(" + ") });
-        const meta = [t("cost.calls", { count: segment.calls }), ...segment.rules];
-        rows.push({ kind: "meta", label: meta.join(" · ") });
-        if (segment.unknownCalls > 0) rows.push({ kind: "meta", label: t("cost.unknown", { count: segment.unknownCalls, route }) });
-      }
-      if (tree.nodes.length > 0) {
-        rows.push({ kind: "rule" });
-        for (const node of tree.nodes) {
-          const label = `${"\u2003".repeat(node.depth - 1)}${node.label}`;
-          if (node.cost === void 0) {
-            const loading = node.state === "loading" || node.state === "idle" || node.state === void 0;
-            rows.push({ kind: "row", label, value: t(loading ? "cost.subagents.loading" : "cost.subagents.unavailable") });
-            continue;
-          }
-          const calls = callsOf(node.cost);
-          if (calls === 0) {
-            rows.push({ kind: "row", label, value: t("cost.subagents.none") });
-            continue;
-          }
-          const value = [sumsText(addAmounts(new Map(), node.cost)), hasUnknown(node.cost) ? "--" : ""].filter((part) => part !== "").join(" + ");
-          rows.push({ kind: "row", label, value });
+      const entry = (label, value, indent, spaced) => {
+        const segments = value?.segments ?? [];
+        rows.push({ kind: "entry", label: indent + label, value: segments.length === 0 ? t("cost.none") : viewText(value), spaced });
+        for (const segment of segments) {
+          rows.push({ kind: "route", label: indent + routeLabel(segment, t), value: segments.length > 1 ? viewText({ segments: [segment] }) : "" });
+          if (segment.unknownCalls > 0) rows.push({ kind: "meta", label: indent + t("cost.unknown", { count: segment.unknownCalls, route: routeName(segment, t) }) });
         }
-      }
+      };
+      entry(t("cost.own"), own, "", false);
+      if (tree.nodes.length > 0) rows.push({ kind: "rule" });
+      tree.nodes.forEach((node, index) => {
+        const indent = "\u2003".repeat(node.depth - 1);
+        if (node.cost !== void 0) return entry(node.label, node.cost, indent, index > 0);
+        const loading = node.state === "loading" || node.state === "idle" || node.state === void 0;
+        rows.push({ kind: "entry", label: indent + node.label, value: t(loading ? "cost.loading" : "cost.unavailable"), spaced: index > 0 });
+      });
       return rows;
     }
 
@@ -302,11 +287,11 @@ window.__ModuleLoader__.load({
       rows.forEach((row, index) => {
         if (row.kind === "rule") {
           children.push(h("div", { key: index, className: "dshsc_rule", style: { gridColumn: "1 / -1", margin: "4px 0" }, "aria-hidden": true }));
-        } else if (row.kind === "meta") {
+        } else if (row.kind === "meta" || row.kind === "route" && row.value === "") {
           children.push(h("div", { key: index, className: "dshsc_meta" }, row.label));
         } else {
-          const strong = row.kind === "strong" ? "dshsc_strong" : void 0;
-          children.push(h("dt", { key: `${index}t`, className: strong }, row.label), h("dd", { key: `${index}d`, className: strong }, row.value));
+          const className = row.kind === "route" ? "dshsc_route" : row.spaced ? "dshsc_strong dshsc_spaced" : "dshsc_strong";
+          children.push(h("dt", { key: `${index}t`, className }, row.label), h("dd", { key: `${index}d`, className }, row.value));
         }
       });
       return h("div", {
@@ -320,9 +305,7 @@ window.__ModuleLoader__.load({
         h("span", { className: "dshsc_titleLabel" }, h(CostIcon), t("cost.title")),
         h("span", { className: "dshsc_titleValue" }, total)),
       h("div", { className: "dshsc_rule", "aria-hidden": true }),
-      h("dl", { className: "dshsc_details" }, children),
-      h("div", { className: "dshsc_rule", "aria-hidden": true }),
-      h("div", { className: "dshsc_note" }, t(tree.nodes.length > 0 ? "cost.note" : "cost.noteNoSub")));
+      h("dl", { className: "dshsc_details" }, children));
     }
 
     const EMPTY = {};

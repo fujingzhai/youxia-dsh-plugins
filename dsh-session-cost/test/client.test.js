@@ -79,19 +79,35 @@ test("nested subagents count toward their top-level child, and loading or unpric
   assert.equal(pillText(own, subagentTree("root", unpriced), t), "¥10.00 (--)");
 });
 
-test("details panel lists totals, own model runs and one row per subagent", () => {
+test("details panel: the main session, then each subagent, each with its model run", () => {
   const own = projections.root.values.sessionCost;
   const tree = subagentTree("root", projections);
   assert.equal(grandTotal(own, tree), "¥12.00 + $0.50");
-  const rows = plain(dialogRows(own, tree, t));
-  assert.deepEqual(rows.slice(0, 3), [
-    { kind: "strong", label: "本会话", value: "¥10.00" },
-    { kind: "strong", label: "子代理（3 个）", value: "¥2.00 + $0.50" },
-    { kind: "rule" }
+  assert.deepEqual(plain(dialogRows(own, tree, t)), [
+    { kind: "entry", label: "主会话", value: "¥10.00", spaced: false },
+    { kind: "route", label: "p/m（r）", value: "" },
+    { kind: "rule" },
+    { kind: "entry", label: "调研", value: "¥2.00", spaced: false },
+    { kind: "route", label: "p/m（r）", value: "" },
+    { kind: "entry", label: "\u2003孙代理", value: "$0.50", spaced: true },
+    { kind: "route", label: "\u2003p/m（r）", value: "" },
+    { kind: "entry", label: "审查", value: "读取中", spaced: true }
   ]);
-  assert.deepEqual(rows[3], { kind: "row", label: "p/m", value: "¥10.00" });
-  assert.deepEqual(rows[4], { kind: "meta", label: "1 次调用 · r" });
-  const subagents = rows.slice(6);
-  assert.deepEqual(subagents.map((row) => [row.label, row.value]), [["调研", "¥2.00"], ["\u2003孙代理", "$0.50"], ["审查", "读取中"]]);
+});
+
+test("details panel: runs get their own amounts after a model switch; unpriced runs are flagged", () => {
+  const own = view(run("CNY", 10, 100), { ...run("USD", 1, 200), model: "n", rules: [] });
+  const solo = { root: { state: "ready", values: { sessionCost: own } } };
+  assert.deepEqual(plain(dialogRows(own, subagentTree("root", solo), t)), [
+    { kind: "entry", label: "主会话", value: "¥10.00 + $1.00", spaced: false },
+    { kind: "route", label: "p/m（r）", value: "¥10.00" },
+    { kind: "route", label: "p/n", value: "$1.00" }
+  ]);
+  const unpriced = cost([], 2, 2);
+  assert.deepEqual(plain(dialogRows(unpriced, subagentTree("root", {}), t)), [
+    { kind: "entry", label: "主会话", value: "--", spaced: false },
+    { kind: "route", label: "p/m（r）", value: "" },
+    { kind: "meta", label: "2 次未定价，需在 prices.json 为 p/m 配价格" }
+  ]);
 });
 
