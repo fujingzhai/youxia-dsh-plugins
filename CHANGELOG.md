@@ -27,6 +27,7 @@
 
 ### 合集维护
 
+- 收录 dsh-session-cost；首页插件表与各安装清单统一按插件名排序；维护约定补充价格表的发版要求。
 - 新增插件索引、GUI／命令行安装说明、更新卸载方式及维护约定。
 - 新增无依赖的全仓检查和 Linux／macOS／Windows GitHub Actions。
 

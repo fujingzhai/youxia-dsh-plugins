@@ -14,19 +14,21 @@
 
 ## 安装
 
-桌面 GUI：**插件 → 添加插件**，粘贴：
+桌面版「插件」→「添加插件」，粘贴：
 
 ```text
 git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-cost@0.4.0&path:/dsh-session-cost
 ```
 
-命令行（Web 版把 `desktop` 换成 `web`）：
+或用命令行（Web 版将 `desktop` 换成 `web`）：
 
 ```sh
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-cost@0.4.0&path:/dsh-session-cost"
 ```
 
-安装后重启 DSH。有 token 用量的会话，会在统计条的用时、用量两项之后显示费用。更新、卸载与克隆后链接安装见[合集首页](../README.md)。
+若终端找不到 `dsh`，macOS 官方桌面版可用 `"/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh"` 替代命令名。也可参照[仓库首页](../README.md)克隆后安装本子目录。
+
+安装后重启 DSH。有 token 用量的会话，会在统计条的用时、用量两项之后显示费用。版本更新与卸载见[仓库首页](../README.md)。
 
 ## 价格放在哪里
 
