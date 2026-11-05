@@ -1,0 +1,12 @@
+{
+  "name": "youxia-dsh-plugins",
+  "private": true,
+  "type": "module",
+  "description": "独立安装、独立版本的 DSH 插件合集维护入口。",
+  "engines": { "node": ">=24.9" },
+  "scripts": {
+    "check": "node scripts/check.mjs",
+    "test": "node --test dsh-pi-mode/test/*.test.js dsh-zh-slash/test/*.test.js"
+  },
+  "license": "MIT"
+}

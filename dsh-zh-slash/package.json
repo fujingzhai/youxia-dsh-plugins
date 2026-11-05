@@ -1,0 +1,36 @@
+{
+  "name": "dsh-zh-slash",
+  "version": "0.1.0",
+  "description": "在 DSH 桌面／Web 输入框行首用顿号「、」触发原生斜杠命令菜单。",
+  "author": "youxia",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fujingzhai/youxia-dsh-plugins.git",
+    "directory": "dsh-zh-slash"
+  },
+  "homepage": "https://github.com/fujingzhai/youxia-dsh-plugins/tree/main/dsh-zh-slash#readme",
+  "bugs": { "url": "https://github.com/fujingzhai/youxia-dsh-plugins/issues" },
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./package.json": "./package.json"
+  },
+  "files": ["index.js", "client.js", "cordis.patch.yml", "README.md", "LICENSE"],
+  "dsh": {
+    "bundle": { "patch": "./cordis.patch.yml" },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": ["@deepseek-ai/dsh-client-ui-conversation"]
+    }
+  },
+  "scripts": {
+    "check": "node --check index.js && node --check client.js",
+    "test": "node --test"
+  },
+  "engines": { "node": ">=24.9", "dsh": ">=0.2.1-rc.5" },
+  "keywords": ["dsh-plugin", "deepseek-harness", "ime", "slash"],
+  "license": "MIT"
+}

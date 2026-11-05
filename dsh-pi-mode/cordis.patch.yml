@@ -76,7 +76,7 @@
           - id: web-tools
             name: 'dsh-pi-mode/web.js'
           # 只挡点名的全局工具，其余全局工具（含以后新装插件带来的）照常给模型。
-          # 目前没有要挡的（11-05：会话搜索包已在插件页关掉，Qoder 生图/搜图已关）；留着这一行，以后有不想给模型的全局工具时往 deny 里加名字
+          # 通用版默认不屏蔽全局工具；需要过滤时按 README 在 deny 中添加工具名。
           - id: global-tool-mask
             name: 'dsh-pi-mode'
             config:

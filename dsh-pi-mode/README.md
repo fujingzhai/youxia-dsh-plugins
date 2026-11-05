@@ -22,12 +22,21 @@ AGENTS.md、技能清单、时间照常注入；自动压缩、后台任务照�
 
 ## 安装
 
-```bash
-git clone <本仓库> ~/dsh-pi-mode        # 放哪都行
-dsh plugin --profile desktop add link:$HOME/dsh-pi-mode
+桌面版「插件」→「添加插件」，粘贴下面的 Git 地址（只装本插件，不装仓库里的其他插件）：
+
+```text
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.1.1&path:/dsh-pi-mode
 ```
 
-桌面版的 `dsh` 命令在 `/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh`。装好后**重启 DSH**：预设里的插件在启动时加载，热重载不会替换。新建对话时在模式菜单里选「Pi 模式」。以后改了本包任何文件，也都要重启。
+也可以使用命令行（Web 版将 `desktop` 换成 `web`）：
+
+```sh
+dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.1.1&path:/dsh-pi-mode"
+```
+
+若终端找不到 `dsh`，macOS 官方桌面版可使用完整路径 `"/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh"` 替代命令名。也可参照[仓库首页](../README.md)克隆后安装本子目录，不要把整个仓库根目录当成插件。
+
+装好后**重启 DSH**：预设里的插件在启动时加载，热重载不会替换。新建对话时在模式菜单里选「Pi 模式」。以后更新或修改本包，也都要重启。版本更新与卸载见[仓库首页](../README.md)。
 
 ## 联网
 
