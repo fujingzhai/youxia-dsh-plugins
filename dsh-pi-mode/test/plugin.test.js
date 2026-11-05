@@ -67,7 +67,8 @@ test('可选联网 hook 可以接管，公共包不需要作者的私有工具',
 test('组合补丁保持通用默认值，不带 IM 定制名单', () => {
   const patch = readFileSync(new URL('../cordis.patch.yml', import.meta.url), 'utf8')
   assert.match(patch, /deny: \[\]/)
-  assert.match(patch, /- id: pi-mode-settings\n\s+name: 'dsh-pi-mode\/settings\.js'\n\s+config:\n\s+deny: \[\]/)
+  // Windows checkouts may use CRLF line endings.
+  assert.match(patch, /- id: pi-mode-settings\r?\n\s+name: 'dsh-pi-mode\/settings\.js'\r?\n\s+config:\r?\n\s+deny: \[\]/)
   assert(!patch.includes('dsh_im_'))
   assert(patch.includes("name: 'dsh-pi-mode/web.js'"))
   assert(patch.includes('@deepseek-ai/dsh-agent-preset'))
