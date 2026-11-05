@@ -34,7 +34,7 @@ dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-p
 
 - 自带的 [prices.json](prices.json) 只收当前主流在线模型，随插件更新；来源与口径见 [PRICES.md](PRICES.md)。
 - **出了新模型、或看到某段显示 `--`**：在价格表里加一条即可（写法见下文）。`--` 表示这个模型既不在价格表里，DSH 自带目录也没有它的价格。
-- **要自己改价或加模型**：把 `prices.json` 复制到自己的目录，在 DSH profile 的 `cordis.patch.yml` 里指过去；这份文件不会被插件更新覆盖，保存即生效：
+- **要自己改价或加模型**：把 `prices.json` 复制到自己的目录，在 DSH profile 的 `cordis.patch.yml` 里指过去（文件里若只有一行 `[]`，先删掉它）；这份文件不会被插件更新覆盖，保存即生效：
 
   ```yaml
   - id: session-cost
@@ -145,7 +145,7 @@ dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-p
 3. DSH 自带的 pi-ai 模型目录（美元刊例价；DSH 附带的版本通常较旧，缺新模型）；
 4. 都没有：显示 `--`。
 
-插件配置写在 DSH profile 的 `cordis.patch.yml`，都可省略：
+插件配置写在 DSH profile 的 `cordis.patch.yml`（文件里若只有一行 `[]`，先删掉它），都可省略：
 
 ```yaml
 - id: session-cost

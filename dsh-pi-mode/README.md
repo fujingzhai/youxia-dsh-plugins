@@ -70,7 +70,7 @@ DSH 的工具分两类：模式（预设）里各行注册的，和全局插件�
 | session_search 等 5 个 | 插件页的「会话搜索」（实验） | 不需要就在插件页关掉；它还会往系统提示词加一段说明，Pi 模式里那段会缺失 |
 | 其他插件的工具（IM、MCP 等） | 各插件 | 默认照常可用 |
 
-Pi 模式默认**不挡任何全局工具**。想在 Pi 模式里挡掉某个、又不想在全局关掉，在自己 profile 的 `cordis.patch.yml`（桌面版在 `~/.dsh/profiles/desktop/`）末尾加一条，保存即生效，无需重启：
+Pi 模式默认**不挡任何全局工具**。想在 Pi 模式里挡掉某个、又不想在全局关掉，在自己 profile 的 `cordis.patch.yml`（桌面版在 `~/.dsh/profiles/desktop/`）末尾加一条（文件里若只有一行 `[]`，先删掉它），保存即生效，无需重启：
 
 ```yaml
 - id: pi-mode-settings
