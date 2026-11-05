@@ -17,13 +17,13 @@
 桌面版「插件」→「添加插件」，粘贴：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-cost@0.4.1&path:/dsh-session-cost
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-cost@0.4.2&path:/dsh-session-cost
 ```
 
 或用命令行（Web 版将 `desktop` 换成 `web`）：
 
 ```sh
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-cost@0.4.1&path:/dsh-session-cost"
+dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-cost@0.4.2&path:/dsh-session-cost"
 ```
 
 若终端找不到 `dsh`，macOS 官方桌面版可用 `"/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh"` 替代命令名。也可参照[仓库首页](../README.md)克隆后安装本子目录。
@@ -167,6 +167,7 @@ dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-p
 ## 账目与显示口径
 
 - Host 投影回放完整持久 Session 日志，历史分页和上下文压缩不会改变既有账目。
+- 上下文压缩时那次摘要本身也是一次模型调用，按它上报的用量如实计入（计价时间取压缩开始时刻 `compaction/start`，路由取摘要事件里的 `provider/model`）。因此压缩较多的会话，金额会高于只算主对话时的读数。
 - 同一次尝试的最终用量替换其流式样本，避免重复计费。
 - `llm/retry-started` 后的新尝试单独计入；如果提供方上报了失败或重试尝试的用量，也会计入费用。
 - 连续相同 `provider/model` 合并为一个显示段；路由变化另起一段。

@@ -4,6 +4,11 @@
 
 ## 2026-11-05
 
+### dsh-session-cost 0.4.2
+
+- 修复漏算：上下文压缩的摘要那次模型调用（`compaction/summary`）也按提供方上报的用量计入费用。此前只算 `assistant/message`，压缩多的会话会少算（一处实测 4 次摘要合计少 2.7%）。计价时间取压缩开始（`compaction/start`），路由取摘要事件自带的 `provider/model`；缺 `compaction/start` 时退回事件时间与当前路由。
+- 投影状态版本升到 6，旧检查点自动重放日志；不含自定义价格表等个人配置。回归测试 43 项通过。
+
 ### dsh-settings-customizer 0.3.0
 
 - 首个公开版（原本地插件名 `dsh-settings-order`）。以个人 DSH profile 配置覆盖设置导航的顺序、名称、图标，不修改其他插件源码；未配置时不改变界面。

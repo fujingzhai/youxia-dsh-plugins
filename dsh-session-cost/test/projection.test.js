@@ -59,6 +59,18 @@ function final(seq, at, model, sample, turn = 1, step = 1) {
   return event(seq, at, "assistant/message", { turn, step, usage: sample, stream: [], message: message("p", model) });
 }
 
+function compactionStart(seq, at, turn = 1) {
+  return event(seq, at, "compaction/start", { compactionId: "c1", turn });
+}
+
+function compactionSummary(seq, at, sample, provider = "p", model = "a") {
+  return event(seq, at, "compaction/summary", { compactionId: "c1", provider, model, usage: sample });
+}
+
+function compactionEnd(seq, at, turn = 1) {
+  return event(seq, at, "compaction/end", { compactionId: "c1", turn });
+}
+
 test("a final sample replaces the same attempt and model switches create ordered segments", () => {
   const value = fold([
     header(0, time("2026-11-04T12:00:00+08:00"), "a"),
@@ -158,7 +170,7 @@ test("wire view reprices restored log facts when the price book changes", () => 
     models: [{ match: ["p/a"], rules: [{ name: "new-price", currency: "USD", input: 20, output: 40 }] }]
   }) });
   const second = createSessionCostProjection(updatedBook);
-  assert.equal(second.stateVersion, 5);
+  assert.equal(second.stateVersion, 6);
   const repriced = second.wire.view(checkpoint);
   assert.equal(repriced.segments[0].amounts[0].currency, "USD");
   assert.equal(repriced.segments[0].amounts[0].amount, 24);
@@ -198,4 +210,46 @@ test("fork-inherited history is skipped so a parent total with subagents never c
   const value = projection.wire.view(projection.stateSchema.parse(state));
   assert.equal(value.totalCalls, 1);
   assert.deepEqual(value.segments.map((segment) => segment.model), ["b"]);
+});
+
+test("compaction summaries are billable calls priced at the moment compaction started", () => {
+  const value = fold([
+    header(0, time("2026-11-04T00:28:00+08:00"), "a"),
+    compactionStart(1, time("2026-11-04T00:29:00+08:00")),
+    compactionSummary(2, time("2026-11-04T00:31:00+08:00"), usage(1_000_000, 100_000)),
+    compactionEnd(3, time("2026-11-04T00:31:00+08:00"))
+  ]);
+  assert.equal(value.totalCalls, 1);
+  assert.equal(value.pricedCalls, 1);
+  assert.equal(value.segments[0].rules[0], "off-peak");
+  assert.equal(value.segments[0].amounts[0].amount, 1.2);
+});
+
+test("a compaction summary carries its own route and does not disturb step accounting", () => {
+  const value = fold([
+    header(0, time("2026-11-04T12:00:00+08:00"), "a"),
+    start(1, time("2026-11-04T12:00:00+08:00")),
+    attempt(2, time("2026-11-04T12:00:01+08:00"), usage(100, 5)),
+    compactionStart(3, time("2026-11-04T12:00:03+08:00")),
+    compactionSummary(4, time("2026-11-04T12:00:09+08:00"), usage(1_000_000, 100_000), "p", "b"),
+    compactionEnd(5, time("2026-11-04T12:00:09+08:00")),
+    final(6, time("2026-11-04T12:00:12+08:00"), "a", usage(200_000, 20_000))
+  ]);
+  assert.equal(value.totalCalls, 2);
+  assert.deepEqual(value.segments.map((segment) => segment.model), ["a", "b"]);
+  assert.ok(Math.abs(value.segments[0].amounts[0].amount - 0.48) < 1e-9);
+  assert.equal(value.segments[1].amounts[0].currency, "USD");
+  assert.equal(value.segments[1].amounts[0].amount, 12);
+});
+
+test("a compaction summary without usage or without a preceding start does not break the ledger", () => {
+  const projection = createSessionCostProjection(priceBook());
+  const initial = projection.init();
+  const broken = projection.apply(initial, event(0, 0, "compaction/summary", { provider: "p", model: "a", usage: { inputTokens: -1, outputTokens: 2 } }));
+  assert.equal(broken, initial);
+  const value = fold([
+    compactionSummary(0, time("2026-11-04T12:00:00+08:00"), usage(1_000_000, 100_000))
+  ]);
+  assert.equal(value.totalCalls, 1);
+  assert.equal(value.segments[0].amounts[0].amount, 2.4);
 });

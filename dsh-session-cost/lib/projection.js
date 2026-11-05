@@ -40,7 +40,8 @@ const stateSchema = schema("state", shape({
   attempts: list(attemptShape),
   route: nullable(route),
   open: nullable(shape({ turn: count, step: count, startTime: amount })),
-  current: nullable(shape({ index: count, turn: count, step: count }))
+  current: nullable(shape({ index: count, turn: count, step: count })),
+  compaction: nullable(shape({ turn: count, startTime: amount }))
 }));
 
 const viewSchema = schema("view", shape({
@@ -82,6 +83,13 @@ function messageRoute(event) {
   const source = event.data.message?.source;
   if (typeof source?.provider !== "string" || typeof source?.model !== "string" || source.provider === "" || source.model === "") return null;
   return { provider: source.provider, model: source.model };
+}
+
+/** Compaction summaries report their own route; older logs only carry the session route. */
+function summaryRoute(event) {
+  const { provider, model } = event.data;
+  if (typeof provider !== "string" || typeof model !== "string" || provider === "" || model === "") return null;
+  return { provider, model };
 }
 
 function lastUsageChunk(stream) {
@@ -157,6 +165,28 @@ export function createSessionCostProjection(pricer) {
     };
   }
 
+  /**
+   * Compaction summarisation is a real model call with its own provider-reported
+   * usage, billed at the time the summary request started. It is appended as its
+   * own attempt (step 0, never `current`) so a later assistant/message for the
+   * surrounding step still replaces that step instead of this one.
+   */
+  function applyCompaction(state, event) {
+    const usage = bucketsOf(event.data.usage);
+    if (usage === null) return state;
+    const started = state.compaction;
+    const next = {
+      turn: started?.turn ?? 0,
+      step: 0,
+      firstSeq: event.seq,
+      lastSeq: event.seq,
+      startTime: started?.startTime ?? event.time,
+      route: summaryRoute(event) ?? state.route,
+      usage
+    };
+    return { ...state, attempts: [...state.attempts, next] };
+  }
+
   function view(state) {
     const segments = [];
     let pricedCalls = 0;
@@ -202,7 +232,7 @@ export function createSessionCostProjection(pricer) {
 
   return {
     key: "sessionCost",
-    stateVersion: 5,
+    stateVersion: 6,
     stateSchema,
     // Forks (branches, fork subagents) start with a copy of the parent's log.
     // Those inherited calls were paid in the parent, so they are skipped here;
@@ -212,7 +242,8 @@ export function createSessionCostProjection(pricer) {
       attempts: [],
       route: null,
       open: null,
-      current: null
+      current: null,
+      compaction: null
     }),
     apply: (state, event) => {
       if (event.seq < state.inherited) return state;
@@ -246,6 +277,15 @@ export function createSessionCostProjection(pricer) {
         case "assistant/attempt":
         case "assistant/message":
           return applyUsage(state, event);
+        case "compaction/start":
+          return {
+            ...state,
+            compaction: { turn: count(event.data.turn) ? event.data.turn : 0, startTime: event.time }
+          };
+        case "compaction/summary":
+          return applyCompaction(state, event);
+        case "compaction/end":
+          return state.compaction === null ? state : { ...state, compaction: null };
         default:
           return state;
       }

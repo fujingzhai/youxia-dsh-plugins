@@ -1,6 +1,6 @@
 {
   "name": "dsh-session-cost",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "在 DSH 输入框下显示当前会话（含子代理）按市面 token 价折算的费用：自维护价格表（别名、峰闲时、节假日、限时、长上下文阶梯）＋ pi-ai 模型目录兜底。",
   "author": "youxia",
   "repository": {
