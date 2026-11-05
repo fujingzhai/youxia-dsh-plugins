@@ -2,25 +2,49 @@
  * Pi 模式的全局工具屏蔽：只挡 config.deny 点名的全局工具，其余全局工具（以后新装插件带来的也一样）照常给模型。
  * 预设各行自己注册的工具不受影响。
  *
- * 做法：挂在预设里监听 system-prompt/assemble（只对本预设的对话分发），在组装结果里过滤工具；
- * 只拿掉点名且确属全局注册的（ctx.tools.get(名字) 不带作用域即全局视图）。
- * 不用 ctx.tools.restrict：预设各行的工具挂在 agent 的上一层，对 agent 来说也算「继承」，会被一并屏蔽；
- * 点到当时还没注册的名字它还会报错。
+ * 在预设作用域用 tools.restrict 屏蔽点名的全局工具，模型声明与执行使用同一份限制。
+ * 先用不带作用域的 tools.get 确认全局注册，跳过预设工具和暂未注册的名字；
+ * 注册表或个人设置变化时重算。DSH 0.2.2 起 assemble 监听器不再接收工具列表。
  */
 export const name = 'pi-mode-tool-mask'
-export const inject = ['tools', 'systemPrompt']
+export const inject = ['tools']
 
 // 个人名单由 settings.js（profile 补丁里的 pi-mode-settings 条目）登记，见该文件说明。
 const SETTINGS = Symbol.for('dsh-pi-mode.settings')
 
 export function apply(ctx, config) {
   const own = Array.isArray(config?.deny) ? config.deny : []
-  ctx.on('system-prompt/assemble', async (_assembly, _context, next) => {
-    const assembly = await next()
+  let current = '[]'
+  let disposeMask
+  let refreshing = false
+  let disposed = false
+
+  function refresh() {
+    if (refreshing || disposed) return
     const personal = globalThis[SETTINGS]?.deny
-    const deny = new Set([...own, ...(Array.isArray(personal) ? personal : [])])
-    if (deny.size === 0) return assembly
-    assembly.tools = assembly.tools.filter((tool) => !(deny.has(tool.name) && ctx.tools.get(tool.name) !== undefined))
-    return assembly
+    const deny = [...new Set([...own, ...(Array.isArray(personal) ? personal : [])])]
+      .filter(name => typeof name === 'string' && ctx.tools.get(name) !== undefined).sort()
+    const key = JSON.stringify(deny)
+    if (key === current) return
+    // restrict 和 dispose 都会发 tools/change；避免因自己的变更递归刷新。
+    refreshing = true
+    try {
+      const next = deny.length ? ctx.tools.restrict({ deny }) : undefined
+      const previous = disposeMask
+      disposeMask = next
+      current = key
+      previous?.()
+    } finally {
+      refreshing = false
+    }
+  }
+
+  ctx.effect(() => () => {
+    disposed = true
+    disposeMask?.()
   })
+  ctx.on('tools/change', refresh)
+  ctx.on('pi-mode/settings-change', refresh)
+  ctx.on('ready', refresh)
+  refresh()
 }
