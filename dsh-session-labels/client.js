@@ -69,6 +69,7 @@ window.__ModuleLoader__.load({
 .yxsl-backdrop{position:fixed;inset:0;z-index:2200;background:#0004;display:grid;place-items:center;padding:20px}.yxsl-dialog{background:var(--dsw-specific-menu,#fff);color:var(--dsw-alias-label-primary,#222);border:1px solid var(--dsw-alias-border-l1,#8884);border-radius:16px;padding:22px;width:min(440px,100%);max-height:85vh;overflow:auto;box-shadow:0 20px 80px #0004;font-size:13px;line-height:1.5}.yxsl-dialog h2{font-size:15px;font-weight:600;margin:0}.yxsl-error{color:var(--dsw-alias-label-error,#e44848);font-size:12px;line-height:1.5;white-space:pre-wrap}.yxsl-danger{color:var(--dsw-alias-label-error,#e44848)!important}
 .yxsl-filter{padding:0;font-size:13px;line-height:20px;font-weight:400;color:var(--dsw-alias-label-primary)}.yxsl-filter:before{content:'';display:block;height:.5px;margin:3px 8px;background:var(--dsw-alias-border-l2,#8883)}.yxsl-filterlabel,.yxsl-filterhint{padding:3px 8px;font-size:11px;line-height:15px;font-weight:400;color:var(--dsw-alias-label-tertiary,#888)}.yxsl-filterhint{margin:0}.yxsl-filterlist{max-height:210px;overflow:auto;display:flex;flex-direction:column}.yxsl-filteritem{border:0;background:transparent;text-align:left;display:flex;align-items:center;gap:6px;width:100%;min-height:30px;padding:4px 8px;border-radius:var(--dsw-radius-md,8px);font-size:13px;line-height:20px;font-weight:400}.yxsl-filteritem:hover,.yxsl-filteritem:focus-visible{background:var(--dsw-alias-interactive-bg-hover,#8882);outline:none}.yxsl-filtericon,.yxsl-filtercheck{display:inline-flex;flex:none;width:14px;height:14px;align-items:center;justify-content:center}.yxsl-filtercheck{margin-inline-start:auto}.yxsl-filter select{height:30px;font-size:13px;line-height:20px}
 .yxsl-marks{display:inline-flex;gap:3px;align-items:center;flex:none}.yxsl-title-color{color:var(--yxsl-color)!important}
+.yxsl-row-action{flex:none;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;margin:-4px;border:0;border-radius:var(--dsw-radius-xs);padding:0;background:transparent;cursor:pointer;color:var(--dsw-alias-label-tertiary)}.yxsl-row-action:focus-visible{outline-offset:-2px}@media (hover:hover){.yxsl-row-action:hover{color:var(--dsw-alias-label-primary)}}
 .yxsl-empty{padding:18px 0;text-align:center;color:var(--dsw-alias-label-tertiary,#888)}
 `;
     return {
@@ -246,6 +247,31 @@ window.__ModuleLoader__.load({
           return h('span', { className: 'yxsl-marks', title: label, 'aria-label': `标签：${label}` },
             ...shown.map(tag => h(TagIcon, { key: tag.id, size: 12, color: tone(tag.color), filled: true })));
         }
+        function TagButton({ sessionId, displayTitle }) {
+          const active = useSource(ctx.contextMenus.active);
+          const expanded = active?.kind === NS && active.value.sessionId === sessionId;
+          return h('button', { type: 'button', className: 'yxsl-row-action', title: '标签', 'aria-label': '标签',
+            'aria-haspopup': 'menu', 'aria-expanded': expanded, 'data-context-menu-trigger': '',
+            onPointerDown: event => event.stopPropagation(), onDoubleClick: event => event.stopPropagation(),
+            onClick: event => {
+              event.stopPropagation();
+              const button = event.currentTarget, rect = button.getBoundingClientRect();
+              button.focus({ preventScroll: true });
+              ctx.contextMenus.open({ kind: NS, value: { sessionId, displayTitle } }, { x: rect.left, y: rect.bottom });
+            } }, h(TagIcon, { size: 14 }));
+        }
+        function tagActions(sessionId) {
+          const state = data.getSnapshot(), status = ui.getSnapshot(), tags = idsFor(state, sessionId);
+          return [
+            ...state.tags.map(tag => ({ id: tag.id, label: `${tags.includes(tag.id) ? '✓  ' : ''}${tag.name}`,
+              icon: { key: `${NS}.color`, src: tone(tag.color) }, disabled: status.pending,
+              run: async () => { await mutate({ op: 'assign', sessionId, id: tag.id, enabled: !tags.includes(tag.id) }); } })),
+            { id: 'create', label: '＋ 新建标签…', separatorBefore: !!state.tags.length, disabled: status.loading || status.pending,
+              run: () => openModal({ kind: 'create', sessionId }) },
+            ...(tags.length ? [{ id: 'clear', label: '清除此会话标签', disabled: status.pending,
+              run: async () => { await mutate({ op: 'clear', sessionId }); } }] : [])
+          ];
+        }
         function Hover({ sessionId }) {
           const state = useSource(data);
           return h('div', { className: 'yxsl yxsl-hover' }, ...idsFor(state, sessionId).map(id => {
@@ -294,22 +320,19 @@ window.__ModuleLoader__.load({
         put('settings.section.icon', TagIcon);
         put('sidebar.session.row.trailing', Marks);
         put('sidebar.session.row.hover', Hover);
+        // Same owner-managed hover strip as Archive (100) and Pin (200).
+        put('sidebar.workspaces.session.row.action', TagButton, { order: 300 });
         put('shell.overlay', Overlay);
         ctx.effect(() => ctx.contextMenus.register({
           id: NS, target: 'session', order: 10000, observe: () => [data, ui],
-          resolve: ({ sessionId }) => {
-            const state = data.getSnapshot(), status = ui.getSnapshot();
-            const tags = idsFor(state, sessionId);
-            return [{ id: 'tags', label: '标签', icon: { key: NS }, separatorBefore: true, afterContent: true,
-              children: [
-                ...state.tags.map(tag => ({ id: tag.id, label: `${tags.includes(tag.id) ? '✓  ' : ''}${tag.name}`,
-                  icon: { key: `${NS}.color`, src: tone(tag.color) }, disabled: status.pending,
-                  run: async () => { await mutate({ op: 'assign', sessionId, id: tag.id, enabled: !tags.includes(tag.id) }); } })),
-                { id: 'create', label: '＋ 新建标签…', separatorBefore: !!state.tags.length, disabled: status.loading || status.pending,
-                  run: () => openModal({ kind: 'create', sessionId }) },
-                ...(tags.length ? [{ id: 'clear', label: '清除此会话标签', disabled: status.pending, run: async () => { await mutate({ op: 'clear', sessionId }); } }] : [])
-              ] }];
-          }
+          resolve: ({ sessionId }) => [{ id: 'tags', label: '标签', icon: { key: NS }, separatorBefore: true,
+            afterContent: true, children: tagActions(sessionId) }]
+        }));
+        // A plugin-owned target lets the shared native popup show tags directly,
+        // without resolving unrelated session actions or nesting a submenu.
+        ctx.effect(() => ctx.contextMenus.register({
+          id: NS, target: NS, order: 10000, observe: () => [data, ui],
+          resolve: ({ sessionId }) => tagActions(sessionId)
         }));
         put('contextMenu.icon', TagIcon, { key: NS });
         put('contextMenu.icon', ({ icon }) => h(TagIcon, { filled: true, color: /^#[\dA-F]{6}$/i.test(icon.src || '') ? icon.src : 'currentColor' }), { key: `${NS}.color` });

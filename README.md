@@ -8,7 +8,7 @@
 |---|---|---|
 | [dsh-pi-mode](dsh-pi-mode) | 0.2.3 | 以 Pi 为蓝本，精简工具与系统提示词；另带 IM 版 Pi-IM |
 | [dsh-session-fee](dsh-session-fee) | 0.4.4 | 在统计条显示会话（含子代理）按市面 token 价折算的费用 |
-| [dsh-session-labels](dsh-session-labels) | 0.1.3 | Finder 风格会话标签：右键打标、标题着色或标签符号、视图筛选 |
+| [dsh-session-labels](dsh-session-labels) | 0.1.4 | Finder 风格会话标签：悬浮按钮与右键打标、标题着色或标签符号、视图筛选 |
 | [dsh-settings-customizer](dsh-settings-customizer) | 0.3.2 | 用个人配置覆盖设置导航的顺序、名称、图标；公共默认为空 |
 | [dsh-speed-pair](dsh-speed-pair) | 0.1.0 | 输出速度改双口径 `X(Y) tok/s`：括号外是首字后的解码速度，括号内是含首字延迟的整段速度 |
 | [dsh-zh-slash](dsh-zh-slash) | 0.1.1 | 用「、」唤出原生 `/` 命令菜单 |
@@ -36,7 +36,7 @@ git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-fee@0.4.4&p
 **会话标签：**
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-labels@0.1.3&path:/dsh-session-labels
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-labels@0.1.4&path:/dsh-session-labels
 ```
 
 **设置导航定制：**
@@ -57,7 +57,7 @@ git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-speed-pair@0.1.0&pa
 git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-zh-slash@0.1.1&path:/dsh-zh-slash
 ```
 
-安装后重启 DSH。Pi 模式需新建会话并在模式菜单中选择；会话费用无需设置，有 token 用量的会话会在统计条里显示；会话标签在右键菜单打标，无需另选模式；输出速度双口径顶替原来的会话统计项，括号内即 pi 底栏口径；顿号触发无需选模式，在已选工作区的会话输入框开头敲「、」即可。
+安装后重启 DSH。Pi 模式需新建会话并在模式菜单中选择；会话费用无需设置，有 token 用量的会话会在统计条里显示；会话标签可悬浮会话行后点击「固定」后面的标签按钮，或在右键菜单打标，无需另选模式；输出速度双口径顶替原来的会话统计项，括号内即 pi 底栏口径；顿号触发无需选模式，在已选工作区的会话输入框开头敲「、」即可。
 
 ### 命令行
 
@@ -65,7 +65,7 @@ git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-zh-slash@0.1.1&path
 # 各条互相独立，按需执行；Web 版将 desktop 换成 web
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.2.3&path:/dsh-pi-mode"
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-fee@0.4.4&path:/dsh-session-fee"
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-labels@0.1.3&path:/dsh-session-labels"
+dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-labels@0.1.4&path:/dsh-session-labels"
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-settings-customizer@0.3.2&path:/dsh-settings-customizer"
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-speed-pair@0.1.0&path:/dsh-speed-pair"
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-zh-slash@0.1.1&path:/dsh-zh-slash"
