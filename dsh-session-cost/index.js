@@ -14,7 +14,7 @@ export const inject = ["sessionProjections"];
 export { Config };
 
 const packageDirectory = dirname(fileURLToPath(import.meta.url));
-const packageVersion = JSON.parse(readFileSync(join(packageDirectory, "package.json"), "utf8")).version;
+const { name: packageName, version: packageVersion } = JSON.parse(readFileSync(join(packageDirectory, "package.json"), "utf8"));
 const statusPath = join(process.env.DSH_HOME || join(homedir(), ".dsh"), "plugins", "session-cost", "status.json");
 
 function freeze(value) {
@@ -52,7 +52,7 @@ export function loadPricing(priceBookPath, config = Config.parse({})) {
 function writeStatus(status) {
   try {
     mkdirSync(dirname(statusPath), { recursive: true });
-    writeFileSync(statusPath, `${JSON.stringify({ plugin: `dsh-session-cost@${packageVersion}`, ...status }, null, 2)}\n`);
+    writeFileSync(statusPath, `${JSON.stringify({ plugin: `${packageName}@${packageVersion}`, ...status }, null, 2)}\n`);
   } catch {
     // Diagnostics only.
   }

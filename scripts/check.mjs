@@ -35,7 +35,10 @@ function filesIn(directory) {
 for (const name of plugins) {
   const directory = join(root, name)
   const manifest = JSON.parse(read(join(directory, 'package.json')))
-  assert.equal(manifest.name, name, `${name}: 包名须等于目录名`)
+  assert.match(manifest.name, /^(?:@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/, `${name}: 包名不合法`)
+  const patchText = read(join(directory, manifest.dsh.bundle.patch))
+  const patchName = manifest.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  assert(new RegExp(`name:\\s*['"]?${patchName}['"]?\\s*$`, 'm').test(patchText), `${name}: 组合补丁的 name 须为包名 ${manifest.name}`)
   assert.match(manifest.version, /^\d+\.\d+\.\d+(?:-[\w.-]+)?$/)
   assert.notEqual(manifest.private, true, `${name}: 独立插件不可标记为 private`)
   assert.equal(manifest.license, 'MIT')
@@ -50,6 +53,10 @@ for (const name of plugins) {
     assert(existsSync(join(directory, manifest.exports?.['./client'] ?? '')), `${name}: Client 入口缺失`)
   }
   const readme = read(join(directory, 'README.md'))
+  if (manifest.name !== name) {
+    assert(rootReadme.includes(manifest.name), `${name}: 首页未写明 npm 包名 ${manifest.name}`)
+    assert(readme.includes(manifest.name), `${name}: 插件说明未写明 npm 包名 ${manifest.name}`)
+  }
   assert(existsSync(join(directory, 'LICENSE')), `${name}: 缺少 LICENSE`)
   const spec = `git+https://github.com/fujingzhai/youxia-dsh-plugins.git#${name}@${manifest.version}&path:/${name}`
   assert(rootReadme.includes(spec), `${name}: 首页安装地址未与版本同步`)
@@ -65,7 +72,7 @@ for (const name of plugins) {
   // Use npm's JS entry so this runs without a Unix shell on Windows too.
   assert(process.env.npm_execpath, '请通过 npm run check 执行')
   const packResult = JSON.parse(run([process.env.npm_execpath, 'pack', '--dry-run', '--json'], directory))
-  const packed = Array.isArray(packResult) ? packResult[0] : packResult[name]
+  const packed = Array.isArray(packResult) ? packResult[0] : packResult[manifest.name] ?? packResult[name]
   const packedPaths = new Set(packed.files.map(file => file.path))
   for (const required of ['package.json', 'README.md', 'LICENSE', manifest.main, manifest.dsh.bundle.patch,
     ...(manifest.dsh.client ? [manifest.exports['./client']] : [])]) {

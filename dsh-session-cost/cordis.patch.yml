@@ -1,5 +1,5 @@
 - insert:
     - id: session-cost
-      name: dsh-session-cost
+      name: dsh-session-fee
       config:
         priceBook: ./prices.json

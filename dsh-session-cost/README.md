@@ -1,4 +1,4 @@
-# dsh-session-cost
+# dsh-session-fee
 
 在 DeepSeek Harness（DSH）输入框下方的统计条里，显示当前会话按市面 token 价折算的**等值费用**。
 
@@ -17,16 +17,18 @@
 桌面版「插件」→「添加插件」，粘贴：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-cost@0.4.2&path:/dsh-session-cost
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-cost@0.4.3&path:/dsh-session-cost
 ```
 
 或用命令行（Web 版将 `desktop` 换成 `web`）：
 
 ```sh
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-cost@0.4.2&path:/dsh-session-cost"
+dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-cost@0.4.3&path:/dsh-session-cost"
 ```
 
 若终端找不到 `dsh`，macOS 官方桌面版可用 `"/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh"` 替代命令名。也可参照[仓库首页](../README.md)克隆后安装本子目录。
+
+连不上 GitHub 时填 npm 包名 `dsh-session-fee`。不要填 `dsh-session-cost`，那是别人的包。目录和 Git 地址里的 `path:` 仍是 `dsh-session-cost`。已装旧包名的，先卸载再装新包名。
 
 安装后重启 DSH。有 token 用量的会话，会在统计条的用时、用量两项之后显示费用。版本更新与卸载见[仓库首页](../README.md)。
 
@@ -38,7 +40,7 @@ dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-p
 
   ```yaml
   - id: session-cost
-    name: dsh-session-cost
+    name: dsh-session-fee
     config:
       priceBook: /你的目录/prices.json
   ```
@@ -149,7 +151,7 @@ dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-p
 
 ```yaml
 - id: session-cost
-  name: dsh-session-cost
+  name: dsh-session-fee
   config:
     priceBook: /你的目录/prices.json   # 自己维护的价格表
     catalog:

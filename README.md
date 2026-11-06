@@ -7,7 +7,7 @@
 | 插件 | 当前版本 | 作用 |
 |---|---|---|
 | [dsh-pi-mode](dsh-pi-mode) | 0.2.3 | 以 Pi 为蓝本，精简工具与系统提示词；另带 IM 版 Pi-IM |
-| [dsh-session-cost](dsh-session-cost) | 0.4.2 | 在统计条显示会话（含子代理）按市面 token 价折算的费用 |
+| [dsh-session-cost](dsh-session-cost) | 0.4.3 | 在统计条显示会话（含子代理）按市面 token 价折算的费用。npm 包名是 `dsh-session-fee` |
 | [dsh-settings-customizer](dsh-settings-customizer) | 0.3.1 | 用个人配置覆盖设置导航的顺序、名称、图标；公共默认为空 |
 | [dsh-speed-pair](dsh-speed-pair) | 0.1.0 | 输出速度改双口径 `X(Y) tok/s`：括号外是首字后的解码速度，括号内是含首字延迟的整段速度 |
 | [dsh-zh-slash](dsh-zh-slash) | 0.1.1 | 用「、」唤出原生 `/` 命令菜单 |
@@ -29,7 +29,7 @@ git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.2.3&path:
 **会话费用：**
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-cost@0.4.2&path:/dsh-session-cost
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-cost@0.4.3&path:/dsh-session-cost
 ```
 
 **设置导航定制：**
@@ -57,7 +57,7 @@ git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-zh-slash@0.1.1&path
 ```sh
 # 各条互相独立，按需执行；Web 版将 desktop 换成 web
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.2.3&path:/dsh-pi-mode"
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-cost@0.4.2&path:/dsh-session-cost"
+dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-cost@0.4.3&path:/dsh-session-cost"
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-settings-customizer@0.3.1&path:/dsh-settings-customizer"
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-speed-pair@0.1.0&path:/dsh-speed-pair"
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-zh-slash@0.1.1&path:/dsh-zh-slash"
@@ -70,6 +70,20 @@ dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-p
 ```
 
 其他平台使用自己的 DSH 命令位置，不要照抄 macOS 路径。
+
+### npm
+
+连不上 GitHub，或桌面端提示改用国内镜像时，在同一输入框填包名。镜像同步可能晚几分钟。
+
+```text
+dsh-pi-mode
+dsh-session-fee
+dsh-settings-customizer
+dsh-speed-pair
+dsh-zh-slash
+```
+
+会话费用的 npm 包名是 `dsh-session-fee`，因为 `dsh-session-cost` 已被他人占用。不要安装那个包。目录和 Git 地址里的 `path:` 仍是 `dsh-session-cost`。
 
 ### 克隆后安装（需自行定制时）
 
@@ -87,7 +101,7 @@ dsh plugin --profile desktop add "link:$PWD/dsh-pi-mode"
 ## 更新与卸载
 
 - **版本安装**：查看 [Releases](https://github.com/fujingzhai/youxia-dsh-plugins/releases)，在插件页更新来源到新版地址，或重新执行该版本的安装命令。版本标签固定，不会自动跟随 `main`。
-- **跟随开发版**：将地址里的 `#<插件名>@<版本>`（如 `#dsh-session-cost@0.4.2`）换成 `#main`。这是滚动版本；需要最新提交时重新安装，不能保证 DSH 自动更新分支引用。
+- **跟随开发版**：将地址里的 `#<目录名>@<版本>`（如 `#dsh-session-cost@0.4.3`）换成 `#main`。这是滚动版本；需要最新提交时重新安装，不能保证 DSH 自动更新分支引用。
 - **本地链接**：先保存自己的改动，再在克隆目录执行 `git pull --ff-only`；有冲突先合并，不要强制重置。
 - **卸载**：在插件页卸载对应插件；也可执行 `dsh plugin --profile desktop remove <插件名>`，如 `dsh-zh-slash`。
 - 每次安装、更新、卸载后重启 DSH；插件各自独立，卸载一个不影响其他。
