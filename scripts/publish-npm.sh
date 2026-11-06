@@ -68,4 +68,4 @@ for dir in "${TARGETS[@]}"; do
 done
 
 unset TOKEN
-echo "完成：发布 $published，跳过 $skipped"
+echo "完成：发布 ${published}，跳过 ${skipped}"
