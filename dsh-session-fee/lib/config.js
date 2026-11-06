@@ -55,7 +55,7 @@ export function normalizeConfig(input) {
 export const Config = {
   "~standard": {
     version: 1,
-    vendor: "dsh-session-cost",
+    vendor: "dsh-session-fee",
     validate(value) {
       try {
         return { value: normalizeConfig(value) };

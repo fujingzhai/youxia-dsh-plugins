@@ -8,14 +8,14 @@ import { createPricer, normalizePriceBook } from "./lib/pricing.js";
 import { createSessionCostProjection } from "./lib/projection.js";
 import { watchPriceBook } from "./lib/reload.js";
 
-export const name = "session-cost";
+export const name = "session-fee";
 export const inject = ["sessionProjections"];
 
 export { Config };
 
 const packageDirectory = dirname(fileURLToPath(import.meta.url));
 const { name: packageName, version: packageVersion } = JSON.parse(readFileSync(join(packageDirectory, "package.json"), "utf8"));
-const statusPath = join(process.env.DSH_HOME || join(homedir(), ".dsh"), "plugins", "session-cost", "status.json");
+const statusPath = join(process.env.DSH_HOME || join(homedir(), ".dsh"), "plugins", "session-fee", "status.json");
 
 function freeze(value) {
   if (typeof value !== "object" || value === null || Object.isFrozen(value)) return value;
@@ -29,7 +29,7 @@ export function loadPriceBook(path) {
   try {
     json = JSON.parse(source);
   } catch (error) {
-    throw new Error(`Unable to parse session-cost price book ${path}: ${error.message}`, { cause: error });
+    throw new Error(`Unable to parse session-fee price book ${path}: ${error.message}`, { cause: error });
   }
   return freeze(normalizePriceBook(json));
 }
@@ -78,10 +78,10 @@ export function apply(ctx, rawConfig) {
         writeStatus(lastGood);
       },
       onError: (error) => {
-        console.error(`[dsh-session-cost] Keeping the last valid price book: ${error.message}`);
+        console.error(`[dsh-session-fee] Keeping the last valid price book: ${error.message}`);
         writeStatus({ ...lastGood, lastError: { at: new Date().toISOString(), message: error.message } });
       }
     });
     return () => reloader.close();
-  }, "dsh-session-cost: price-book watcher");
+  }, "dsh-session-fee: price-book watcher");
 }

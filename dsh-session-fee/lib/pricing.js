@@ -5,7 +5,7 @@ const localFormatters = new Map();
 const globCache = new Map();
 
 function fail(path, message) {
-  throw new Error(`Invalid session-cost price book at ${path}: ${message}`);
+  throw new Error(`Invalid session-fee price book at ${path}: ${message}`);
 }
 
 function object(value, path, allowedKeys = null) {

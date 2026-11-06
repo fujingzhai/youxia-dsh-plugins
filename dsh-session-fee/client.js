@@ -1,10 +1,10 @@
 window.__ModuleLoader__.load({
-  id: "dsh-session-cost",
+  id: "dsh-session-fee",
   factory(require) {
     const React = require("react");
     const ReactDOM = require("react-dom");
     const h = React.createElement;
-    const NS = "session-cost";
+    const NS = "session-fee";
     const CURRENCY_SYMBOLS = {
       CNY: "¥",
       USD: "$",
@@ -352,15 +352,15 @@ window.__ModuleLoader__.load({
     return {
       inject: ["slots", "locale", "sessions"],
       apply(ctx) {
-        ctx.effect(() => ctx.locale.register(NS, { zh, en }), "dsh-session-cost: dictionaries");
+        ctx.effect(() => ctx.locale.register(NS, { zh, en }), "dsh-session-fee: dictionaries");
         ctx.effect(() => {
           if (typeof document === "undefined") return void 0;
           const style = document.createElement("style");
-          style.dataset.plugin = "dsh-session-cost";
+          style.dataset.plugin = "dsh-session-fee";
           style.textContent = css;
           document.head.appendChild(style);
           return () => style.remove();
-        }, "dsh-session-cost: styles");
+        }, "dsh-session-fee: styles");
         const actions = () => ({
           refreshProjections(sessionId) {
             return ctx.sessions.refreshProjections(sessionId);

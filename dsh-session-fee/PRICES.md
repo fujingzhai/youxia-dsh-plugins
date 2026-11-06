@@ -76,4 +76,4 @@ Qoder（经 [dsh-provider-qoder](https://www.npmjs.com/package/dsh-provider-qode
 - [Gemini 4 Argon on Google Cloud](https://cloud.google.com/blog/products/ai-machine-learning/gemini-4-argon-available-on-google-cloud)
 - [Moonshot 模型推理价格](https://platform.kimi.com/docs/pricing/chat)、[阿里云 Qwen3.8-Max](https://help.aliyun.com/zh/model-studio/qwen3-8-max)
 
-修改 `prices.json` 并保存即可，立即生效；校验失败的文件不会替换上一份有效价格（错误写进 DSH 数据目录下的 `plugins/session-cost/status.json`）。
+修改 `prices.json` 并保存即可，立即生效；校验失败的文件不会替换上一份有效价格（错误写进 DSH 数据目录下的 `plugins/session-fee/status.json`）。

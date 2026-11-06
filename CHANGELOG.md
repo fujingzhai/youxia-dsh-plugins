@@ -4,9 +4,9 @@
 
 ## 2026-11-06
 
-### dsh-session-cost 0.4.3
+### dsh-session-fee 0.4.4
 
-- npm 包名改为 `dsh-session-fee`。`dsh-session-cost` 已被他人占用，不能发布。目录与 Git 地址里的 `path:` 不变。已安装旧包名的，卸载后再装新包名。
+- 目录、Git 标签、插件条目和 npm 包名统一为 `dsh-session-fee`。`dsh-session-cost` 是别人的 npm 包，不能再用。已安装旧名的，卸载后改用新地址或新包名。0.4.3 只改了 npm 包名，目录仍是旧的，请不要再装那一版。
 
 ### dsh-pi-mode 0.2.3
 

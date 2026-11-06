@@ -11,7 +11,7 @@ const shape = (fields) => (value) => typeof value === "object" && value !== null
 function schema(name, check) {
   return {
     parse(value) {
-      if (!check(value)) throw new TypeError(`Invalid session-cost ${name}`);
+      if (!check(value)) throw new TypeError(`Invalid session-fee ${name}`);
       return value;
     }
   };

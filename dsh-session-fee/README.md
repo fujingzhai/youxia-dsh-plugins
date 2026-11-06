@@ -17,18 +17,18 @@
 桌面版「插件」→「添加插件」，粘贴：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-cost@0.4.3&path:/dsh-session-cost
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-fee@0.4.4&path:/dsh-session-fee
 ```
 
 或用命令行（Web 版将 `desktop` 换成 `web`）：
 
 ```sh
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-cost@0.4.3&path:/dsh-session-cost"
+dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-fee@0.4.4&path:/dsh-session-fee"
 ```
 
 若终端找不到 `dsh`，macOS 官方桌面版可用 `"/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh"` 替代命令名。也可参照[仓库首页](../README.md)克隆后安装本子目录。
 
-连不上 GitHub 时填 npm 包名 `dsh-session-fee`。不要填 `dsh-session-cost`，那是别人的包。目录和 Git 地址里的 `path:` 仍是 `dsh-session-cost`。已装旧包名的，先卸载再装新包名。
+连不上 GitHub 时填 npm 包名 `dsh-session-fee`。不要填 `dsh-session-cost`，那是别人的包。已安装旧目录或旧包名的，先卸载再装这一版。
 
 安装后重启 DSH。有 token 用量的会话，会在统计条的用时、用量两项之后显示费用。版本更新与卸载见[仓库首页](../README.md)。
 
@@ -39,7 +39,7 @@ dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-p
 - **要自己改价或加模型**：把 `prices.json` 复制到自己的目录，在 DSH profile 的 `cordis.patch.yml` 里指过去（文件里若只有一行 `[]`，先删掉它）；这份文件不会被插件更新覆盖，保存即生效：
 
   ```yaml
-  - id: session-cost
+  - id: session-fee
     name: dsh-session-fee
     config:
       priceBook: /你的目录/prices.json
@@ -55,7 +55,7 @@ dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-p
 | profile 补丁里的插件配置 | DSH 约 2 秒后重新组合 | 不用 |
 | 插件代码 | 下一次重新组合时换上：改一下补丁、在插件页开关一次插件，或重启 | 不必 |
 
-金额在每次模型调用结束、拿到用量后更新，不在流式输出中途估算。价格表写坏或校验失败时保留上一份有效价格。每次加载结果（价格表条数、目录来源与版本、最近错误）写在 DSH 数据目录（默认 `~/.dsh`）下的 `plugins/session-cost/status.json`，排查用。
+金额在每次模型调用结束、拿到用量后更新，不在流式输出中途估算。价格表写坏或校验失败时保留上一份有效价格。每次加载结果（价格表条数、目录来源与版本、最近错误）写在 DSH 数据目录（默认 `~/.dsh`）下的 `plugins/session-fee/status.json`，排查用。
 
 ## 配置参考
 
@@ -150,7 +150,7 @@ dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-p
 插件配置写在 DSH profile 的 `cordis.patch.yml`（文件里若只有一行 `[]`，先删掉它），都可省略：
 
 ```yaml
-- id: session-cost
+- id: session-fee
   name: dsh-session-fee
   config:
     priceBook: /你的目录/prices.json   # 自己维护的价格表

@@ -16,7 +16,7 @@
 3. 新增依赖、提高最低 DSH 版本或改变提示词时，在插件 README 和 CHANGELOG 写明影响。
 4. 安装文档必须给出可复制的 Git 子目录地址（`&path:/<插件名>`），禁止放作者本机安装路径。
 5. Windows 上 `dsh-pi-mode` 的系统提示词需要适配；CI 语法／单元测试通过不等于 GUI 或 PowerShell 行为已经验证。
-6. `dsh-session-cost` 的价格表只收当前主流在线模型。改价或增删模型也要按插件发新版本（固定版本的安装不会自动拿到新价格），同步 `prices.json`、`PRICES.md` 与 CHANGELOG。它的 npm 包名是 `dsh-session-fee`，目录名不改。
+6. `dsh-session-fee` 的价格表只收当前主流在线模型。改价或增删模型也要按插件发新版本（固定版本的安装不会自动拿到新价格），同步 `prices.json`、`PRICES.md` 与 CHANGELOG。目录、Git 标签和 npm 包名都用这个名字。
 
 ## 发布
 
