@@ -1,6 +1,6 @@
 {
   "name": "dsh-pi-mode",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "author": "youxia",
   "repository": {
     "type": "git",
@@ -28,6 +28,8 @@
   },
   "exports": {
     ".": "./index.js",
+    "./web.js": "./web.js",
+    "./settings.js": "./settings.js",
     "./icon": "./icon.svg",
     "./package.json": "./package.json"
   },

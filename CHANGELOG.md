@@ -4,6 +4,11 @@
 
 ## 2026-11-06
 
+### dsh-pi-mode 0.2.3
+
+- 修复 0.2.2 新增 `exports` 时漏掉 `./web.js` 与 `./settings.js` 两个子路径：Pi 模式的联网行与个人设置行无法启动，新建会话报 `agent-preset/invalid: web-tools (dsh-pi-mode/web.js): never started`，已有 Pi 会话显示「会话不可用」、标题退回 session-ID。已发布的 0.2.2 包同样受影响，请升级。
+- `node --check` 与 11 项回归测试通过。
+
 ### dsh-pi-mode 0.2.2
 
 ### dsh-settings-customizer 0.3.1
