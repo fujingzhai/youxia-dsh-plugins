@@ -11,13 +11,13 @@ DSH 主面板里的 **DeepSeek** 官方网页：复用桌面端原生浏览器�
 GUI：**插件 → 添加插件**，粘贴：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.0&path:/dsh-quick-chat
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.1&path:/dsh-quick-chat
 ```
 
 命令行：
 
 ```sh
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.0&path:/dsh-quick-chat"
+dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.1&path:/dsh-quick-chat"
 ```
 
 npm（连不上 GitHub 时）：包名 `dsh-quick-chat`。装完重启 DSH，左侧出现 **DeepSeek**。
@@ -29,7 +29,8 @@ npm（连不上 GitHub 时）：包名 `dsh-quick-chat`。装完重启 DSH，左
 - 左侧入口是一枚**聊天气泡**：16 格、1.3 px 描边、`currentColor`，与官方「插件」「自动化任务」等行图标同一种画法，悬停与选中态完全交给 DSH 侧栏。
 - **面板里只有网页本身**：没有标题栏、缩放选择、刷新按钮、地址栏或底部状态行。
 - 网页固定按 **90%** 显示，使用 Chromium 自身的页面缩放，只缩网页内容，不缩 DSH 界面。
-- 切到别的面板只是隐藏，回来不重载；收起左侧栏时不影响网页宽度计算。
+- 顶部的 48 px 原生窗口条（macOS 红绿灯）与收起侧栏时的左上角按钮，都由网页自动让出空间；收起或展开侧栏，网页跟着重排，不会压住这些按钮。
+- 切到别的面板只是隐藏，回来不重载。
 
 ## 登录保持
 

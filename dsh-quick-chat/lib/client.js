@@ -504,11 +504,39 @@ window.__ModuleLoader__.load({
     function syncBounds(host) {
       if (guest === null) return
       const rect = host.getBoundingClientRect()
+      // The frame paints the macOS traffic lights and, while the sidebar is
+      // collapsed, its reopen button ON TOP of the panel area, and a native
+      // <webview> always covers DOM. Reserve those bands so the page never sits
+      // under them: the top strip is `--dsh-frame-top-clearance` (48 px on
+      // macOS), and a collapsed sidebar adds `--dsh-frame-leading-clearance`
+      // (160 px, 84 px in fullscreen).
+      const insets = frameInsets(host)
+      const left = Math.max(rect.left, insets.leading)
+      const top = Math.max(rect.top, insets.top)
       const style = guest.container.style
-      style.left = rect.left + 'px'
-      style.top = rect.top + 'px'
-      style.width = rect.width + 'px'
-      style.height = rect.height + 'px'
+      style.left = left + 'px'
+      style.top = top + 'px'
+      style.width = Math.max(0, rect.left + rect.width - left) + 'px'
+      style.height = Math.max(0, rect.top + rect.height - top) + 'px'
+    }
+
+    /**
+     * Read the frame's reserved bands from the host's computed style.
+     * Custom properties inherit, so the frame's values reach the panel element.
+     * @param host - the measured panel element.
+     * @returns `{ top, leading }` in CSS pixels; 0 when unavailable.
+     */
+    function frameInsets(host) {
+      try {
+        const computed = window.getComputedStyle(host)
+        const read = function (name) {
+          const value = parseFloat(computed.getPropertyValue(name))
+          return Number.isFinite(value) && value > 0 ? value : 0
+        }
+        return { top: read('--dsh-frame-top-clearance'), leading: read('--dsh-frame-leading-clearance') }
+      } catch (error) {
+        return { top: 0, leading: 0 }
+      }
     }
 
     /** The center-column panel the layout mounts while this id is selected. */

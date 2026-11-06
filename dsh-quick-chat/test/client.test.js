@@ -164,6 +164,9 @@ function harness(options = {}) {
     },
     confirm: () => true,
     alert: () => {},
+    getComputedStyle: () => ({
+      getPropertyValue: (name) => (options.vars ?? {})[name] ?? '',
+    }),
     dshDesktop: { protocolVersion: 1, browser: bridge },
   }
 
@@ -344,6 +347,27 @@ test('mounting reserves one guest and attaches the approved webview', async () =
   assert.equal(container.style.display, 'block')
   assert.equal(container.style.width, '900px')
   assert.equal(bundle.calls.intervals, 1, 'one save interval per guest')
+})
+
+test('the page is inset below the frame chrome and the collapsed-sidebar controls', async () => {
+  const bundle = harness({
+    vars: { '--dsh-frame-top-clearance': '48px', '--dsh-frame-leading-clearance': '160px' },
+  })
+  await mountPanel(bundle)
+  const { container } = bundle.guest()
+  assert.equal(container.style.left, '160px', 'clear of the traffic lights and the reopen button')
+  assert.equal(container.style.top, '48px', 'clear of the macOS chrome strip')
+  assert.equal(container.style.width, '750px')
+  assert.equal(container.style.height, '592px')
+})
+
+test('an expanded sidebar keeps the page flush with the panel', async () => {
+  const bundle = harness({ vars: { '--dsh-frame-top-clearance': '48px' } })
+  await mountPanel(bundle)
+  const { container } = bundle.guest()
+  assert.equal(container.style.left, '10px', 'the sidebar already holds that space')
+  assert.equal(container.style.top, '48px')
+  assert.equal(container.style.width, '900px')
 })
 
 test('the saved state is written on the origin and the page reloads once', async () => {
