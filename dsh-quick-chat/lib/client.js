@@ -1,5 +1,5 @@
 /**
- * dsh-deep-seek — browser half.
+ * dsh-quick-chat — browser half.
  * Fork of JaMoLpE88/dsh-desktop-chat 0.1.2 (Apache-2.0).
  * Modified 2026-11-07: identity, whale icon, native page zoom, compact controls,
  * request diagnostics and lease/disposal race guards. See NOTICE.
@@ -37,31 +37,31 @@
  */
 
 window.__ModuleLoader__.load({
-  id: 'dsh-deep-seek',
+  id: 'dsh-quick-chat',
   factory: (require) => {
     const React = require('react')
     const h = React.createElement
 
     /** This plugin's panel id: the sidebar row and the main cell share it. */
-    const PANEL_ID = 'deep-seek'
+    const PANEL_ID = 'quick-chat'
     /** The page this plugin exists to show. */
     const PAGE_URL = 'https://chat.deepseek.com/'
     /** The only origin whose storage this plugin ever touches. */
     const PAGE_ORIGIN = 'https://chat.deepseek.com'
     /** Storage identity for the guest reservation. */
-    const STORAGE_IDENTITY = 'dsh-deep-seek'
+    const STORAGE_IDENTITY = 'dsh-quick-chat'
     /** Routes served by the Host half. */
     const ROUTES = {
-      restore: '/api/dsh-deep-seek/session/restore',
-      save: '/api/dsh-deep-seek/session/save',
+      restore: '/api/dsh-quick-chat/session/restore',
+      save: '/api/dsh-quick-chat/session/save',
     }
     /** Header the Host half checks; a cross-site form post cannot set it. */
-    const GUARD_HEADER = 'x-dsh-deep-seek'
+    const GUARD_HEADER = 'x-dsh-quick-chat'
     /** How often the guest's own storage is snapshotted while it is open. */
     const SAVE_INTERVAL_MS = 10000
 
-    const STYLE_ID = 'dsh-deep-seek-style'
-    const OVERLAY_ATTR = 'data-dsh-deep-seek-overlay'
+    const STYLE_ID = 'dsh-quick-chat-style'
+    const OVERLAY_ATTR = 'data-dsh-quick-chat-overlay'
 
     /**
      * Page density. The window is dense enough that a 100 % DeepSeek page leaves
@@ -280,7 +280,7 @@ window.__ModuleLoader__.load({
         stats.posted += 1
       } catch (error) {
         stats.error = messageOf(error)
-        console.warn('[dsh-deep-seek] session save failed:', error)
+        console.warn('[dsh-quick-chat] session save failed:', error)
       }
     }
 
@@ -390,7 +390,7 @@ window.__ModuleLoader__.load({
               try {
                 element.setUserAgent(userAgent)
               } catch (error) {
-                console.warn('[dsh-deep-seek] could not set the guest user agent:', error)
+                console.warn('[dsh-quick-chat] could not set the guest user agent:', error)
               }
             }
             element.loadURL(PAGE_URL).catch(function (error) {
@@ -446,7 +446,7 @@ window.__ModuleLoader__.load({
                 element.reload()
               } catch (error) {
                 restoreState = 'pending'
-                console.warn('[dsh-deep-seek] could not restore site storage:', error)
+                console.warn('[dsh-quick-chat] could not restore site storage:', error)
               }
               return
             }
@@ -611,7 +611,7 @@ window.__ModuleLoader__.load({
         disposed = true
         disposeGuest()
         document.getElementById(STYLE_ID)?.remove()
-      }, 'dsh-deep-seek: native guest')
+      }, 'dsh-quick-chat: native guest')
     }
 
     return { inject: ['slots'], apply }

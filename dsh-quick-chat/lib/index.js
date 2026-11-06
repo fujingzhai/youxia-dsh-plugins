@@ -1,5 +1,5 @@
 /**
- * dsh-deep-seek — Host half.
+ * dsh-quick-chat — Host half.
  *
  * One job: keep the DeepSeek login alive across DSH Desktop restarts.
  *
@@ -31,7 +31,7 @@ import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 
 /** Stable cordis plugin name. */
-export const name = 'deep-seek'
+export const name = 'quick-chat'
 
 /** The web server is the only Host service this plugin needs. */
 export const inject = ['webServer']
@@ -40,18 +40,18 @@ export const inject = ['webServer']
 export const PAGE_URL = 'https://chat.deepseek.com/'
 
 /** Sidebar entry id, shared by the entry row and the main panel key. */
-export const PANEL_ID = 'deep-seek'
+export const PANEL_ID = 'quick-chat'
 
 /** Route family; the browser half spells the same paths. */
 export const ROUTES = {
-  state: '/api/dsh-deep-seek/state',
-  restore: '/api/dsh-deep-seek/session/restore',
-  save: '/api/dsh-deep-seek/session/save',
-  forget: '/api/dsh-deep-seek/session/forget',
+  state: '/api/dsh-quick-chat/state',
+  restore: '/api/dsh-quick-chat/session/restore',
+  save: '/api/dsh-quick-chat/session/save',
+  forget: '/api/dsh-quick-chat/session/forget',
 }
 
 /** Header the browser half sends; blocks cross-site reads of a credential route. */
-const GUARD_HEADER = 'x-dsh-deep-seek'
+const GUARD_HEADER = 'x-dsh-quick-chat'
 
 /**
  * Expand a leading `~` prefix against the OS home, as the harness's own home
@@ -81,11 +81,11 @@ export function dshHome(env = process.env) {
 let sessionFilePath = null
 
 /**
- * The snapshot path: `<dsh home>/dsh-deep-seek/session.json`.
+ * The snapshot path: `<dsh home>/dsh-quick-chat/session.json`.
  * @returns the absolute snapshot path.
  */
 export function SESSION_FILE() {
-  return sessionFilePath === null ? join(dshHome(), 'dsh-deep-seek', 'session.json') : sessionFilePath
+  return sessionFilePath === null ? join(dshHome(), 'dsh-quick-chat', 'session.json') : sessionFilePath
 }
 
 /**
@@ -358,6 +358,6 @@ export function apply(ctx) {
           json(res, 500, { ok: false, error: error instanceof Error ? error.message : String(error) })
         })
       },
-    }), `dsh-deep-seek: ${route.path}`)
+    }), `dsh-quick-chat: ${route.path}`)
   }
 }

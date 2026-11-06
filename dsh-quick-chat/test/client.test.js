@@ -20,8 +20,8 @@ import vm from 'node:vm'
 
 const BUNDLE = fileURLToPath(new URL('../lib/client.js', import.meta.url))
 const PAGE_URL = 'https://chat.deepseek.com/'
-const PANEL_ID = 'deep-seek'
-const OVERLAY = 'data-dsh-deep-seek-overlay'
+const PANEL_ID = 'quick-chat'
+const OVERLAY = 'data-dsh-quick-chat-overlay'
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36 Electron/33.2.0'
 
 /** A DOM element stub covering exactly what lib/client.js touches. */
@@ -306,7 +306,7 @@ test('the page is the whole panel: no header, toolbar or status row', () => {
   assert.match(rendered.props.className, /dp-host/)
   assert.ok(rendered.props.ref, 'the same element is the measured host')
   assert.equal(rendered.props.children, undefined, 'nothing is drawn around the page')
-  const css = bundle.sandbox.document.getElementById('dsh-deep-seek-style').textContent
+  const css = bundle.sandbox.document.getElementById('dsh-quick-chat-style').textContent
   assert.doesNotMatch(css, /dp-header|dp-brand|dp-controls|dp-control\b|dp-refresh/)
   assert.match(css, /\.dp-host\{width:100%;height:100%/)
 })
@@ -327,7 +327,7 @@ test('mounting reserves one guest and attaches the approved webview', async () =
   const bundle = harness()
   const { host } = await mountPanel(bundle)
 
-  assert.deepEqual(bundle.calls.acquire, ['dsh-deep-seek'])
+  assert.deepEqual(bundle.calls.acquire, ['dsh-quick-chat'])
   const { container, element } = bundle.guest()
   assert.ok(element, 'the webview was attached')
   assert.equal(element.tagName, 'WEBVIEW')
@@ -371,7 +371,7 @@ test('the saved state is written on the origin and the page reloads once', async
 
   const save = bundle.calls.fetch.find((call) => call.url.indexOf('/session/save') !== -1)
   assert.ok(save, 'the refreshed state was saved')
-  assert.equal(save.init.headers['x-dsh-deep-seek'], '1')
+  assert.equal(save.init.headers['x-dsh-quick-chat'], '1')
   assert.deepEqual(JSON.parse(save.init.body).storage[0][0], 'userToken')
 })
 

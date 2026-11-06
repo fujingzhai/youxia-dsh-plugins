@@ -1,4 +1,4 @@
-# dsh-deep-seek
+# dsh-quick-chat
 
 DSH 主面板里的 **DeepSeek** 官方网页：复用桌面端原生浏览器，登录跨重启恢复。
 
@@ -11,16 +11,16 @@ DSH 主面板里的 **DeepSeek** 官方网页：复用桌面端原生浏览器�
 GUI：**插件 → 添加插件**，粘贴：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-deep-seek@0.1.0&path:/dsh-deep-seek
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.0&path:/dsh-quick-chat
 ```
 
 命令行：
 
 ```sh
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-deep-seek@0.1.0&path:/dsh-deep-seek"
+dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.0&path:/dsh-quick-chat"
 ```
 
-npm（连不上 GitHub 时）：包名 `dsh-deep-seek`。装完重启 DSH，左侧出现 **DeepSeek**。
+npm（连不上 GitHub 时）：包名 `dsh-quick-chat`。装完重启 DSH，左侧出现 **DeepSeek**。
 
 需要 DSH Desktop 0.2.2-rc.1 或更新版本；纯 `dsh web` 没有原生网页通道，面板只会提示不支持。
 
@@ -36,7 +36,7 @@ npm（连不上 GitHub 时）：包名 `dsh-deep-seek`。装完重启 DSH，左�
 网页分区由桌面端分配，每次运行都是新的内存分区。本插件在网页处于 `chat.deepseek.com` 时，读取页面自己可见的 `localStorage` 与 `document.cookie`，写到本机：
 
 ```text
-<DSH_HOME 或 ~/.dsh>/dsh-deep-seek/session.json   目录 0700，文件 0600
+<DSH_HOME 或 ~/.dsh>/dsh-quick-chat/session.json   目录 0700，文件 0600
 ```
 
 下次打开先回填再重载一次，网页启动时已是登录态。具体取舍：
@@ -51,14 +51,14 @@ npm（连不上 GitHub 时）：包名 `dsh-deep-seek`。装完重启 DSH，左�
 
 | 项目 | 上游 0.1.2 | 本 fork |
 |---|---|---|
-| 包名 / 面板 / 路由 / 存储目录 | `@jamolpe88/dsh-desktop-chat` | `dsh-deep-seek`，独立目录，不读写别人的凭据 |
+| 包名 / 面板 / 路由 / 存储目录 | `@jamolpe88/dsh-desktop-chat` | `dsh-quick-chat`，独立目录，不读写别人的凭据 |
 | 侧栏图标 | 自制气泡轮廓 | 聊天气泡，与官方行图标同一套线宽与颜色 |
 | 顶栏 | 无 | 无，面板里只有网页 |
 | 页面密度 | 100% | 固定 90% |
 | 销毁竞态 | 租约到达竞态未处理 | 卸载后到达的租约立即释放；销毁时不再补发保存 |
 | 卸载 | 保留样式与 guest | 释放 guest 并移除本插件样式 |
 
-登录恢复的流程、快照护栏与 Host 路由沿用上游；上游的 `x-dsh-deep-seek` 请求头校验保留，跨站表单无法通过。
+登录恢复的流程、快照护栏与 Host 路由沿用上游；上游的 `x-dsh-quick-chat` 请求头校验保留，跨站表单无法通过。
 
 ## 隐私
 

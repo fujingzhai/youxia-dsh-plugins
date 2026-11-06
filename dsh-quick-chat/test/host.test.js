@@ -28,7 +28,7 @@ const {
 
 /** A throwaway snapshot path, so no test touches the real profile. */
 function tempSnapshot() {
-  const dir = mkdtempSync(join(tmpdir(), 'dsh-deep-seek-'))
+  const dir = mkdtempSync(join(tmpdir(), 'dsh-quick-chat-'))
   const file = join(dir, 'session.json')
   setSessionFile(file)
   return { dir, file, cleanup: () => { setSessionFile(null); rmSync(dir, { recursive: true, force: true }) } }
@@ -38,7 +38,7 @@ function tempSnapshot() {
 function request(method = 'POST', body, headers = {}) {
   const stream = Readable.from(body === undefined ? [] : [Buffer.from(JSON.stringify(body))])
   stream.method = method
-  stream.headers = { 'x-dsh-deep-seek': '1', ...headers }
+  stream.headers = { 'x-dsh-quick-chat': '1', ...headers }
   return stream
 }
 
@@ -236,7 +236,7 @@ test('credential routes refuse a request without the plugin header', async () =>
   try {
     for (const path of Object.values(ROUTES)) {
       const res = response()
-      await route(path).handler(request('GET', undefined, { 'x-dsh-deep-seek': '' }), res)
+      await route(path).handler(request('GET', undefined, { 'x-dsh-quick-chat': '' }), res)
       assert.equal(res.status, 403, `${path} refused`)
     }
   } finally {
@@ -262,7 +262,7 @@ test('a malformed body is rejected without touching the snapshot', async () => {
     const res = response()
     const bad = Readable.from([Buffer.from('{not json')])
     bad.method = 'POST'
-    bad.headers = { 'x-dsh-deep-seek': '1' }
+    bad.headers = { 'x-dsh-quick-chat': '1' }
     await route(ROUTES.save).handler(bad, res)
     assert.equal(res.status, 400)
     assert.equal(existsSync(file), false)
@@ -273,5 +273,5 @@ test('a malformed body is rejected without touching the snapshot', async () => {
 
 test('the default snapshot lives under the DSH home', () => {
   setSessionFile(null)
-  assert.match(SESSION_FILE(), /dsh-deep-seek[\\/]session\.json$/)
+  assert.match(SESSION_FILE(), /dsh-quick-chat[\\/]session\.json$/)
 })

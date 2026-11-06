@@ -4,7 +4,7 @@
 
 ## 2026-11-07
 
-### dsh-deep-seek 0.1.0
+### dsh-quick-chat 0.1.0
 
 - 新增：基于 JaMoLpE88/dsh-desktop-chat 0.1.2（Apache-2.0）的 fork，在 DSH 主面板里以原生浏览器打开 `chat.deepseek.com`，跨重启回填本机登录快照。
 - 侧栏入口为聊天气泡（16 格、1.3 px、`currentColor`），与官方行图标同一种画法；入口顺序 15，位于官方「自动化任务」之后。
