@@ -4,6 +4,11 @@
 
 ## 2026-11-07
 
+### dsh-quick-chat 0.1.2
+
+- 插件列表显示名改为 **DeepSeek Chat**（`locale/zh.json`、`locale/en.json` 的 `meta.title`），与包名、条目 id 分开；左侧栏入口仍叫「DeepSeek」。
+- 新增插件图标 `icon.svg`：DeepSeek 官方鲸鱼，品牌蓝 `#4D6BFE`，64 px 白底圆角，供插件列表与插件市场使用。
+
 ### dsh-quick-chat 0.1.1
 
 - 修复：收起左侧栏后，网页会盖住 macOS 红绿灯与左上角的侧栏展开按钮。现在按窗口预留的顶部 48 px 与收起侧栏时的前缘宽度（160 px，全屏 84 px）给网页留出空间，侧栏展开/收起时自动重排。

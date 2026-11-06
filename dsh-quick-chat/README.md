@@ -2,7 +2,9 @@
 
 DSH 主面板里的 **DeepSeek** 官方网页：复用桌面端原生浏览器，登录跨重启恢复。
 
-左侧一个入口，点开就是 `chat.deepseek.com` 本身，不另起浏览器、不用 iframe、不代理请求；切换面板不会卸载网页。
+左侧一个入口（名称 **DeepSeek**），点开就是 `chat.deepseek.com` 本身，不另起浏览器、不用 iframe、不代理请求；切换面板不会卸载网页。
+
+插件列表里的显示名是 **DeepSeek Chat**（与包名、条目 id `dsh-quick-chat` 分开），并带 DeepSeek 官方鲸鱼图标。
 
 基于 [JaMoLpE88/dsh-desktop-chat](https://github.com/JaMoLpE88/dsh-desktop-chat) 0.1.2（Apache-2.0）的 fork，改动见 [NOTICE](NOTICE)。
 
@@ -11,13 +13,13 @@ DSH 主面板里的 **DeepSeek** 官方网页：复用桌面端原生浏览器�
 GUI：**插件 → 添加插件**，粘贴：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.1&path:/dsh-quick-chat
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.2&path:/dsh-quick-chat
 ```
 
 命令行：
 
 ```sh
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.1&path:/dsh-quick-chat"
+dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.2&path:/dsh-quick-chat"
 ```
 
 npm（连不上 GitHub 时）：包名 `dsh-quick-chat`。装完重启 DSH，左侧出现 **DeepSeek**。
