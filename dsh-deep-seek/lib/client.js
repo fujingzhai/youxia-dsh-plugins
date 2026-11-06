@@ -1,0 +1,619 @@
+/**
+ * dsh-deep-seek — browser half.
+ * Fork of JaMoLpE88/dsh-desktop-chat 0.1.2 (Apache-2.0).
+ * Modified 2026-11-07: identity, whale icon, native page zoom, compact controls,
+ * request diagnostics and lease/disposal race guards. See NOTICE.
+ *
+ * One sidebar entry renders the official chat.deepseek.com web app inside the
+ * DSH window, filling the center column. Both halves of that are slots the
+ * shell owns:
+ *
+ *   - `sidebar.panellist` gets the label and icon; the sidebar owns the button
+ *     and selects the main panel whose id matches;
+ *   - `main` (keyed by the same id) gets the page. The layout renders only the
+ *     selected key, so switching panels is the shell's business.
+ *
+ * The page is the desktop shell's native browser guest, not an iframe (the site
+ * sends `frame-ancestors 'none'`): the renderer asks
+ * `globalThis.dshDesktop.browser` for a reservation and attaches a `<webview>`
+ * whose `src` is `about:blank#<lease>` and whose `partition` matches. The shell
+ * approves that attach and rewrites the web preferences.
+ *
+ * The guest element deliberately lives outside the React tree, in a container
+ * this plugin owns at the document root: a `<webview>` is destroyed when it
+ * leaves the document, so a guest owned by the slot would be torn down and
+ * reloaded — losing nothing but wasting a navigation — every time the user
+ * looked at another panel. Instead the slot hands this plugin a measured area
+ * and the persistent guest is positioned onto it while selected, and hidden
+ * when not.
+ *
+ * Session survival is page-side only: the shell's partitions are
+ * process-lifetime, and this plugin's Host half cannot reach Electron's cookie
+ * store (see lib/index.js). So the guest's `localStorage` and `document.cookie`
+ * are snapshotted through the Host routes and written back before the page is
+ * reloaded. DeepSeek keeps its auth token in `localStorage["userToken"]`, which
+ * is what makes that work; HttpOnly cookies cannot be carried and are reported
+ * as such.
+ */
+
+window.__ModuleLoader__.load({
+  id: 'dsh-deep-seek',
+  factory: (require) => {
+    const React = require('react')
+    const h = React.createElement
+
+    /** This plugin's panel id: the sidebar row and the main cell share it. */
+    const PANEL_ID = 'deep-seek'
+    /** The page this plugin exists to show. */
+    const PAGE_URL = 'https://chat.deepseek.com/'
+    /** The only origin whose storage this plugin ever touches. */
+    const PAGE_ORIGIN = 'https://chat.deepseek.com'
+    /** Storage identity for the guest reservation. */
+    const STORAGE_IDENTITY = 'dsh-deep-seek'
+    /** Routes served by the Host half. */
+    const ROUTES = {
+      restore: '/api/dsh-deep-seek/session/restore',
+      save: '/api/dsh-deep-seek/session/save',
+    }
+    /** Header the Host half checks; a cross-site form post cannot set it. */
+    const GUARD_HEADER = 'x-dsh-deep-seek'
+    /** How often the guest's own storage is snapshotted while it is open. */
+    const SAVE_INTERVAL_MS = 10000
+
+    const STYLE_ID = 'dsh-deep-seek-style'
+    const OVERLAY_ATTR = 'data-dsh-deep-seek-overlay'
+
+    /**
+     * Page density. The window is dense enough that a 100 % DeepSeek page leaves
+     * very little air once the sidebar is open, so the guest is always laid out
+     * at 90 %; this is Chromium's own layout zoom, not a CSS transform.
+     */
+    const ZOOM_FACTOR = 0.9
+    let disposed = false
+    function applyZoom(element) {
+      try { element.setZoomFactor(ZOOM_FACTOR) } catch { /* Not yet attached. */ }
+    }
+    function copy() {
+      const lang = String(document.documentElement.getAttribute('lang') || navigator?.language || '').toLowerCase()
+      const zh = lang.startsWith('zh')
+      return zh ? {
+        label: 'DeepSeek', failed: '暂时无法打开 DeepSeek', retry: '重试',
+        noBridge: '需要 DeepSeek Harness Desktop；普通 Web 模式没有原生网页通道。',
+      } : {
+        label: 'DeepSeek', failed: 'Could not load DeepSeek', retry: 'Retry',
+        noBridge: 'This view needs DeepSeek Harness Desktop, not a plain Web profile.',
+      }
+    }
+
+    const CSS = [
+      '.dp-host{width:100%;height:100%;min-width:0;min-height:0;display:flex;align-items:center;justify-content:center}',
+      '[' + OVERLAY_ATTR + ']{position:fixed;display:none;z-index:40}',
+      '[' + OVERLAY_ATTR + '] webview{-webkit-app-region:no-drag;border:0;flex:auto;width:100%;min-width:0;height:100%;min-height:0;display:flex}',
+      '.dp-message{max-width:460px;padding:22px;text-align:center;font-size:13px;line-height:1.65;color:var(--dsw-alias-label-secondary);font-family:var(--dsw-font-family)}',
+      '.dp-action{margin-top:14px;padding:6px 14px;border-radius:8px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-elevated);color:var(--dsw-alias-label-primary);cursor:pointer;font-size:13px;font-family:var(--dsw-font-family)}',
+    ].join('\n')
+
+    /**
+     * The desktop shell's browser bridge, when this renderer is the desktop
+     * app's primary frame. A plain web profile exposes only a protocol version.
+     */
+    const carrier = globalThis.dshDesktop
+    const bridge = carrier !== null && typeof carrier === 'object' && carrier.protocolVersion === 1
+      ? carrier.browser
+      : undefined
+
+    /**
+     * The only state that outlives a panel mount. `container` and `element`
+     * stay in the document for the whole app run so the guest is never torn
+     * down; the slot only decides where they are shown.
+     */
+    let guest = null
+    /** In-flight acquisition, so two mounts cannot reserve two guests. */
+    let acquiring = null
+    /** Last acquisition failure, if any. */
+    let failure = ''
+
+    /**
+     * Why the last save attempt did or did not reach the Host. Counters only —
+     * no storage values and no URLs beyond the host name — so a stuck save can
+     * be diagnosed through the state route.
+     */
+    const stats = {
+      attempts: 0,
+      posted: 0,
+      skipped: '',
+      lastUrl: '',
+      popupHosts: [],
+      error: '',
+    }
+
+    /** Render any thrown value as a message. */
+    function messageOf(error) {
+      return error instanceof Error ? error.message : String(error)
+    }
+
+    /** The host name of a popup request, for diagnostics only. */
+    function hostOf(url) {
+      try {
+        return new URL(url).host
+      } catch {
+        return 'invalid'
+      }
+    }
+
+    /** Inject the stylesheet — and re-inject it: a hot swap runs new code under the old CSS. */
+    function ensureStyle() {
+      let tag = document.getElementById(STYLE_ID)
+      if (tag === null) {
+        tag = document.createElement('style')
+        tag.id = STYLE_ID
+        document.head.appendChild(tag)
+      }
+      tag.textContent = CSS
+    }
+
+    /** A centred message, optionally with a retry button. */
+    function messageBox(text, action) {
+      const box = document.createElement('div')
+      box.className = 'dp-message'
+      box.textContent = text
+      if (action !== undefined) {
+        const button = document.createElement('button')
+        button.type = 'button'
+        button.className = 'dp-action'
+        button.textContent = action.label
+        button.addEventListener('click', async function () {
+          if (button.disabled) return
+          button.disabled = true
+          try {
+            await action.run()
+          } finally {
+            button.disabled = false
+          }
+        })
+        box.appendChild(button)
+      }
+      return box
+    }
+
+    /** The document-root container that keeps the guest alive. */
+    function overlayContainer() {
+      const existing = document.querySelector('[' + OVERLAY_ATTR + ']')
+      if (existing !== null && existing !== undefined) return existing
+      const box = document.createElement('div')
+      box.setAttribute(OVERLAY_ATTR, '')
+      document.body.appendChild(box)
+      return box
+    }
+
+    /** The JSON text the guest returns with its own credentials. */
+    const READ_STATE_SCRIPT = [
+      "location.origin !== 'https://chat.deepseek.com' ? null : JSON.stringify({",
+      '  url: location.href,',
+      '  cleared: /sign_?in|log_?in|passport/i.test(location.pathname),',
+      '  storage: Object.keys(localStorage)',
+      '    .filter(function (key) { return !/^(aws_waf|awswaf)/i.test(key) })',
+      '    .map(function (key) { return [key, localStorage.getItem(key)] }),',
+      '  cookie: document.cookie.split(";")',
+      '    .map(function (pair) { return pair.trim() })',
+      '    .filter(function (pair) { return pair && !/^aws-waf-token=/i.test(pair) })',
+      '    .join("; ")',
+      '})',
+    ].join('\n')
+
+    /**
+     * Read everything the guest page itself can reach: its storage, its own
+     * cookie string and whether it is showing a sign-in screen.
+     * @param element - the live webview.
+     * @returns the guest state, or null when the page is elsewhere.
+     */
+    function readGuestState(element) {
+      return element.executeJavaScript(READ_STATE_SCRIPT)
+    }
+
+    /**
+     * Write a guest state back into the page.
+     * Cookies are re-scoped to the site root, which is where a login cookie
+     * belongs; the original attributes are not recoverable from `document.cookie`.
+     * @param element - the live webview.
+     * @param state - `{ storage, cookie }`.
+     * @returns true when the page accepted it.
+     */
+    function writeGuestState(element, state) {
+      return element.executeJavaScript(
+        '(function () { if (location.origin !== "https://chat.deepseek.com") return false; var state = '
+        + JSON.stringify(state) + ';'
+        + ' var storage = Array.isArray(state.storage) ? state.storage : [];'
+        + ' for (var i = 0; i < storage.length; i++) {'
+        + '   if (!Array.isArray(storage[i]) || typeof storage[i][0] !== "string") continue;'
+        + '   try { localStorage.setItem(storage[i][0], String(storage[i][1])) } catch (error) {}'
+        + ' }'
+        + ' if (typeof state.cookie === "string" && state.cookie !== "") {'
+        + '   var parts = state.cookie.split(";");'
+        + '   for (var j = 0; j < parts.length; j++) {'
+        + '     var pair = parts[j].trim();'
+        + '     if (pair.indexOf("=") === -1) continue;'
+        + '     try { document.cookie = pair + "; path=/" } catch (error) {}'
+        + '   }'
+        + ' }'
+        + ' return true })()',
+      )
+    }
+
+    /** Check the live URL before any session operation. */
+    function onDeepSeek(element) {
+      try {
+        return new URL(element.getURL()).origin === PAGE_ORIGIN
+      } catch {
+        return false
+      }
+    }
+
+    /** Ask the Host for the saved page-state before the first navigation. */
+    async function restoreSession() {
+      const response = await fetch(ROUTES.restore, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', [GUARD_HEADER]: '1' },
+        body: '{}',
+      })
+      const payload = await response.json()
+      if (payload === null || typeof payload !== 'object') return null
+      if (payload.ok !== true) return null
+      const storage = Array.isArray(payload.storage) ? payload.storage : []
+      const cookie = typeof payload.cookie === 'string' ? payload.cookie : ''
+      if (storage.length === 0 && cookie === '') return null
+      return { storage, cookie }
+    }
+
+    /**
+     * POST one save body; `skip` bodies carry diagnostics only and never write.
+     * @param body - request body for the Host half.
+     */
+    async function postSave(body) {
+      try {
+        const response = await fetch(ROUTES.save, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', [GUARD_HEADER]: '1' },
+          body: JSON.stringify(body),
+        })
+        await response.json()
+        stats.posted += 1
+      } catch (error) {
+        stats.error = messageOf(error)
+        console.warn('[dsh-deep-seek] session save failed:', error)
+      }
+    }
+
+    /**
+     * Ask the Host to refresh the snapshot with what the guest can read.
+     *
+     * Two signals matter: a full load and an in-page navigation. The site is a
+     * single-page app, so signing in usually navigates without ever firing
+     * `did-finish-load`; a save loop keyed to that event alone would freeze on
+     * the last pre-login state. Every skipped attempt still reports its reason,
+     * so a frozen loop is visible instead of silent.
+     * @param withState - whether to include the guest's own state.
+     * @param target - the guest record; defaults to the live one.
+     */
+    async function saveSession(withState, target) {
+      const record = target === undefined ? guest : target
+      stats.attempts += 1
+      const diag = {
+        attempts: stats.attempts,
+        posted: stats.posted,
+        popups: stats.popupHosts.length,
+        popupHosts: stats.popupHosts.slice(-3),
+        lastUrl: stats.lastUrl,
+        ready: record !== undefined && record !== null && record.ready === true,
+      }
+      if (!record || !record.ready || !onDeepSeek(record.element)) {
+        stats.skipped = !record ? 'no-guest' : (!record.ready ? 'not-ready' : 'off-origin')
+        await postSave({ skip: stats.skipped, diag })
+        return
+      }
+      const body = { diag }
+      if (withState) {
+        try {
+          const raw = await readGuestState(record.element)
+          if (raw === null) {
+            stats.skipped = 'no-state'
+            await postSave({ skip: stats.skipped, diag })
+            return
+          }
+          const state = JSON.parse(raw)
+          if (!record.ready || !onDeepSeek(record.element) || state === null || typeof state !== 'object') {
+            stats.skipped = 'stale-state'
+            await postSave({ skip: stats.skipped, diag })
+            return
+          }
+          if (!Array.isArray(state.storage) || typeof state.cookie !== 'string') {
+            stats.skipped = 'bad-state'
+            await postSave({ skip: stats.skipped, diag })
+            return
+          }
+          stats.lastUrl = typeof state.url === 'string' ? state.url : ''
+          body.storage = state.storage
+          body.cookie = state.cookie
+          body.cleared = state.cleared === true
+        } catch (error) {
+          stats.skipped = 'read-failed'
+          stats.error = messageOf(error)
+          await postSave({ skip: stats.skipped, diag })
+          return
+        }
+      }
+      stats.skipped = ''
+      await postSave(body)
+    }
+
+    /**
+     * Reserve a guest and attach its webview, once per app run.
+     * @returns a promise resolving once the attempt settled.
+     */
+    function ensureGuest() {
+      if (disposed || guest !== null || bridge === undefined) return Promise.resolve()
+      if (acquiring !== null) return acquiring
+      acquiring = (async () => {
+        let pendingLease = null
+        try {
+          const reservation = await bridge.acquire(STORAGE_IDENTITY)
+          if (reservation === null || typeof reservation !== 'object'
+            || typeof reservation.lease !== 'string' || typeof reservation.partition !== 'string') {
+            throw new Error('the desktop browser bridge returned no reservation')
+          }
+          // Read the saved page-state before anything is requested: the guest
+          // gets it as soon as the origin is loaded, then one reload.
+          pendingLease = reservation.lease
+          if (disposed) return
+          const restored = await restoreSession()
+          if (disposed) return
+          const element = document.createElement('webview')
+          element.setAttribute('name', reservation.lease)
+          element.setAttribute('partition', reservation.partition)
+          element.setAttribute('allowpopups', '')
+          element.setAttribute('data-sidebar-browser-frame', '')
+          element.setAttribute('src', 'about:blank#' + reservation.lease)
+          // The site greets a UA containing "electron" with its unsafe-environment
+          // dialog, and its check is a literal substring test. Drop ONLY the
+          // Electron token; the Chrome version stays exactly as the engine
+          // reports it so client hints stay consistent.
+          const userAgent = typeof navigator === 'object' && typeof navigator.userAgent === 'string'
+            ? navigator.userAgent.replace(/\s*Electron\/[\d.]+/i, '')
+            : ''
+          if (userAgent !== '') element.setAttribute('useragent', userAgent)
+
+          let restoreState = restored === null ? 'none' : 'pending'
+          const record = { lease: reservation.lease, partition: reservation.partition, element, ready: false }
+
+          element.addEventListener('dom-ready', function () {
+            if (userAgent !== '') {
+              try {
+                element.setUserAgent(userAgent)
+              } catch (error) {
+                console.warn('[dsh-deep-seek] could not set the guest user agent:', error)
+              }
+            }
+            element.loadURL(PAGE_URL).catch(function (error) {
+              failure = messageOf(error)
+            })
+          }, { once: true })
+
+          element.addEventListener('dom-ready', function () {
+            if (guest === record && onDeepSeek(element)) applyZoom(element)
+          })
+          element.addEventListener('did-start-loading', function () {
+            record.ready = false
+          })
+
+          // `did-finish-load` only fires for full document loads. The site is a
+          // single-page app, so signing in is an in-page navigation: it clears
+          // `ready` through `did-start-loading` and would never set it again.
+          // These two events are what keep the save loop alive after a login.
+          element.addEventListener('did-navigate-in-page', function () {
+            if (guest !== record || !onDeepSeek(element)) return
+            if (restoreState === 'pending' || restoreState === 'restoring' || restoreState === 'reloading') return
+            applyZoom(element)
+            record.ready = true
+            void saveSession(true, record)
+          })
+
+          element.addEventListener('did-stop-loading', function () {
+            if (guest !== record || !onDeepSeek(element)) return
+            if (restoreState === 'restoring' || restoreState === 'reloading' || restoreState === 'pending') return
+            restoreState = 'done'
+            record.ready = true
+            void saveSession(true, record)
+          })
+
+          // Storage can only be written while the page is on its own origin, so
+          // it is restored after the first load and the page is then asked to
+          // load once more — this time already signed in. Until that settles,
+          // snapshots are skipped: the freshly loaded page still has empty
+          // storage, and saving that would erase the snapshot being restored.
+          element.addEventListener('did-finish-load', async function () {
+            if (guest !== record || !onDeepSeek(element) || restoreState === 'restoring') return
+            applyZoom(element)
+            if (restoreState === 'pending') {
+              restoreState = 'restoring'
+              try {
+                const applied = await writeGuestState(element, restored)
+                if (guest !== record) return
+                if (applied !== true || !onDeepSeek(element)) {
+                  restoreState = 'pending'
+                  return
+                }
+                restoreState = 'reloading'
+                element.reload()
+              } catch (error) {
+                restoreState = 'pending'
+                console.warn('[dsh-deep-seek] could not restore site storage:', error)
+              }
+              return
+            }
+            restoreState = 'done'
+            record.ready = true
+            void saveSession(true, record)
+          })
+
+          if (typeof bridge.onOpenRequested === 'function') {
+            record.unsubscribeOpen = bridge.onOpenRequested(reservation.lease, function (url) {
+              stats.popupHosts.push(hostOf(url))
+            })
+          }
+
+          const container = overlayContainer()
+          container.appendChild(element)
+          record.container = container
+          record.timer = setInterval(function () {
+            void saveSession(true, record)
+          }, SAVE_INTERVAL_MS)
+          guest = record
+          pendingLease = null
+          failure = ''
+        } catch (error) {
+          failure = messageOf(error)
+        } finally {
+          if (pendingLease !== null) {
+            try { await bridge.release(pendingLease) } catch { /* Native owner may be gone. */ }
+          }
+          acquiring = null
+        }
+      })()
+      return acquiring
+    }
+
+    /** Release the guest, for plugin disposal. */
+    function disposeGuest() {
+      if (guest === null) return
+      const releasing = guest
+      guest = null
+      if (releasing.timer !== undefined) clearInterval(releasing.timer)
+      if (typeof releasing.unsubscribeOpen === 'function') releasing.unsubscribeOpen()
+      // Last chance to keep the login: the page is about to be torn down.
+      releasing.container.remove()
+      if (bridge !== undefined) {
+        try {
+          void bridge.release(releasing.lease)
+        } catch (error) {
+          // Already gone.
+        }
+      }
+    }
+
+    /** Position the persistent guest over the area the slot gave this panel. */
+    function syncBounds(host) {
+      if (guest === null) return
+      const rect = host.getBoundingClientRect()
+      const style = guest.container.style
+      style.left = rect.left + 'px'
+      style.top = rect.top + 'px'
+      style.width = rect.width + 'px'
+      style.height = rect.height + 'px'
+    }
+
+    /** The center-column panel the layout mounts while this id is selected. */
+    function DeepSeekPanel() {
+      const hostRef = React.useRef(null)
+
+      React.useEffect(function () {
+        const host = hostRef.current
+        if (host === null || host === undefined) return undefined
+        let alive = true
+        let observer
+        let reposition = null
+
+        const showMessage = function (text) {
+          host.replaceChildren()
+          host.appendChild(messageBox(text, {
+            label: copy().retry,
+            run: function () {
+              failure = ''
+              void ensureGuest().then(function () {
+                if (alive) mount()
+              })
+            },
+          }))
+        }
+
+        const mount = function () {
+          if (!alive) return
+          if (guest === null) {
+            showMessage(copy().failed + ': ' + (failure || 'unknown'))
+            return
+          }
+          host.replaceChildren()
+          syncBounds(host)
+          guest.container.style.display = 'block'
+          reposition = function () {
+            if (alive) syncBounds(host)
+          }
+          if (typeof ResizeObserver === 'function') {
+            observer = new ResizeObserver(reposition)
+            observer.observe(host)
+          }
+          window.addEventListener('resize', reposition)
+        }
+
+        if (bridge === undefined) {
+          showMessage(copy().noBridge)
+          return undefined
+        }
+
+        void ensureGuest().then(mount)
+
+        return function () {
+          alive = false
+          if (observer !== undefined) observer.disconnect()
+          if (reposition !== null) window.removeEventListener('resize', reposition)
+          // Hidden, never detached: the guest keeps its page and its login.
+          if (guest !== null) {
+            void saveSession(true)
+            guest.container.style.display = 'none'
+          }
+        }
+      }, [])
+
+      // The page is the panel: no header, toolbar or status row of its own.
+      return h('div', { ref: hostRef, className: 'dp-host' })
+    }
+
+    /**
+     * The sidebar glyph: a plain chat bubble on the shell's 16-unit grid, drawn
+     * with the same 1.3 px `currentColor` line as the official rows, so the shell
+     * owns its hover and selected states and nothing needs a badge or logo colour.
+     */
+    function DeepSeekIcon(props) {
+      const size = typeof props?.size === 'number' ? props.size : 16
+      return h('svg', {
+        viewBox: '0 0 16 16', width: size, height: size,
+        fill: 'none', stroke: 'currentColor', strokeWidth: 1.3,
+        strokeLinecap: 'round', strokeLinejoin: 'round',
+        'aria-hidden': true, focusable: false,
+      }, h('path', {
+        d: 'M13.1 3.4H2.9c-.8 0-1.4.6-1.4 1.4v4.9c0 .8.6 1.4 1.4 1.4h1v2.5l3.1-2.5h6.1c.8 0 1.4-.6 1.4-1.4V4.8c0-.8-.6-1.4-1.4-1.4Z',
+      }))
+    }
+
+    /** Register the nav row and the page, then own the guest's lifetime. */
+    function apply(ctx) {
+      ensureStyle()
+      ctx.slots.inject('sidebar.panellist', () => ctx.slots.register({
+        name: 'sidebar.panellist',
+        id: PANEL_ID,
+        order: 15,
+        label: () => copy().label,
+      }, DeepSeekIcon))
+      ctx.slots.inject('main', () => ctx.slots.register({
+        name: 'main',
+        key: PANEL_ID,
+      }, DeepSeekPanel))
+      ctx.effect(() => () => {
+        disposed = true
+        disposeGuest()
+        document.getElementById(STYLE_ID)?.remove()
+      }, 'dsh-deep-seek: native guest')
+    }
+
+    return { inject: ['slots'], apply }
+  },
+})

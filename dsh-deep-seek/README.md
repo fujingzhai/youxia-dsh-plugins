@@ -1,0 +1,77 @@
+# dsh-deep-seek
+
+DSH 主面板里的 **DeepSeek** 官方网页：复用桌面端原生浏览器，登录跨重启恢复。
+
+左侧一个入口，点开就是 `chat.deepseek.com` 本身，不另起浏览器、不用 iframe、不代理请求；切换面板不会卸载网页。
+
+基于 [JaMoLpE88/dsh-desktop-chat](https://github.com/JaMoLpE88/dsh-desktop-chat) 0.1.2（Apache-2.0）的 fork，改动见 [NOTICE](NOTICE)。
+
+## 安装
+
+GUI：**插件 → 添加插件**，粘贴：
+
+```text
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-deep-seek@0.1.0&path:/dsh-deep-seek
+```
+
+命令行：
+
+```sh
+dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-deep-seek@0.1.0&path:/dsh-deep-seek"
+```
+
+npm（连不上 GitHub 时）：包名 `dsh-deep-seek`。装完重启 DSH，左侧出现 **DeepSeek**。
+
+需要 DSH Desktop 0.2.2-rc.1 或更新版本；纯 `dsh web` 没有原生网页通道，面板只会提示不支持。
+
+## 界面
+
+- 左侧入口是一枚**聊天气泡**：16 格、1.3 px 描边、`currentColor`，与官方「插件」「自动化任务」等行图标同一种画法，悬停与选中态完全交给 DSH 侧栏。
+- **面板里只有网页本身**：没有标题栏、缩放选择、刷新按钮、地址栏或底部状态行。
+- 网页固定按 **90%** 显示，使用 Chromium 自身的页面缩放，只缩网页内容，不缩 DSH 界面。
+- 切到别的面板只是隐藏，回来不重载；收起左侧栏时不影响网页宽度计算。
+
+## 登录保持
+
+网页分区由桌面端分配，每次运行都是新的内存分区。本插件在网页处于 `chat.deepseek.com` 时，读取页面自己可见的 `localStorage` 与 `document.cookie`，写到本机：
+
+```text
+<DSH_HOME 或 ~/.dsh>/dsh-deep-seek/session.json   目录 0700，文件 0600
+```
+
+下次打开先回填再重载一次，网页启动时已是登录态。具体取舍：
+
+- **能恢复**：DeepSeek 的网页令牌在 `localStorage` 里，这是恢复登录的关键。
+- **不能恢复**：HttpOnly Cookie（WAF / 人机校验类）。丢失后站点可能要求额外验证，这由站点决定。
+- 已登录时，页面报出的空状态或未登录状态不会覆盖旧快照；只有在网页自己显示登录页时才按退出处理。
+- 快照是**明文、仅本人可读**的文件，不是加密存储。和浏览器「记住登录」同等敏感。
+- 想彻底换账号：完全退出 DSH 后删除 `session.json`，或在网页里主动退出登录——页面进入登录页时插件会按退出处理，不再回填旧快照。
+
+## 与上游的差异
+
+| 项目 | 上游 0.1.2 | 本 fork |
+|---|---|---|
+| 包名 / 面板 / 路由 / 存储目录 | `@jamolpe88/dsh-desktop-chat` | `dsh-deep-seek`，独立目录，不读写别人的凭据 |
+| 侧栏图标 | 自制气泡轮廓 | 聊天气泡，与官方行图标同一套线宽与颜色 |
+| 顶栏 | 无 | 无，面板里只有网页 |
+| 页面密度 | 100% | 固定 90% |
+| 销毁竞态 | 租约到达竞态未处理 | 卸载后到达的租约立即释放；销毁时不再补发保存 |
+| 卸载 | 保留样式与 guest | 释放 guest 并移除本插件样式 |
+
+登录恢复的流程、快照护栏与 Host 路由沿用上游；上游的 `x-dsh-deep-seek` 请求头校验保留，跨站表单无法通过。
+
+## 隐私
+
+插件自身不发起网络请求，只有网页访问自己的服务器。不读取对话内容，不注入站点脚本，不注册 Agent 工具或提示词，不包含遥测、监听端口或独立浏览器。诊断接口只返回计数与布尔值，不返回令牌。
+
+## 已知限制
+
+- 仅桌面端；Web 模式提示不支持。
+- 网页在切走后仍驻留，占一个渲染进程。
+- 网站改版可能使登录键名变化；此时重新登录即可，快照不会被写坏。
+- 未在 Windows / Linux 实测；macOS 由使用者在 DSH 0.2.2-rc.1 上验收跨重启登录。
+- 上游 0.1.2 的 HTTP 请求头校验依赖自定义头，本 fork 未改动该机制。
+
+## 许可
+
+Apache-2.0。上游版权与改动说明见 [NOTICE](NOTICE)。侧栏图标为本 fork 自绘，未使用第三方图标文件；本项目与 DeepSeek 官方无关。
