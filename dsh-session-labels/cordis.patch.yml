@@ -1,0 +1,3 @@
+- insert:
+    - id: session-labels
+      name: dsh-session-labels

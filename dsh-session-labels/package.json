@@ -1,0 +1,21 @@
+{
+  "name": "dsh-session-labels",
+  "version": "0.1.0",
+  "description": "Finder 风格会话标签：右键打标、标题着色或标记、视图筛选。",
+  "author": "youxia",
+  "type": "module",
+  "main": "./index.js",
+  "exports": { ".": "./index.js", "./client": "./client.js", "./icon": "./icon.svg", "./package.json": "./package.json" },
+  "files": ["index.js", "lib", "client.js", "icon.svg", "cordis.patch.yml", "README.md", "LICENSE"],
+  "repository": { "type": "git", "url": "git+https://github.com/fujingzhai/youxia-dsh-plugins.git", "directory": "dsh-session-labels" },
+  "homepage": "https://github.com/fujingzhai/youxia-dsh-plugins/tree/main/dsh-session-labels#readme",
+  "bugs": { "url": "https://github.com/fujingzhai/youxia-dsh-plugins/issues" },
+  "dsh": {
+    "bundle": { "patch": "./cordis.patch.yml" },
+    "client": { "platform": "web", "inject": ["@deepseek-ai/dsh-client-ui-workspace", "@deepseek-ai/dsh-client-ui-context-menu", "@deepseek-ai/dsh-client-ui-settings"] }
+  },
+  "engines": { "node": ">=24.9", "dsh": ">=0.2.2-rc.1" },
+  "scripts": { "test": "node --test" },
+  "keywords": ["dsh-plugin", "deepseek-harness", "session", "tags"],
+  "license": "MIT"
+}
