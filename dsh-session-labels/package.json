@@ -1,6 +1,6 @@
 {
   "name": "dsh-session-labels",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Finder 风格会话标签：右键打标、标题着色或标签符号、视图筛选。",
   "author": "youxia",
   "type": "module",

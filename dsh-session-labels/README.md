@@ -17,7 +17,7 @@ Finder 风格的 DSH 会话标签。名称、颜色和会话关联由 Host 保�
 桌面版「插件」→「添加插件」，粘贴：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-labels@0.1.2&path:/dsh-session-labels
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-labels@0.1.3&path:/dsh-session-labels
 ```
 
 或在合集根目录链接安装：
