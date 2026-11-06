@@ -356,37 +356,54 @@ test('mounting reserves one guest and attaches the approved webview', async () =
   assert.equal(bundle.calls.intervals, 1, 'one save interval per guest')
 })
 
-test('the page reserves the window chrome band and keeps the full width', async () => {
+test('an open sidebar lets the page fill the panel to its top edge', async () => {
   const bundle = harness({ vars: { '--dsh-frame-top-clearance': '48px' } })
   await mountPanel(bundle)
   const { container } = bundle.guest()
-  assert.equal(container.style.left, '10px', 'no horizontal gap: the controls live in the top band')
-  assert.equal(container.style.top, '48px', 'clear of the macOS traffic lights and reopen button')
+  assert.equal(container.style.left, '10px')
+  assert.equal(container.style.top, '40px', 'no reserved strip: the controls sit above the sidebar')
+  assert.equal(container.style.width, '900px')
+  assert.equal(container.style.height, '600px')
+})
+
+test('a collapsed sidebar reserves only the top strip and keeps full width', async () => {
+  const bundle = harness({
+    vars: { '--dsh-frame-top-clearance': '48px', '--dsh-frame-leading-clearance': '160px' },
+  })
+  await mountPanel(bundle)
+  const { container } = bundle.guest()
+  assert.equal(container.style.left, '10px', 'no horizontal gutter')
+  assert.equal(container.style.top, '48px', 'clear of the traffic lights and reopen button')
   assert.equal(container.style.width, '900px')
   assert.equal(container.style.height, '592px')
 })
 
-test('toggling the sidebar re-measures the page against its new panel rect', async () => {
+test('toggling the sidebar re-measures the page: top strip appears only when collapsed', async () => {
   const bundle = harness({ vars: { '--dsh-frame-top-clearance': '48px' } })
   const { host } = await mountPanel(bundle)
   const { container } = bundle.guest()
-  assert.equal(container.style.left, '10px')
-
-  // Sidebar expanded: the panel starts to the right of it, below the chrome.
-  host.getBoundingClientRect = () => ({ left: 260, top: 48, width: 940, height: 700 })
-  bundle.observers[bundle.observers.length - 1].callback()
-  assert.equal(container.style.left, '260px')
-  assert.equal(container.style.top, '48px')
-  assert.equal(container.style.width, '940px')
-  assert.equal(container.style.height, '700px')
-
-  // Collapsed again: the panel reaches the window edge but stays below the chrome.
   host.getBoundingClientRect = () => ({ left: 0, top: 0, width: 1200, height: 800 })
+
+  // Collapsed: the frame now publishes the leading clearance.
+  bundle.sandbox.window.getComputedStyle = () => ({
+    getPropertyValue: (name) => ({
+      '--dsh-frame-top-clearance': '48px',
+      '--dsh-frame-leading-clearance': '160px',
+    })[name] ?? '',
+  })
   bundle.observers[bundle.observers.length - 1].callback()
-  assert.equal(container.style.left, '0px', 'full width, no empty gutter')
+  assert.equal(container.style.left, '0px', 'full width')
   assert.equal(container.style.top, '48px')
   assert.equal(container.style.width, '1200px')
   assert.equal(container.style.height, '752px')
+
+  // Expanded again: no leading clearance, so the page may touch the top.
+  bundle.sandbox.window.getComputedStyle = () => ({
+    getPropertyValue: (name) => (name === '--dsh-frame-top-clearance' ? '48px' : ''),
+  })
+  bundle.observers[bundle.observers.length - 1].callback()
+  assert.equal(container.style.top, '0px')
+  assert.equal(container.style.height, '800px')
 })
 
 test('the saved state is written on the origin and the page reloads once', async () => {

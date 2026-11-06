@@ -504,14 +504,16 @@ window.__ModuleLoader__.load({
     function syncBounds(host) {
       if (guest === null) return
       const rect = host.getBoundingClientRect()
-      // The frame paints the traffic lights and, while the sidebar is collapsed,
-      // its reopen button OVER the top of the panel area, and a native <webview>
-      // always covers DOM. Official pages reserve exactly that band with
-      // `padding-top: calc(inset + --dsh-frame-top-clearance)` and take the rest
-      // of the width as-is, so do the same: keep the top strip clear, lose no
-      // width. The controls sit at top 11–39 px, inside this band.
+      // A native <webview> always covers DOM, and the frame paints the traffic
+      // lights plus its sidebar toggle OVER the panel area. While the sidebar is
+      // open those controls sit above the sidebar, so the page can start at the
+      // very top; only a collapsed sidebar puts them over this panel, and then
+      // the page gives up the `--dsh-frame-top-clearance` strip (48 px on macOS).
+      // That flag arrives as `--dsh-frame-leading-clearance`, which the frame
+      // sets only for a collapsed sidebar. Width is never reduced.
       const insets = frameInsets(host)
-      const top = Math.max(rect.top, insets.top)
+      const collapsed = insets.leading > 0
+      const top = collapsed ? Math.max(rect.top, insets.top) : rect.top
       const style = guest.container.style
       style.left = rect.left + 'px'
       style.top = top + 'px'

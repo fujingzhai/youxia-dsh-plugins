@@ -13,13 +13,13 @@ DSH 主面板里的 **DeepSeek** 官方网页：复用桌面端原生浏览器�
 GUI：**插件 → 添加插件**，粘贴：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.3&path:/dsh-quick-chat
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.4&path:/dsh-quick-chat
 ```
 
 命令行：
 
 ```sh
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.3&path:/dsh-quick-chat"
+dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.4&path:/dsh-quick-chat"
 ```
 
 npm（连不上 GitHub 时）：包名 `dsh-quick-chat`。装完重启 DSH，左侧出现 **DeepSeek**。
@@ -31,7 +31,7 @@ npm（连不上 GitHub 时）：包名 `dsh-quick-chat`。装完重启 DSH，左
 - 左侧入口是一枚**聊天气泡**：16 格、1.3 px 描边、`currentColor`，与官方「插件」「自动化任务」等行图标同一种画法，悬停与选中态完全交给 DSH 侧栏。
 - **面板里只有网页本身**：没有标题栏、缩放选择、刷新按钮、地址栏或底部状态行。
 - 网页固定按 **90%** 显示，使用 Chromium 自身的页面缩放，只缩网页内容，不缩 DSH 界面。
-- 顶部让出 48 px 原生窗口条：红绿灯、侧栏展开按钮都在这一条里，网页从它下方开始，与官方页面（`padding-top: calc(inset + --dsh-frame-top-clearance)`）一致；宽度不额外留白，收起侧栏时网页铺满整个窗口宽。
+- 侧栏展开时网页从面板顶端铺满，不留任何空白；**只有收起侧栏时**才让出顶部 48 px 窗口条，因为那时红绿灯与展开按钮正压在面板上方。宽度始终铺满。
 - 切到别的面板只是隐藏，回来不重载。
 
 ## 登录保持
