@@ -504,20 +504,19 @@ window.__ModuleLoader__.load({
     function syncBounds(host) {
       if (guest === null) return
       const rect = host.getBoundingClientRect()
-      // The frame paints the macOS traffic lights and, while the sidebar is
-      // collapsed, its reopen button ON TOP of the panel area, and a native
-      // <webview> always covers DOM. Reserve those bands so the page never sits
-      // under them: the top strip is `--dsh-frame-top-clearance` (48 px on
-      // macOS), and a collapsed sidebar adds `--dsh-frame-leading-clearance`
-      // (160 px, 84 px in fullscreen).
+      // The frame paints the traffic lights and, while the sidebar is collapsed,
+      // its reopen button OVER the top of the panel area, and a native <webview>
+      // always covers DOM. Official pages reserve exactly that band with
+      // `padding-top: calc(inset + --dsh-frame-top-clearance)` and take the rest
+      // of the width as-is, so do the same: keep the top strip clear, lose no
+      // width. The controls sit at top 11–39 px, inside this band.
       const insets = frameInsets(host)
-      const left = Math.max(rect.left, insets.leading)
       const top = Math.max(rect.top, insets.top)
       const style = guest.container.style
-      style.left = left + 'px'
+      style.left = rect.left + 'px'
       style.top = top + 'px'
-      style.width = Math.max(0, rect.left + rect.width - left) + 'px'
-      style.height = Math.max(0, rect.top + rect.height - top) + 'px'
+      style.width = rect.width + 'px'
+      style.height = Math.max(0, rect.height - (top - rect.top)) + 'px'
     }
 
     /**

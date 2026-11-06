@@ -12,7 +12,7 @@
 | [dsh-settings-customizer](dsh-settings-customizer) | 0.3.2 | 用个人配置覆盖设置导航的顺序、名称、图标；公共默认为空 |
 | [dsh-speed-pair](dsh-speed-pair) | 0.1.0 | 输出速度改双口径 `X(Y) tok/s`：括号外是首字后的解码速度，括号内是含首字延迟的整段速度 |
 | [dsh-zh-slash](dsh-zh-slash) | 0.1.1 | 用「、」唤出原生 `/` 命令菜单 |
-| [dsh-quick-chat](dsh-quick-chat) | 0.1.2 | DSH 主面板里的 DeepSeek 官方网页：复用原生浏览器，登录跨重启恢复 |
+| [dsh-quick-chat](dsh-quick-chat) | 0.1.3 | DSH 主面板里的 DeepSeek 官方网页：复用原生浏览器，登录跨重启恢复 |
 
 兼容要求与使用说明见各插件目录。
 
@@ -61,7 +61,7 @@ git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-zh-slash@0.1.1&path
 **DeepSeek：**
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.2&path:/dsh-quick-chat
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.3&path:/dsh-quick-chat
 ```
 
 安装后重启 DSH。装好后左侧出现「DeepSeek」，首次需在窗格里登录一次。Pi 模式需新建会话并在模式菜单中选择；会话费用无需设置，有 token 用量的会话会在统计条里显示；会话标签可悬浮会话行后点击「固定」后面的标签按钮，或在右键菜单打标，无需另选模式；输出速度双口径顶替原来的会话统计项，括号内即 pi 底栏口径；顿号触发无需选模式，在已选工作区的会话输入框开头敲「、」即可。
@@ -76,7 +76,7 @@ dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-p
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-settings-customizer@0.3.2&path:/dsh-settings-customizer"
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-speed-pair@0.1.0&path:/dsh-speed-pair"
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-zh-slash@0.1.1&path:/dsh-zh-slash"
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.2&path:/dsh-quick-chat"
+dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.3&path:/dsh-quick-chat"
 ```
 
 若终端找不到 `dsh`，macOS 官方桌面版可把命令名替换成带引号的完整路径：

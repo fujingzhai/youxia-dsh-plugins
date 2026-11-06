@@ -86,6 +86,7 @@ function harness(options = {}) {
   const effects = []
   const appEffects = []
   const refs = []
+  const observers = []
   const styleTags = new Map()
   const stateReply = JSON.stringify(options.state === undefined
     ? { url: PAGE_URL, cleared: false, storage: [['userToken', JSON.stringify({ value: 't', __version: 1 })], ['theme', '"dark"']], cookie: 'smidV2=abc' }
@@ -180,6 +181,11 @@ function harness(options = {}) {
     fetch,
     console,
     URL,
+    ResizeObserver: class {
+      constructor(callback) { this.callback = callback; observers.push(this) }
+      observe() {}
+      disconnect() {}
+    },
     setInterval: (callback) => {
       calls.intervals += 1
       calls.intervalCallbacks.push(callback)
@@ -231,6 +237,7 @@ function harness(options = {}) {
     calls,
     registered,
     refs,
+    observers,
     effects,
     appEffects,
     document,
@@ -349,25 +356,37 @@ test('mounting reserves one guest and attaches the approved webview', async () =
   assert.equal(bundle.calls.intervals, 1, 'one save interval per guest')
 })
 
-test('the page is inset below the frame chrome and the collapsed-sidebar controls', async () => {
-  const bundle = harness({
-    vars: { '--dsh-frame-top-clearance': '48px', '--dsh-frame-leading-clearance': '160px' },
-  })
-  await mountPanel(bundle)
-  const { container } = bundle.guest()
-  assert.equal(container.style.left, '160px', 'clear of the traffic lights and the reopen button')
-  assert.equal(container.style.top, '48px', 'clear of the macOS chrome strip')
-  assert.equal(container.style.width, '750px')
-  assert.equal(container.style.height, '592px')
-})
-
-test('an expanded sidebar keeps the page flush with the panel', async () => {
+test('the page reserves the window chrome band and keeps the full width', async () => {
   const bundle = harness({ vars: { '--dsh-frame-top-clearance': '48px' } })
   await mountPanel(bundle)
   const { container } = bundle.guest()
-  assert.equal(container.style.left, '10px', 'the sidebar already holds that space')
-  assert.equal(container.style.top, '48px')
+  assert.equal(container.style.left, '10px', 'no horizontal gap: the controls live in the top band')
+  assert.equal(container.style.top, '48px', 'clear of the macOS traffic lights and reopen button')
   assert.equal(container.style.width, '900px')
+  assert.equal(container.style.height, '592px')
+})
+
+test('toggling the sidebar re-measures the page against its new panel rect', async () => {
+  const bundle = harness({ vars: { '--dsh-frame-top-clearance': '48px' } })
+  const { host } = await mountPanel(bundle)
+  const { container } = bundle.guest()
+  assert.equal(container.style.left, '10px')
+
+  // Sidebar expanded: the panel starts to the right of it, below the chrome.
+  host.getBoundingClientRect = () => ({ left: 260, top: 48, width: 940, height: 700 })
+  bundle.observers[bundle.observers.length - 1].callback()
+  assert.equal(container.style.left, '260px')
+  assert.equal(container.style.top, '48px')
+  assert.equal(container.style.width, '940px')
+  assert.equal(container.style.height, '700px')
+
+  // Collapsed again: the panel reaches the window edge but stays below the chrome.
+  host.getBoundingClientRect = () => ({ left: 0, top: 0, width: 1200, height: 800 })
+  bundle.observers[bundle.observers.length - 1].callback()
+  assert.equal(container.style.left, '0px', 'full width, no empty gutter')
+  assert.equal(container.style.top, '48px')
+  assert.equal(container.style.width, '1200px')
+  assert.equal(container.style.height, '752px')
 })
 
 test('the saved state is written on the origin and the page reloads once', async () => {
