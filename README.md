@@ -6,11 +6,11 @@
 
 | 插件 | 当前版本 | 作用 |
 |---|---|---|
-| [dsh-pi-mode](dsh-pi-mode) | 0.2.1 | 以 Pi 为蓝本，精简工具与系统提示词；另带 IM 版 Pi-IM |
+| [dsh-pi-mode](dsh-pi-mode) | 0.2.2 | 以 Pi 为蓝本，精简工具与系统提示词；另带 IM 版 Pi-IM |
 | [dsh-session-cost](dsh-session-cost) | 0.4.2 | 在统计条显示会话（含子代理）按市面 token 价折算的费用 |
-| [dsh-settings-customizer](dsh-settings-customizer) | 0.3.0 | 用个人配置覆盖设置导航的顺序、名称、图标；公共默认为空 |
+| [dsh-settings-customizer](dsh-settings-customizer) | 0.3.1 | 用个人配置覆盖设置导航的顺序、名称、图标；公共默认为空 |
 | [dsh-speed-pair](dsh-speed-pair) | 0.1.0 | 输出速度改双口径 `X(Y) tok/s`：括号外是首字后的解码速度，括号内是含首字延迟的整段速度 |
-| [dsh-zh-slash](dsh-zh-slash) | 0.1.0 | 用「、」唤出原生 `/` 命令菜单 |
+| [dsh-zh-slash](dsh-zh-slash) | 0.1.1 | 用「、」唤出原生 `/` 命令菜单 |
 
 兼容要求与使用说明见各插件目录。
 
@@ -23,7 +23,7 @@
 **Pi 模式：**
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.2.1&path:/dsh-pi-mode
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.2.2&path:/dsh-pi-mode
 ```
 
 **会话费用：**
@@ -35,7 +35,7 @@ git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-cost@0.4.2&
 **设置导航定制：**
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-settings-customizer@0.3.0&path:/dsh-settings-customizer
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-settings-customizer@0.3.1&path:/dsh-settings-customizer
 ```
 
 **输出速度双口径：**
@@ -47,7 +47,7 @@ git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-speed-pair@0.1.0&pa
 **顿号触发：**
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-zh-slash@0.1.0&path:/dsh-zh-slash
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-zh-slash@0.1.1&path:/dsh-zh-slash
 ```
 
 安装后重启 DSH。Pi 模式需新建会话并在模式菜单中选择；会话费用无需设置，有 token 用量的会话会在统计条里显示；输出速度双口径顶替原来的会话统计项，括号内即 pi 底栏口径；顿号触发无需选模式，在已选工作区的会话输入框开头敲「、」即可。
@@ -56,17 +56,17 @@ git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-zh-slash@0.1.0&path
 
 ```sh
 # 各条互相独立，按需执行；Web 版将 desktop 换成 web
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.2.1&path:/dsh-pi-mode"
+dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.2.2&path:/dsh-pi-mode"
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-cost@0.4.2&path:/dsh-session-cost"
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-settings-customizer@0.3.0&path:/dsh-settings-customizer"
+dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-settings-customizer@0.3.1&path:/dsh-settings-customizer"
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-speed-pair@0.1.0&path:/dsh-speed-pair"
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-zh-slash@0.1.0&path:/dsh-zh-slash"
+dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-zh-slash@0.1.1&path:/dsh-zh-slash"
 ```
 
 若终端找不到 `dsh`，macOS 官方桌面版可把命令名替换成带引号的完整路径：
 
 ```sh
-"/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh" plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-zh-slash@0.1.0&path:/dsh-zh-slash"
+"/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh" plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-zh-slash@0.1.1&path:/dsh-zh-slash"
 ```
 
 其他平台使用自己的 DSH 命令位置，不要照抄 macOS 路径。

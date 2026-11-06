@@ -1,6 +1,6 @@
 {
   "name": "dsh-pi-mode",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "author": "youxia",
   "repository": {
     "type": "git",
@@ -26,8 +26,14 @@
       "patch": "./cordis.patch.yml"
     }
   },
+  "exports": {
+    ".": "./index.js",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
   "files": [
     "index.js",
+    "icon.svg",
     "web.js",
     "settings.js",
     "cordis.patch.yml",

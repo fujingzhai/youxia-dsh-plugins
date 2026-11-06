@@ -9,13 +9,13 @@
 桌面版在「插件 → 添加插件」粘贴：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-settings-customizer@0.3.0&path:/dsh-settings-customizer
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-settings-customizer@0.3.1&path:/dsh-settings-customizer
 ```
 
 或命令行：
 
 ```sh
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-settings-customizer@0.3.0&path:/dsh-settings-customizer"
+dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-settings-customizer@0.3.1&path:/dsh-settings-customizer"
 ```
 
 Web 版把 `desktop` 换成 `web`。首次安装后重启 DSH。

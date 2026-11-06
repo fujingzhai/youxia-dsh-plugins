@@ -2,6 +2,14 @@
 
 各插件独立版本，Git 标签采用 `<插件名>@<版本>`。未说明的插件不随其他插件升级。
 
+## 2026-11-06
+
+### dsh-pi-mode 0.2.2
+
+### dsh-settings-customizer 0.3.1
+
+### dsh-zh-slash 0.1.1
+
 ## 2026-11-05
 
 ### dsh-session-cost 0.4.2

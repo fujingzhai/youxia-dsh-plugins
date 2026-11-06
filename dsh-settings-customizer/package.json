@@ -1,6 +1,6 @@
 {
   "name": "dsh-settings-customizer",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "通过个人 DSH 配置统一定制设置导航的顺序、名称和图标，公共默认不含作者规则。",
   "author": "youxia",
   "repository": {
@@ -15,9 +15,10 @@
   "exports": {
     ".": "./index.js",
     "./client": "./client.js",
+    "./icon": "./icon.svg",
     "./package.json": "./package.json"
   },
-  "files": ["index.js", "client.js", "cordis.patch.yml", "README.md", "LICENSE"],
+  "files": ["index.js", "client.js", "icon.svg", "cordis.patch.yml", "README.md", "LICENSE"],
   "dsh": {
     "bundle": { "patch": "./cordis.patch.yml" },
     "client": {
