@@ -202,10 +202,10 @@ window.__ModuleLoader__.load({
                 h('select', { className: 'yxsl-input', value: appearance, disabled: status.pending || status.loading,
                   onChange: event => mutate({ op: 'appearance', value: event.target.value }) },
                 h('option', { value: 'tint' }, '字体色彩'),
-                h('option', { value: 'marks' }, '标记'))),
+                h('option', { value: 'marks' }, '标签符号'))),
               h('p', { className: 'yxsl-muted' }, appearance === 'marks'
-                ? '只显示标记，不改变标题颜色。'
-                : '标题使用第一个标签的颜色。还有其他标签时，用标记显示。')),
+                ? '只显示标签符号，不改变标题颜色。'
+                : '标题使用第一个标签的颜色。还有其他标签时，用标签符号显示。')),
             h('div', { className: 'yxsl-card' }, status.loading ? '读取中…' : !state.tags.length ? h('div', { className: 'yxsl-empty' }, '还没有标签，先创建一个吧。') :
               state.tags.map((tag, index) => {
                 const rows = sessionRows(state.assignments, tag.id, catalog.items, catalog.archived);

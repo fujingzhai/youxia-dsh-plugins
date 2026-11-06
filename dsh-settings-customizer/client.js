@@ -43,11 +43,14 @@ window.__ModuleLoader__.load({
         throw new Error(`dsh-settings-customizer: 无效图标 ${String(spec)}`);
       }
       const viewBox = typeof spec === "object" ? spec.viewBox ?? "0 0 24 24" : "0 0 24 24";
+      const height = Number(String(viewBox).trim().split(/[\s,]+/)[3]);
+      // 16 格对齐 DSH 设置导航 medium 图标（线宽 1.3）；24 格内置图标保持 1.7。
+      const strokeWidth = height === 16 ? 1.3 : 1.7;
       return function SettingsNavIcon({ size = 16 }) {
         const h = require("react").createElement;
         return h("svg", {
           width: size, height: size, viewBox, fill: "none", stroke: "currentColor",
-          strokeWidth: 1.7, strokeLinecap: "round", strokeLinejoin: "round",
+          strokeWidth, strokeLinecap: "round", strokeLinejoin: "round",
           "aria-hidden": true, focusable: false
         }, ...paths.map((d, key) => h("path", { d, key })));
       };

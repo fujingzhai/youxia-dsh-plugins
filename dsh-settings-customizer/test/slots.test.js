@@ -272,6 +272,8 @@ test("内置图标、SVG 路径和自定义组件，均接收 size，继承主�
   assert.equal(element.type, "svg");
   assert.equal(element.props.width, 20);
   assert.equal(element.props.stroke, "currentColor");
+  assert.equal(element.props.strokeWidth, 1.7);
+  assert.equal(makeIcon({ paths: ["M1 1h4"], viewBox: "0 0 16 16" })({}).props.strokeWidth, 1.3);
   assert.equal(element.children.length, 3);
   assert.equal(makeIcon({ paths: ["M0 0h10"], viewBox: "0 0 10 10" })({}).props.viewBox, "0 0 10 10");
   assert.equal(makeIcon(({ active }) => active)({ active: true }), true);

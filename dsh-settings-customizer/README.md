@@ -9,13 +9,13 @@
 桌面版在「插件 → 添加插件」粘贴：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-settings-customizer@0.3.1&path:/dsh-settings-customizer
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-settings-customizer@0.3.2&path:/dsh-settings-customizer
 ```
 
 或命令行：
 
 ```sh
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-settings-customizer@0.3.1&path:/dsh-settings-customizer"
+dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-settings-customizer@0.3.2&path:/dsh-settings-customizer"
 ```
 
 Web 版把 `desktop` 换成 `web`。首次安装后重启 DSH。
@@ -70,7 +70,7 @@ Web 版把 `desktop` 换成 `web`。首次安装后重启 DSH。
             - M3 10h18
 ```
 
-最多 64 条非空路径，每条最长 16384 字符；viewBox 的宽高须为正数。采用描边、`currentColor`，跟随主题和选中态；尺寸由 DSH 设置壳提供。不支持任意脚本、React 函数或 SVG 事件属性。
+最多 64 条非空路径，每条最长 16384 字符；viewBox 的宽高须为正数。采用描边、`currentColor`，跟随主题和选中态；尺寸由 DSH 设置壳提供。`0 0 16 16` 使用线宽 1.3，与设置导航的 medium 图标一致；`0 0 24 24` 仍为 1.7。不支持任意脚本、React 函数或 SVG 事件属性。
 
 ## 隐私与更新
 

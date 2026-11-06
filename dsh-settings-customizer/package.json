@@ -1,6 +1,6 @@
 {
   "name": "dsh-settings-customizer",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "通过个人 DSH 配置统一定制设置导航的顺序、名称和图标，公共默认不含作者规则。",
   "author": "youxia",
   "repository": {
