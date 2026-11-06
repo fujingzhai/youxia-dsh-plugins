@@ -160,3 +160,14 @@ test('Pi-IM 原样引用 Pi 模式的 pi-core，只另带自己的 channel 行',
   const body = patch.split(/\r?\n/).filter(line => !/^\s*#/.test(line)).join('\n')
   assert.equal((body.match(/\{\{channel_rules\}\}/g) ?? []).length, 1, '提示词里只引用一次')
 })
+
+test('补丁里用包名引用的 web.js / settings.js 能按 exports 解析', async () => {
+  // 0.2.2 曾给 exports 加了白名单却漏掉这两个子路径；用相对路径 import 文件测不出来，
+  // 要等 DSH 新建会话时才报 "web-tools (dsh-pi-mode/web.js): never started"。
+  const [web, settings] = await Promise.all([
+    import('dsh-pi-mode/web.js'),
+    import('dsh-pi-mode/settings.js'),
+  ])
+  assert.equal(typeof web.apply, 'function')
+  assert.equal(typeof settings.apply, 'function')
+})
