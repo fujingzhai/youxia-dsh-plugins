@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import { apply } from '../index.js'
+import { apply as applyShell, shellRules } from '../shell.js'
 import { apply as applyWeb } from '../web.js'
 import { apply as applySettings } from '../settings.js'
 
@@ -161,13 +162,40 @@ test('Pi-IM 原样引用 Pi 模式的 pi-core，只另带自己的 channel 行',
   assert.equal((body.match(/\{\{channel_rules\}\}/g) ?? []).length, 1, '提示词里只引用一次')
 })
 
-test('补丁里用包名引用的 web.js / settings.js 能按 exports 解析', async () => {
+test('补丁里用包名引用的 web.js / settings.js / shell.js 能按 exports 解析', async () => {
   // 0.2.2 曾给 exports 加了白名单却漏掉这两个子路径；用相对路径 import 文件测不出来，
   // 要等 DSH 新建会话时才报 "web-tools (dsh-pi-mode/web.js): never started"。
-  const [web, settings] = await Promise.all([
+  const [web, settings, shell] = await Promise.all([
     import('dsh-pi-mode/web.js'),
     import('dsh-pi-mode/settings.js'),
+    import('dsh-pi-mode/shell.js'),
   ])
   assert.equal(typeof web.apply, 'function')
   assert.equal(typeof settings.apply, 'function')
+  assert.equal(typeof shell.apply, 'function')
+})
+
+test('找文件的规矩按系统填写，shell.js 把对应文本登记为 shell_rules', () => {
+  const posix = shellRules('darwin')
+  const linux = shellRules('linux')
+  const windows = shellRules('win32')
+  assert.equal(posix, linux)
+  assert.match(posix, /bash（ls、rg、find）/)
+  assert.doesNotMatch(posix, /glob|grep|pwsh|PowerShell/)
+  assert.match(windows, /找文件用 glob，搜文件内容用 grep/)
+  assert.match(windows, /跑命令用 pwsh/)
+  assert.doesNotMatch(windows, /都用 bash/)
+  const variables = new Map()
+  applyShell({ systemPrompt: { variable: (name, provider) => variables.set(name, provider) } })
+  assert.equal(variables.get('shell_rules')?.(), shellRules())
+})
+
+test('glob/grep 与提示词变量随系统开关，两边不混用', () => {
+  const patch = readFileSync(new URL('../cordis.patch.yml', import.meta.url), 'utf8')
+  assert.match(patch, /- id: tool-fs-search\r?\n\s+name: '@deepseek-ai\/dsh-tool-fs-search'\r?\n\s+disabled: !!js process\.platform !== 'win32'\r?\n\s+config:\r?\n\s+sampleOverCapGlobResults: false/)
+  assert.match(patch, /- id: shell-rules\r?\n\s+name: 'dsh-pi-mode\/shell\.js'/)
+  assert.match(patch, /\{\{shell_rules\}\}/)
+  assert.doesNotMatch(patch, /都用 bash（ls、rg、find）/)
+  const body = patch.split(/\r?\n/).filter(line => !/^\s*#/.test(line)).join('\n')
+  assert.equal((body.match(/\{\{shell_rules\}\}/g) ?? []).length, 1, '提示词里只引用一次')
 })

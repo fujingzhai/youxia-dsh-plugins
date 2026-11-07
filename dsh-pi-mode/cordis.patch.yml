@@ -2,7 +2,8 @@
 # - pi（Pi 模式）：桌面端／网页端用；
 # - pi-im（Pi-IM）：给 IM 机器人用（在 IM 插件的机器人设置里选它），差别只在交付方式与 IM 工具。
 # 两者共用 pi-core 一组（Pi-IM 用 YAML 别名 *pi-core 原样引用），改 pi-core 两边同时生效；各自只多一行 channel。
-# 与标准模式相比去掉了：glob/grep（改用 bash）、子代理与 workflow、目标、计划模式、todo、定时提醒；
+# 与标准模式相比去掉了：子代理与 workflow、目标、计划模式、todo、定时提醒。
+# glob/grep 只在 Windows 上挂（官方工具自带 ripgrep，不依赖本机是否安装 rg）；macOS / Linux 不挂，改用 bash。
 # 联网由本包 web.js 接入（默认 DSH 自带工具，可被 pi 同款工具接管）；全局工具只挡点名的（默认为空），由本包 index.js 限制，
 # 个人名单写在自己 profile 补丁的 pi-mode-settings 条目（本文件末尾）里，见 README。
 # 系统提示词以 pi 为蓝本、按 DSH 改写（一句身份＋规矩；中文；工具说明里已有的不重复），完整替换 DSH 拼装的提示词，
@@ -13,7 +14,7 @@
       config:
         id: pi
         name: Pi 模式
-        description: 对齐 pi：13 个工具，无子代理、目标与计划，系统提示词只有身份与规矩
+        description: 对齐 pi：无子代理、目标与计划，系统提示词只有身份与规矩；Windows 另挂 glob/grep
         order: 0
         plugins:
           - &pi-core
@@ -26,6 +27,7 @@
                 config:
                   # complete：这段就是全部系统提示词；includeRuntimeContext: false 去掉源码路径、GUI 网址等可选运行时上下文（当前目录是必需项，保留）
                   # {{channel_rules}} 由各模式的 channel 行提供（桌面端与 IM 的交付方式不同），{{web_rules}} 由 web.js 提供
+                  # {{shell_rules}} 由本包 shell.js 按系统填写：Windows 用 glob/grep 与 PowerShell，其余用 bash
                   complete: true
                   includeRuntimeContext: false
                   prefix: |-
@@ -35,9 +37,7 @@
 
                     - 非特殊情况，回复尽可能简洁。
                     - 遇到该由用户拿主意、且答案会改变下一步做法的决定时，才用 ask_user_question，一次问完；能自己查清的事实、有惯常做法的选择，自行决定并在回复里说明。
-                    - 列目录、找文件、搜内容都用 bash（ls、rg、find）。
-                    - bash 结果末尾的 [exit code: N] 不是 0，或 exit 0 但本应有输出却为空、null、带 error，即没拿到结果，先查再走。
-                    - 长命令转后台，记下 job id：完成会通知，不要空等（sleep、反复查询），也别重复发起同一件事，先做别的；收尾时收回仍要的结果（确实卡住才等），不要的关掉。
+                    {{shell_rules}}
                     - 局部修改用 edit，write 只用于新建或整篇重写；修改或覆盖文件前先 read 一遍。
                     {{channel_rules}}
                     - 看文件用 read，不要用 cat 或 sed。
@@ -56,6 +56,15 @@
               - id: tool-pwsh
                 name: '@deepseek-ai/dsh-tool-pwsh'
                 disabled: !!js process.platform !== 'win32'
+              # 只在 Windows 挂：官方工具自带 ripgrep，不依赖本机是否安装 rg。macOS / Linux 继续用 bash 的 ls、rg、find。
+              # 提示词整份替换后，官方「用 glob/grep、不要用 shell」那段不会出现，由 shell.js 的 {{shell_rules}} 补上。
+              - id: tool-fs-search
+                name: '@deepseek-ai/dsh-tool-fs-search'
+                disabled: !!js process.platform !== 'win32'
+                config:
+                  sampleOverCapGlobResults: false
+              - id: shell-rules
+                name: 'dsh-pi-mode/shell.js'
               - id: tool-fs
                 name: '@deepseek-ai/dsh-tool-fs'
               - id: tool-jobs

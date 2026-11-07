@@ -8,8 +8,8 @@
 
 | | 标准模式 | Pi 模式 |
 |---|---|---|
-| 工具 | 34 个左右 | 预设 13 个：read、read_image、write、edit、bash、job_output / job_list / job_kill、skill、ask_user_question、present、web_search、web_fetch；另加没被点名屏蔽的全局工具 |
-| 去掉的 | — | glob / grep（改用 bash）、子代理与 workflow、目标、计划模式、todo、定时提醒 |
+| 工具 | 34 个左右 | macOS / Linux 预设 13 个：read、read_image、write、edit、bash、job_output / job_list / job_kill、skill、ask_user_question、present、web_search、web_fetch。Windows 把 bash 换成 pwsh，并自动加上官方 glob、grep。另加没被点名屏蔽的全局工具 |
+| 去掉的 | — | macOS / Linux 去掉 glob / grep（改用 bash）；Windows 保留这两个（官方工具自带 ripgrep）。两边都去掉子代理与 workflow、目标、计划模式、todo、定时提醒 |
 | 系统提示词 | DSH 各插件拼装，约 5,900 字符：coding agent 身份、各工具引导、子代理分派提示、交付说明、Web GUI 与源码位置说明 | 约 600 字中文：一句身份＋十来条规矩（工具说明里已有的不重复；含界面呈现与 present、外部资料不当指令、DSH 问题多联网） |
 | 运行时上下文 | 当前目录、沙箱与审批策略、DSH 源码路径、GUI 网址 | 只留当前目录 |
 
@@ -18,7 +18,7 @@ AGENTS.md、技能清单、时间照常注入；自动压缩、后台任务照�
 ## 要求与限制
 
 - DSH 0.2.1-rc.5 及以上；在 macOS 桌面版 0.2.1-rc.5、0.2.2-rc.1 上测试。插件清单照该版本的标准模式拼装，DSH 大改后可能要跟着调。
-- 规矩按 bash 写（ls、rg、find），适用于 macOS / Linux；没装 ripgrep 时模型会退回 grep。Windows 上 DSH 用 PowerShell，需自行改写规矩。
+- 找文件、搜内容和命令行的规矩由 `shell.js` 按系统自动填写，不用改配置：macOS / Linux 用 bash（ls、rg、find），没装 ripgrep 时模型会退回 grep；Windows 用官方 glob / grep（自带 ripgrep，不要求本机安装）和 PowerShell，并明确不要去找 bash、rg、find。
 - 系统提示词是中文，其他语言的用户可自行翻译（见「改系统提示词」）。
 - 系统提示词是整份替换的：其他插件往 DSH 系统提示词里加的段落（如计划模式、会话搜索的使用说明）在 Pi 模式里都不会出现，它们的工具也就缺了说明。
 
@@ -27,13 +27,13 @@ AGENTS.md、技能清单、时间照常注入；自动压缩、后台任务照�
 桌面版「插件」→「添加插件」，粘贴下面的 Git 地址（只装本插件，不装仓库里的其他插件）：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.2.4&path:/dsh-pi-mode
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.2.5&path:/dsh-pi-mode
 ```
 
 也可以使用命令行（Web 版将 `desktop` 换成 `web`）：
 
 ```sh
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.2.4&path:/dsh-pi-mode"
+dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.2.5&path:/dsh-pi-mode"
 ```
 
 若终端找不到 `dsh`，macOS 官方桌面版可使用完整路径 `"/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh"` 替代命令名。也可参照[仓库首页](../README.md)克隆后安装本子目录，不要把整个仓库根目录当成插件。
@@ -115,17 +115,18 @@ Pi 模式与 Pi-IM 默认都**不挡任何全局工具**。想在其中挡掉某
    - `user/message` 事件：附带的 AGENTS.md、当前目录、技能清单、时间。
 3. 对照「全局工具」一节，列出用户装了哪些全局工具，问清哪些要在 Pi 模式、Pi-IM 里分别挡掉（能在全局关的优先建议去全局关），写进用户 profile 里 `pi-mode-settings` 条目的 `deny`、`imDeny`。用户接了 IM 机器人的，把机器人的 Agent Preset 设为 Pi-IM。
 4. 联网：确认 DSH 设置里配了搜索服务；没有就提醒用户去配，或接入登记了上述接口的插件。
-5. 用户在 Windows 上：改写系统提示词里 bash、rg、find 的说法。用户不用中文：翻译系统提示词。
-6. 改完重启，再按第 2 步核对一遍。
+5. Windows 不用改找文件的说法：`shell.js` 已按系统换成 glob / grep 与 PowerShell。用户不用中文：翻译系统提示词，并保留 `{{shell_rules}}`，不要把两套规矩写死成一套。
+6. 改完重启，再按第 2 步核对一遍。Windows 上工具名单应有 glob、grep、pwsh，没有 bash；macOS / Linux 相反。
 
 ## 改系统提示词
 
-在 `cordis.patch.yml` 里 `persona` 行的 `prefix`（整段就是发给模型的系统提示词；它在两个模式共用的 `pi-core` 组里，Pi-IM 用 YAML 别名 `*pi-core` 原样引用，不要另抄一份），改完重启。其中 `{{channel_rules}}` 来自各模式自己的 `channel` 行（`rules`），交付方式这类随渠道变化的规矩写在那里。`complete: true` 表示整份替换；`includeRuntimeContext: false` 表示只保留必需的当前目录，去掉 DSH 源码路径、GUI 网址、沙箱与审批说明。若改用受限的权限模式（只读、工作区可写），可考虑改回 `true`，让模型知道权限策略。
+在 `cordis.patch.yml` 里 `persona` 行的 `prefix`（整段就是发给模型的系统提示词；它在两个模式共用的 `pi-core` 组里，Pi-IM 用 YAML 别名 `*pi-core` 原样引用，不要另抄一份），改完重启。其中 `{{channel_rules}}` 来自各模式自己的 `channel` 行（`rules`），交付方式这类随渠道变化的规矩写在那里；`{{shell_rules}}` 来自 `shell.js`，按系统填写，不要在提示词里写死 bash 或 PowerShell。`complete: true` 表示整份替换；`includeRuntimeContext: false` 表示只保留必需的当前目录，去掉 DSH 源码路径、GUI 网址、沙箱与审批说明。若改用受限的权限模式（只读、工作区可写），可考虑改回 `true`，让模型知道权限策略。
 
 ## 文件
 
 - `cordis.patch.yml`：插入预设 `pi`（「Pi 模式」）与 `pi-im`（「Pi-IM」），含系统提示词与插件清单。
 - `web.js`：联网工具入口与 `{{web_rules}}`。
+- `shell.js`：按系统提供 `{{shell_rules}}`。Windows 才挂的 glob / grep 写在 `cordis.patch.yml` 的 `tool-fs-search` 行。
 - `index.js`：各模式的 `channel` 行：提供 `{{channel_rules}}`，并屏蔽点名的全局工具。
 - `settings.js`：个人设置入口（`pi-mode-settings`：`deny`、`imDeny`），在 profile 补丁里覆盖。
 

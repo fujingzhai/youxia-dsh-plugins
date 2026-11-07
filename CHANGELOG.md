@@ -4,6 +4,13 @@
 
 ## 2026-11-07
 
+### dsh-pi-mode 0.2.5
+
+- Windows 不再沿用 bash 规矩。按 `process.platform` 自动识别，不用改配置，也不影响 macOS / Linux：
+  - Windows 挂上官方 `glob` / `grep`（自带 ripgrep，不要求本机安装 `rg`），提示词改为用这两个工具找文件、搜内容，命令行写 PowerShell，并明确不要去找 bash、rg、find。
+  - macOS / Linux 仍不挂这两个工具，规矩仍是 bash 的 ls、rg、find。
+- 只放开工具不够：Pi 模式整份替换系统提示词，官方「用 glob/grep、不要用 shell」那段不会出现，所以对应说法由新增的 `shell.js` 以 `{{shell_rules}}` 注入。
+
 ### dsh-pi-mode 0.2.4
 
 - 系统提示词「规矩」改写两条，把两类容易漏掉的执行问题说死：
