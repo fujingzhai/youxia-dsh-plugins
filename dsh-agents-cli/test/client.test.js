@@ -24,8 +24,14 @@ function harness() {
     write(data, done) { this.writes.push(data); done?.() }
     dispose() { this.disposed = true }
   }
+  const React = {
+    createElement: (type, props, ...children) => ({ type, props: { ...props, children } }),
+    useSyncExternalStore: (_subscribe, getSnapshot) => getSnapshot(),
+    useState: (initial) => [typeof initial === 'function' ? initial() : initial, () => {}],
+    useRef: (current) => ({ current }), useEffect() {},
+  }
   const sandbox = {
-    window: { __ModuleLoader__: { load(module) { plugin = module.factory(() => ({ createElement() {} })) } } },
+    window: { __ModuleLoader__: { load(module) { plugin = module.factory(() => React) } } },
     __dshAgentsXterm: { Terminal, FitAddon: class { proposeDimensions() { return { cols: 100, rows: 30 } } }, css: '' },
     document: { head: new Node(), body: new Node(), documentElement: { getAttribute() { return 'zh' } }, createElement() { return new Node() }, getElementById(id) { return tags.get(id) || null } },
     navigator: { language: 'zh' },
@@ -35,7 +41,7 @@ function harness() {
     fetch: async (path, init) => { requests.push({ path, body: JSON.parse(init.body) }); return { ok: true, json: async () => ({ ok: true }) } },
   }
   vm.createContext(sandbox)
-  vm.runInContext(source.replace("    return { inject: ['slots', 'theme'], apply }", "    globalThis.api = { Session, sessions, readFrames, publish, select, snapshot, pendingStarts, updateAgent, availableAgents, adopt }; return { inject: ['slots', 'theme'], apply }"), sandbox)
+  vm.runInContext(source.replace("    return { inject: ['slots', 'theme'], apply }", "    globalThis.api = { Session, sessions, readFrames, publish, select, snapshot, pendingStarts, updateAgent, availableAgents, adopt, AgentsPanel }; return { inject: ['slots', 'theme'], apply }"), sandbox)
   return {
     ...sandbox.api, sandbox, requests, terminals, Node, plugin,
     dark(value) { dark = value },
@@ -223,13 +229,34 @@ test('inventory hides missing/disabled CLIs, retains live sessions and reveals n
   assert.equal(env.availableAgents().map((agent) => agent.id).join(','), 'claude,codex,pi')
 })
 
+test('first render creates only the first screen; unopened tabs stay grey until running', () => {
+  const env = harness()
+  const agents = ['claude', 'codex', 'agy', 'pi'].map((id) => ({ id, name: id, command: id, color: '#123456', enabled: true }))
+  env.adopt({ agents, activeId: 'pi' })
+  const nodes = (tree) => tree && typeof tree === 'object' ? [tree, ...(tree.props?.children || []).flat(Infinity).flatMap(nodes)] : []
+  let tree = env.AgentsPanel()
+  assert.equal(nodes(tree).filter((node) => typeof node.type === 'function' && node.type.name === 'Screen').length, 1)
+  let dots = nodes(tree).filter((node) => node.props?.className === 'ac-dot')
+  assert.equal(dots.map((dot) => dot.props['data-status']).join(','), 'unopened,unopened,unopened,unopened')
+  env.publish({ statuses: { claude: 'running' } })
+  tree = env.AgentsPanel()
+  dots = nodes(tree).filter((node) => node.props?.className === 'ac-dot')
+  assert.equal(dots.map((dot) => dot.props['data-status']).join(','), 'running,unopened,unopened,unopened')
+  env.publish({ active: 'codex', statuses: { claude: 'running', codex: 'running', pi: 'exited' } })
+  tree = env.AgentsPanel()
+  dots = nodes(tree).filter((node) => node.props?.className === 'ac-dot')
+  assert.equal(dots.map((dot) => dot.props['data-status']).join(','), 'running,running,unopened,exited')
+  // The actual CSS rule greys every data-status except running, including unopened/exited.
+  assert.match(source, /ac-dot\[data-status\]:not\(\[data-status=running\]\).*#9ca3af/)
+})
+
 test('toolbar stays centered and exposes only settings; themes are read-only', () => {
   assert.match(source, /grid-template-columns:minmax\(max\(112px/)
   assert.doesNotMatch(source, /ac-title|ac-foot|allBackground|generation|restart: true/)
   assert.match(source, /kind: 'gear'/)
   assert.doesNotMatch(source, /ThemeButton|setTheme\(|kind: 'refresh'|ac-theme/)
   assert.match(source, /type: 'color'/)
-  assert.match(source, /padding:8px 8px 20px/)
+  assert.match(source, /padding:8px 8px 6px/)
   assert.match(source, /this.term.open\(this.body\)/)
   assert.match(source, /ac-term-body\{width:100%;height:100%/)
   assert.match(source, /maxLength: 256, value: editing.command/)

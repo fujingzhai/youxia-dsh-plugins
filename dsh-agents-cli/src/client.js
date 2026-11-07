@@ -11,7 +11,7 @@ window.__ModuleLoader__.load({
     const XTERM_STYLE_ID = 'dsh-agents-cli-xterm'
     const ROUTES = Object.fromEntries(['state', 'settings', 'open', 'stream', 'input'].map((key) => [key, `/api/dsh-agents-cli/${key}`]))
     const BUILTINS = [
-      { id: 'claude', name: 'Claude', command: 'claude', color: '#e88b3a' },
+      { id: 'claude', name: 'Claude Code', command: 'claude', color: '#e88b3a' },
       { id: 'codex', name: 'Codex', command: 'codex', color: '#4285f4' },
       { id: 'agy', name: 'Antigravity', command: 'agy', color: '#20a56b' },
       { id: 'pi', name: 'Pi', command: 'pi', color: '#df5252' },
@@ -34,7 +34,7 @@ window.__ModuleLoader__.load({
 .ac-icon:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover,#8881);color:var(--dsw-alias-label-primary,#202124)}
 .ac-stage{position:relative;flex:1;min-width:0;min-height:0;background:var(--dsw-alias-bg-base,#fff)}
 .ac-screen{position:absolute;inset:0;display:flex;flex-direction:column;min-width:0;min-height:0}.ac-screen[hidden]{display:none!important}
-.ac-term{flex:1;min-width:0;min-height:0;padding:8px 8px 20px;overflow:hidden;background:var(--dsw-alias-bg-base,#fff);color:var(--dsw-alias-label-primary,#202124)}
+.ac-term{flex:1;min-width:0;min-height:0;padding:8px 8px 6px;overflow:hidden;background:var(--dsw-alias-bg-base,#fff);color:var(--dsw-alias-label-primary,#202124)}
 .ac-term-body{width:100%;height:100%;overflow:hidden}.ac-term .xterm{height:100%}.ac-term .xterm-viewport{background:var(--dsw-alias-bg-base,#fff)!important}
 .ac-fail,.ac-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:28px;text-align:center;color:var(--dsw-alias-label-secondary,#666);background:var(--dsw-alias-bg-base,#fff)}
 .ac-fail{position:absolute;inset:0}.ac-empty{height:100%}.ac-fail h2,.ac-empty h2{margin:0;font-size:16px;font-weight:500;color:var(--dsw-alias-label-primary,#202124)}.ac-fail p,.ac-empty p{margin:0;max-width:440px;line-height:1.7}

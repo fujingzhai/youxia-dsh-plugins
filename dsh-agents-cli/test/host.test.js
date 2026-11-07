@@ -122,10 +122,10 @@ async function call(controller, path, method, body, header) {
   return { req, res, json: res.body ? JSON.parse(res.body) : null }
 }
 
-test('defaults are Claude, Codex, Antigravity and Pi, with no personal directory', () => {
+test('defaults are Claude Code, Codex, Antigravity and Pi, with no personal directory', () => {
   const settings = defaultSettings()
   assert.deepEqual(settings.agents.map((item) => item.id), ['claude', 'codex', 'agy', 'pi'])
-  assert.deepEqual(settings.agents.map((item) => item.name), ['Claude', 'Codex', 'Antigravity', 'Pi'])
+  assert.deepEqual(settings.agents.map((item) => item.name), ['Claude Code', 'Codex', 'Antigravity', 'Pi'])
   assert.deepEqual(settings.agents.map((item) => item.color), ['#e88b3a', '#4285f4', '#20a56b', '#df5252'])
   assert.equal(settings.agents[3].command, 'pi')
   assert.equal(settings.cwd, '')
@@ -396,7 +396,7 @@ test('migration keeps a manually added Pi id, custom order and active selection'
     { id: 'my-pi', name: 'pi', command: 'pi', color: '#06b6d4' },
   ], activeId: 'my-pi', cwd: '' }
   const migrated = parseSettings(legacy)
-  assert.equal(migrated.version, 4)
+  assert.equal(migrated.version, 5)
   assert.equal(migrated.agents.length, 4)
   assert.deepEqual(migrated.agents.map((a) => a.id), ['agy', 'claude', 'codex', 'my-pi'])
   assert.equal(migrated.activeId, 'my-pi')
@@ -434,6 +434,22 @@ test('Antigravity migration preserves customized labels, commands, colors and id
   raw.agents[2] = { ...raw.agents[2], name: 'My agent', command: 'agy --flag', color: '#123456' }
   assert.deepEqual(parseSettings(raw).agents[2], { ...raw.agents[2], enabled: true, builtinId: 'agy' })
   assert.throws(() => parseSettings({ version: 1, agents: [null] }), /无效/)
+})
+
+test('Claude Code default name migrates once without changing custom labels or terminal ids', () => {
+  const old = { ...defaultSettings(), version: 4 }
+  old.agents[0] = { ...old.agents[0], name: 'Claude', command: 'claude --custom', color: '#123456', enabled: false }
+  const migrated = parseSettings(old)
+  assert.equal(migrated.agents[0].name, 'Claude Code')
+  assert.equal(migrated.agents[0].id, 'claude')
+  assert.equal(migrated.agents[0].command, 'claude --custom')
+  assert.equal(migrated.agents[0].enabled, false)
+  assert.equal(migrated.agents[0].color, '#123456')
+  old.agents[0].name = 'My Claude'
+  assert.equal(parseSettings(old).agents[0].name, 'My Claude')
+  old.version = 5
+  old.agents[0].name = 'Claude'
+  assert.equal(parseSettings(old).agents[0].name, 'Claude')
 })
 
 async function shellRun(file, args, input, cwd) {

@@ -1,7 +1,7 @@
 /**
  * dsh-agents-cli — Host half.
  *
- * Manages persistent local CLI agent terminals (Claude, Codex, Agy, Pi by default,
+ * Manages persistent local CLI agent terminals (Claude Code, Codex, Antigravity, Pi by default,
  * plus user-added commands) by reusing DSH's official `subprocess.spawnTerminal`
  * PTY provider and `@xterm/headless` screen serializer.
  */
@@ -28,7 +28,7 @@ export const GUARD_HEADER = 'x-dsh-agents-cli'
 
 /** Built-in CLI agent entries. */
 export const BUILTINS = Object.freeze([
-  Object.freeze({ id: 'claude', name: 'Claude', command: 'claude', color: '#e88b3a' }),
+  Object.freeze({ id: 'claude', name: 'Claude Code', command: 'claude', color: '#e88b3a' }),
   Object.freeze({ id: 'codex', name: 'Codex', command: 'codex', color: '#4285f4' }),
   Object.freeze({ id: 'agy', name: 'Antigravity', command: 'agy', color: '#20a56b' }),
   Object.freeze({ id: 'pi', name: 'Pi', command: 'pi', color: '#df5252' }),
@@ -128,7 +128,7 @@ export function cleanAgent(value, index = 0) {
 /** Return fresh default settings. */
 export function defaultSettings() {
   return {
-    version: 4,
+    version: 5,
     agents: BUILTINS.map((item) => ({ ...item, enabled: true, builtinId: item.id })),
     activeId: 'claude',
     defaultId: null,
@@ -167,7 +167,7 @@ function migrateAntigravity(settings) {
 export function parseSettings(input) {
   if (input === null || input === undefined || input === '') return defaultSettings()
   let raw = typeof input === 'string' ? JSON.parse(input) : input
-  if (raw === null || typeof raw !== 'object' || ![1, 2, 3, 4].includes(raw.version) || !Array.isArray(raw.agents)) {
+  if (raw === null || typeof raw !== 'object' || ![1, 2, 3, 4, 5].includes(raw.version) || !Array.isArray(raw.agents)) {
     throw new Error('不支持的配置格式')
   }
   if (raw.agents.some((agent) => !agent || typeof agent !== 'object')) throw new Error('无效的入口配置')
@@ -178,6 +178,7 @@ export function parseSettings(input) {
     for (const builtin of BUILTINS) if (!agents.some((agent) => agent.id === builtin.id || agent.builtinId === builtin.id) && agents.length < 24) agents.push({ ...builtin, enabled: false, builtinId: builtin.id })
     raw = { ...raw, agents }
   }
+  if (raw.version < 5) raw = { ...raw, agents: raw.agents.map((agent) => agent.id === 'claude' && ['claude', 'Claude'].includes(agent.name) ? { ...agent, name: 'Claude Code' } : agent) }
   if (raw.agents.length === 0) throw new Error('至少保留一个 Agent 入口')
   if (raw.agents.length > 24) throw new Error('最多支持 24 个 Agent 入口')
   const ids = new Set()
@@ -190,7 +191,7 @@ export function parseSettings(input) {
   const activeId = typeof raw.activeId === 'string' && ids.has(raw.activeId) ? raw.activeId : agents[0].id
   const defaultId = typeof raw.defaultId === 'string' && ids.has(raw.defaultId) ? raw.defaultId : null
   const cwd = typeof raw.cwd === 'string' && !/[\r\n\0]/.test(raw.cwd) ? raw.cwd.trim().slice(0, 512) : ''
-  return { version: 4, agents, activeId, defaultId, cwd }
+  return { version: 5, agents, activeId, defaultId, cwd }
 }
 
 /** Read persisted settings from disk, falling back to defaults when absent or corrupt. */
@@ -199,7 +200,7 @@ export function readSettings(file = SETTINGS_FILE()) {
     if (!existsSync(file)) return defaultSettings()
     const raw = JSON.parse(readFileSync(file, 'utf8'))
     const settings = parseSettings(raw)
-    if (raw.version < 4) {
+    if (raw.version < 5) {
       try { writeSettings(settings, file) } catch { /* Read-only storage must not discard valid preferences. */ }
     }
     return settings
@@ -865,7 +866,7 @@ export function createRoutes(controller, { detect = async () => ({}) } = {}) {
           const merged = {
             ...current,
             ...(body.settings !== null && typeof body.settings === 'object' ? body.settings : body),
-            version: 4,
+            version: 5,
           }
           controller.resolveCwd(merged.cwd)
           const saved = writeSettings(merged)

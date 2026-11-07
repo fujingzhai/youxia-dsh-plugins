@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Agents CLI",
-    "description": "Use local Claude, Codex, Antigravity and Pi in DSH: automatic CLI detection, persistent terminals and editable custom entries."
+    "description": "Use local Claude Code, Codex, Antigravity and Pi in DSH: automatic CLI detection, persistent terminals and editable custom entries."
   }
 }
