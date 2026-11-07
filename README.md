@@ -6,7 +6,7 @@
 
 | 插件 | 当前版本 | 作用 |
 |---|---|---|
-| [dsh-pi-mode](dsh-pi-mode) | 0.2.3 | 以 Pi 为蓝本，精简工具与系统提示词；另带 IM 版 Pi-IM |
+| [dsh-pi-mode](dsh-pi-mode) | 0.2.4 | 以 Pi 为蓝本，精简工具与系统提示词；另带 IM 版 Pi-IM |
 | [dsh-session-fee](dsh-session-fee) | 0.4.4 | 在统计条显示会话（含子代理）按市面 token 价折算的费用 |
 | [dsh-session-labels](dsh-session-labels) | 0.1.4 | Finder 风格会话标签：悬浮按钮与右键打标、标题着色或标签符号、视图筛选 |
 | [dsh-settings-customizer](dsh-settings-customizer) | 0.3.2 | 用个人配置覆盖设置导航的顺序、名称、图标；公共默认为空 |
@@ -25,7 +25,7 @@
 **Pi 模式：**
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.2.3&path:/dsh-pi-mode
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.2.4&path:/dsh-pi-mode
 ```
 
 **会话费用：**
@@ -70,7 +70,7 @@ git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.4&pa
 
 ```sh
 # 各条互相独立，按需执行；Web 版将 desktop 换成 web
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.2.3&path:/dsh-pi-mode"
+dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.2.4&path:/dsh-pi-mode"
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-fee@0.4.4&path:/dsh-session-fee"
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-labels@0.1.4&path:/dsh-session-labels"
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-settings-customizer@0.3.2&path:/dsh-settings-customizer"
