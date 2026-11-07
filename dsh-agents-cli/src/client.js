@@ -35,12 +35,12 @@ window.__ModuleLoader__.load({
 .ac-stage{position:relative;flex:1;min-width:0;min-height:0;background:var(--dsw-alias-bg-base,#fff)}
 .ac-screen{position:absolute;inset:0;display:flex;flex-direction:column;min-width:0;min-height:0}.ac-screen[hidden]{display:none!important}
 .ac-term{flex:1;min-width:0;min-height:0;padding:8px 8px 20px;overflow:hidden;background:var(--dsw-alias-bg-base,#fff);color:var(--dsw-alias-label-primary,#202124)}
-.ac-term-body{width:100%;height:100%;overflow:hidden}.ac-term .xterm{height:100%}
+.ac-term-body{width:100%;height:100%;overflow:hidden}.ac-term .xterm{height:100%}.ac-term .xterm-viewport{background:var(--dsw-alias-bg-base,#fff)!important}
 .ac-fail,.ac-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:28px;text-align:center;color:var(--dsw-alias-label-secondary,#666);background:var(--dsw-alias-bg-base,#fff)}
 .ac-fail{position:absolute;inset:0}.ac-empty{height:100%}.ac-fail h2,.ac-empty h2{margin:0;font-size:16px;font-weight:500;color:var(--dsw-alias-label-primary,#202124)}.ac-fail p,.ac-empty p{margin:0;max-width:440px;line-height:1.7}
 .ac-primary{border:0;border-radius:7px;background:#596bdf;color:#fff;padding:7px 14px}
 .ac-link{border:0;background:none;color:var(--dsw-alias-state-business-primary,#596bdf);padding:0;font-size:12px}
-.ac-dot[data-status=exited],.ac-dot[data-status=failed]{background:var(--dsw-alias-label-tertiary,#9ca3af)!important}
+.ac-dot[data-status]:not([data-status=running]){background:var(--dsw-alias-label-tertiary,#9ca3af)!important}
 .ac-color{display:inline-flex;align-items:center;gap:6px;color:var(--dsw-alias-label-secondary,#666);font-size:12px}.ac-dialog input.ac-color-input{width:28px;height:28px;flex:none;padding:2px;border:1px solid var(--dsw-alias-border-l3,#ddd);border-radius:6px;background:transparent;cursor:pointer}
 .ac-hint{max-width:100%;overflow-wrap:anywhere}.ac-row[data-disabled=true] b,.ac-row[data-disabled=true] small{opacity:.45}.ac-row[data-disabled=true] .ac-color-input{filter:grayscale(1);opacity:.5}.ac-status{display:inline-block;margin-top:3px;padding:1px 5px;border-radius:4px;font-size:10px;color:var(--dsw-alias-label-secondary,#666);background:var(--dsw-alias-interactive-bg-hover,#8881)}.ac-status[data-missing=true]{border:1px dashed var(--dsw-alias-border-l3,#bbb);background:transparent}.ac-row[data-missing=true] .ac-color-input{outline:1px dashed var(--dsw-alias-label-secondary,#999);outline-offset:2px}
 .ac-notice{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:4;display:flex;align-items:center;gap:8px;max-width:90%;padding:6px 10px;border:1px solid var(--dsw-alias-border-l3,#ddd);border-radius:8px;background:var(--dsw-alias-bg-base,#fff);color:#c35f65}
@@ -95,9 +95,11 @@ window.__ModuleLoader__.load({
     function Glyph({ kind }) {
       const paths = {
         gear: 'M6.3 1.5h3.4l.4 1.8 1.2.7 1.8-.5 1.7 3-1.4 1.2v1.4l1.4 1.2-1.7 3-1.8-.5-1.2.7-.4 1.8H6.3l-.4-1.8-1.2-.7-1.8.5-1.7-3 1.4-1.2V7.7L1.2 6.5l1.7-3 1.8.5 1.2-.7z',
+        edit: 'M10.5 2.5a1.4 1.4 0 0 1 2 2L6 11l-3 .8.8-3 6.7-6.3ZM9.5 3.5l2 2M2.8 14h10.4',
+        up: 'M4 9.5 8 5.5l4 4', down: 'M4 6.5 8 10.5l4-4', close: 'M4 4l8 8M12 4l-8 8',
       }
       return h('svg', { width: 16, height: 16, viewBox: '0 0 16 16', fill: 'none', stroke: 'currentColor', strokeWidth: 1.25, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true },
-        h('path', { d: paths[kind] }), h('circle', { cx: 8, cy: 8.4, r: 2.1 }))
+        h('path', { d: paths[kind] }), kind === 'gear' ? h('circle', { cx: 8, cy: 8.4, r: 2.1 }) : null)
     }
 
     function readFrames(buffer) {
@@ -446,7 +448,7 @@ window.__ModuleLoader__.load({
       }
       return h('dialog', { ref: dialog, className: 'ac-dialog', onCancel: onClose, onClick: (event) => { if (event.target === dialog.current) onClose() } },
         h('div', { className: 'ac-head' }, h('div', null, h('h2', null, text.manage), h('p', null, text.note)),
-          h('button', { type: 'button', className: 'ac-icon', onClick: onClose, 'aria-label': text.close }, '✕')),
+          h('button', { type: 'button', className: 'ac-icon', onClick: onClose, 'aria-label': text.close }, h(Glyph, { kind: 'close' }))),
         settings.agents.map((agent, index) => h('div', { className: 'ac-row', key: agent.id, 'data-disabled': agent.enabled === false, 'data-missing': availability[agent.id]?.installed === false },
           h(ColorPicker, { value: agent.color, label: `${text.color} ${agent.name}`, disabled: busy,
             onSave: async (color) => {
@@ -465,11 +467,11 @@ window.__ModuleLoader__.load({
           h('div', { className: 'ac-edit-actions' }, h('button', { type: 'submit', className: 'ac-link', disabled: busy }, text.save), h('button', { type: 'button', className: 'ac-link', disabled: busy, onClick: () => setEditing(null) }, text.cancel)),
           ) : h('div', null, h('b', null, agent.name), h('small', null, agent.command),
             h('span', { className: 'ac-status', 'data-missing': availability[agent.id]?.installed === false }, agent.enabled === false ? text.disabled : availability[agent.id]?.installed === false ? text.missing : availability[agent.id]?.installed === true ? text.detected : text.unknown)),
-          h('button', { type: 'button', className: 'ac-icon', disabled: busy || editing?.id === agent.id, title: text.edit, 'aria-label': `${text.edit} ${agent.name}`, onClick: () => setEditing({ id: agent.id, name: agent.name, command: agent.command }) }, '✎'),
-          ...[[-1, text.up, '↑'], [1, text.down, '↓']].map(([delta, label, glyph]) => h('button', {
+          h('button', { type: 'button', className: 'ac-icon', disabled: busy || editing?.id === agent.id, title: text.edit, 'aria-label': `${text.edit} ${agent.name}`, onClick: () => setEditing({ id: agent.id, name: agent.name, command: agent.command }) }, h(Glyph, { kind: 'edit' })),
+          ...[[-1, text.up, 'up'], [1, text.down, 'down']].map(([delta, label, kind]) => h('button', {
             key: delta, type: 'button', className: 'ac-icon', disabled: busy || index + delta < 0 || index + delta >= settings.agents.length,
             title: label, 'aria-label': `${label} ${agent.name}`, onClick: () => move(index, delta),
-          }, glyph)),
+          }, h(Glyph, { kind }))),
           h('button', { type: 'button', className: 'ac-link', disabled: busy, 'aria-label': `${agent.enabled === false ? text.restore : text.remove} ${agent.name}`, onClick: () => void commit((latest) => ({ agents: latest.agents.map((item) => item.id === agent.id ? { ...item, enabled: item.enabled === false } : item) })) }, agent.enabled === false ? text.restore : text.remove))),
         h('form', { className: 'ac-add', onSubmit: async (event) => {
           event.preventDefault()
@@ -513,7 +515,7 @@ window.__ModuleLoader__.load({
           h('div', { className: 'ac-actions' },
             h('button', { type: 'button', className: 'ac-icon', title: text.manage, 'aria-label': text.manage, onClick: () => setManage(true) }, h(Glyph, { kind: 'gear' })))),
         h('div', { className: 'ac-stage' },
-          error ? h('div', { className: 'ac-notice', role: 'alert' }, error, h('button', { className: 'ac-icon', 'aria-label': text.close, onClick: () => publish({ error: '' }) }, '✕')) : null,
+          error ? h('div', { className: 'ac-notice', role: 'alert' }, error, h('button', { className: 'ac-icon', 'aria-label': text.close, onClick: () => publish({ error: '' }) }, h(Glyph, { kind: 'close' }))) : null,
           current ? visible.map((agent) => h(Screen, { key: agent.id, agent, active: current.id === agent.id })) : h('div', { className: 'ac-empty' }, h('h2', null, text.noAgents), h('p', null, text.inventory), h('button', { type: 'button', className: 'ac-primary', onClick: () => setManage(true) }, text.manage))),
         manage ? h(Manage, { settings, defaultCwd, availability, onClose: () => setManage(false) }) : null)
     }

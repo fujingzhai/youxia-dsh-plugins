@@ -9,7 +9,7 @@
 需要 DSH **0.2.2-rc.1** 或更新版本，并在本机安装要使用的 CLI。打开 **插件 → 添加插件**，填入：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-agents-cli@0.1.2&path:/dsh-agents-cli
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-agents-cli@0.1.3&path:/dsh-agents-cli
 ```
 
 也可直接填 npm 包名：
@@ -21,7 +21,7 @@ dsh-agents-cli
 命令行（各系统相同；Web 版将 `desktop` 换成 `web`）：
 
 ```sh
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-agents-cli@0.1.2&path:/dsh-agents-cli"
+dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-agents-cli@0.1.3&path:/dsh-agents-cli"
 ```
 
 安装后重启 DSH，左侧出现 **Agents**。插件不安装 CLI、不接管登录，也不提供安装按钮。
@@ -31,7 +31,7 @@ dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-p
 - 四个默认入口依次为 Claude／Codex／Antigravity／Pi，对应指令 `claude`／`codex`／`agy`／`pi`，配色为橙／蓝／绿／红。**这些是可编辑的默认值，不是写死的程序路径**；Antigravity 用户若使用其他启动命令，可在设置里修改 `agy`。
 - 在用户的 shell 环境中检测指令，支持 PATH、函数和别名；顶栏只显示已检测到且启用的入口。每约 30 秒、回到窗口及打开设置时更新检测，安装后的 CLI 会自动出现。检测失败或复杂自定义命令无法可靠识别时，不武断隐藏。
 - 不进入左侧 Agents，不做周期检测、不启动任何 CLI。首次进入只启动排序后的**第一个可用入口**，其他入口点到才启动；已打开的入口切走、收起侧栏或离开面板仍保持进程和输入状态，后台输出继续接收。DSH 重启或插件卸载后重新按需启动。
-- CLI 退出后小点变灰，保留输出；再次点击该入口才重启。普通切换和网络重连不重复执行指令。
+- 未启动的入口显示灰点，实际启动后才恢复对应颜色。CLI 退出后小点变灰，保留输出；再次点击该入口才重启。普通切换和网络重连不重复执行指令。
 - 右上角只保留设置。默认入口和自定义入口都可编辑名称、指令、颜色、顺序。指令更改对下次启动生效，不打断现有进程。
 - 「移除」会停用入口并结束对应终端，设置中保留灰色条目及其原配置，可单独「恢复」。未安装／未检测到的入口使用不同的虚线状态标记，仍可编辑、排序；没有统一的「补回」按钮。
 - 启动目录留空使用 DSH 官方 `workingDirectory.defaultDirectory`，设置里显示实际路径。手填无效目录会报错；更改仅影响下次启动。命令或 shell 函数若自行 `cd`，以其自身逻辑为准；本插件不随聊天会话切换目录。
