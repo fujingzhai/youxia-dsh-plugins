@@ -6,7 +6,7 @@
   "engines": { "node": ">=24.9" },
   "scripts": {
     "check": "node scripts/check.mjs",
-    "test": "node --test dsh-pi-mode/test/*.test.js dsh-zh-slash/test/*.test.js dsh-session-fee/test/*.test.js dsh-session-labels/test/*.test.js dsh-settings-customizer/test/*.test.js dsh-speed-pair/test/*.test.js"
+    "test": "node --test dsh-pi-mode/test/*.test.js dsh-zh-slash/test/*.test.js dsh-session-fee/test/*.test.js dsh-session-labels/test/*.test.js dsh-settings-customizer/test/*.test.js dsh-speed-pair/test/*.test.js dsh-quick-chat/test/*.test.js dsh-agents-cli/test/*.test.js"
   },
   "license": "MIT"
 }

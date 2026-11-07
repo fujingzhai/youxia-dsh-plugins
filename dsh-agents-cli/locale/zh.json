@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Agents CLI",
+    "description": "在 DSH 主面板中使用本机 Claude、Codex、Antigravity、Pi：自动检测、持久终端，支持自定义和编辑入口。"
+  }
+}
