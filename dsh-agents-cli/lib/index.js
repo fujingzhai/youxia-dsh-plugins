@@ -14,7 +14,7 @@ import { createRequire } from 'node:module'
 import { homedir } from 'node:os'
 import { delimiter, dirname, join, resolve } from 'node:path'
 import { ActivityTracker } from './activity.js'
-import { activityCommand } from './launch.js'
+import { activityCommand, antigravityTitleSettings } from './launch.js'
 
 /** Stable cordis plugin name. */
 export const name = 'agents-cli'
@@ -683,6 +683,14 @@ export function createAgentsCliController(subprocess, { defaultDirectory = () =>
       const resolvedCwd = resolveCwd(cwd)
       const shellPath = await resolveUserShell(subprocess)
       const launch = buildShellLaunch(shellPath)
+      let activitySettingsFile
+      if (launch.name === 'cmd' && command?.trim() === 'agy') {
+        const directory = join(dirname(SETTINGS_FILE()), 'session-adapters')
+        mkdirSync(directory, { recursive: true, mode: 0o700 })
+        activitySettingsFile = join(directory, 'antigravity-title.json')
+        writeFileSync(activitySettingsFile, JSON.stringify(antigravityTitleSettings()), { mode: 0o600 })
+      }
+      const adaptedCommand = activityCommand(command || '', launch.name, process.execPath, activitySettingsFile)
       const env = buildTerminalEnv(shellPath, process.env, process.platform, await resolveLoginPath(shellPath))
       if (launch.name === 'cmd') { env.DSH_AGENTS_ESC = '\x1b'; env.DSH_AGENTS_BEL = '\x07' }
       const handle = await subprocess.spawnTerminal({
@@ -710,7 +718,7 @@ export function createAgentsCliController(subprocess, { defaultDirectory = () =>
       }
       const managed = new ManagedTerminal(id, handle, info)
       terminals.set(id, managed)
-      const keystrokes = agentKeystrokes(activityCommand(command || '', launch.name), launch.name, managed.completionToken)
+      const keystrokes = agentKeystrokes(adaptedCommand, launch.name, managed.completionToken)
       managed.startCommand = () => {
         if (managed.commandStarted) return
         managed.commandStarted = true

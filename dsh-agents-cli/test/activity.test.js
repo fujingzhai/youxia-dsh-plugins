@@ -6,7 +6,7 @@ import { join, resolve, basename, dirname } from 'node:path'
 import { homedir } from 'node:os'
 import { fileURLToPath } from 'node:url'
 import { ActivityTracker } from '../lib/activity.js'
-import { activityCommand, quoteArgument } from '../lib/launch.js'
+import { activityCommand, quoteArgument, antigravityTitleSettings } from '../lib/launch.js'
 import piExtension from '../lib/pi-activity.mjs'
 
 const osc = (value, code = 7501) => `\x1b]${code};${value}\x1b\\`
@@ -74,7 +74,7 @@ test('POSIX adapters preserve function arguments and never execute callbacks dur
     if (command === 'codex') assert(args.includes('tui.terminal_title=["activity","thread-name"]'))
   }
 })
-test('Windows cmd passes session config JSON through .cmd shims unchanged', { skip: process.platform !== 'win32' }, () => {
+test('Windows cmd passes Codex options and Antigravity settings-file path through .cmd shims unchanged', { skip: process.platform !== 'win32' }, () => {
   const base = process.env.CI ? join(homedir(), '.dsh-agents-cli-tests') : join(homedir(), 'AI-Space', '.tmp')
   mkdirSync(base, { recursive: true })
   const dir = mkdtempSync(join(base, 'agents-cli-test-'))
@@ -84,14 +84,16 @@ test('Windows cmd passes session config JSON through .cmd shims unchanged', { sk
     for (const name of ['codex', 'agy']) {
       const shim = join(dir, name + '.cmd')
       writeFileSync(shim, `@echo off\r\n"${process.execPath}" "${helper}" %*\r\n`)
-      const command = activityCommand(name, 'cmd')
+      const settingsFile = join(dir, 'title settings.json')
+      writeFileSync(settingsFile, JSON.stringify(antigravityTitleSettings()))
+      const command = activityCommand(name, 'cmd', process.execPath, settingsFile)
       const script = join(dir, 'run.cmd')
       writeFileSync(script, `@echo off\r\nset "PATH=${dir};%PATH%"\r\ncall ${command}\r\n`)
       const child = spawnSync(process.env.ComSpec || 'cmd.exe', ['/d', '/c', script], { encoding: 'utf8' })
       assert.equal(child.status, 0, child.stderr)
       const args = JSON.parse(child.stdout.trim())
       if (name === 'codex') assert(args.includes('tui.terminal_title=["activity","thread-name"]'))
-      else assert.equal(JSON.parse(args[1]).title.enabled, true)
+      else assert.equal(args[1], settingsFile)
     }
   } finally {
     const target = resolve(dir), trash = resolve(homedir(), '.Trash')
