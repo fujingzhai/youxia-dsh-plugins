@@ -1,6 +1,6 @@
 {
   "name": "dsh-pi-mode",
-  "version": "0.2.5",
+  "version": "0.3.0",
   "author": "youxia",
   "repository": {
     "type": "git",
@@ -9,16 +9,16 @@
   },
   "homepage": "https://github.com/fujingzhai/youxia-dsh-plugins/tree/main/dsh-pi-mode#readme",
   "bugs": { "url": "https://github.com/fujingzhai/youxia-dsh-plugins/issues" },
-  "description": "DSH 的 Pi 模式：工具与系统提示词以 pi 为蓝本（无子代理、目标与计划；系统提示词只有一句身份和规矩；Windows 自动改用 glob/grep 与 PowerShell）；另带给 IM 机器人用的 Pi-IM。",
+  "description": "DSH 的 Pi 模式插件：精简工具与中文系统提示词，同包提供 Pi 模式、IM 版 Pi-IM 与开启官方 apply_patch 的 Pi+模式；三者共用核心定义。",
   "type": "module",
   "main": "index.js",
   "license": "MIT",
   "engines": {
     "node": ">=24.9",
-    "dsh": ">=0.2.1-rc.5"
+    "dsh": ">=0.2.2-rc.1"
   },
   "scripts": {
-    "check": "node --check index.js && node --check web.js && node --check settings.js && node --check shell.js",
+    "check": "node --check index.js && node --check web.js && node --check settings.js && node --check shell.js && node --check files.js",
     "test": "node --test"
   },
   "dsh": {
@@ -31,6 +31,7 @@
     "./web.js": "./web.js",
     "./settings.js": "./settings.js",
     "./shell.js": "./shell.js",
+    "./files.js": "./files.js",
     "./icon": "./icon.svg",
     "./package.json": "./package.json"
   },
@@ -40,12 +41,14 @@
     "web.js",
     "settings.js",
     "shell.js",
+    "files.js",
     "cordis.patch.yml",
     "README.md",
     "LICENSE"
   ],
   "peerDependencies": {
-    "@deepseek-ai/dsh-tool-web": ">=0.2.1-rc.5"
+    "@deepseek-ai/dsh-tool-web": ">=0.2.2-rc.1",
+    "@deepseek-ai/dsh-tool-fs": ">=0.2.2-rc.1"
   },
   "keywords": [
     "deepseek-harness",

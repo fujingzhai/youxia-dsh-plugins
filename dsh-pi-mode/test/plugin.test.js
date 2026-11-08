@@ -5,6 +5,7 @@ import { apply } from '../index.js'
 import { apply as applyShell, shellRules } from '../shell.js'
 import { apply as applyWeb } from '../web.js'
 import { apply as applySettings } from '../settings.js'
+import { EDIT_RULES, PATCH_RULES, fileRules } from '../files.js'
 
 function mask(config, globals = []) {
   const events = new Map()
@@ -151,7 +152,8 @@ test('组合补丁保持通用默认值，不带 IM 定制名单', () => {
 
 test('Pi-IM 原样引用 Pi 模式的 pi-core，只另带自己的 channel 行', () => {
   const patch = readFileSync(new URL('../cordis.patch.yml', import.meta.url), 'utf8')
-  const [pi, im] = patch.split(/- id: preset-pi-im\r?\n/)
+  const [pi, remainder] = patch.split(/- id: preset-pi-im\r?\n/)
+  const [im] = remainder.split(/- id: preset-pi-plus\r?\n/)
   assert(im, '缺少 preset-pi-im')
   assert.match(pi, /- &pi-core\r?\n\s+id: pi-core/)
   assert.match(im, /plugins:\r?\n(\s+#.*\r?\n)*\s+- \*pi-core\r?\n/)
@@ -162,17 +164,19 @@ test('Pi-IM 原样引用 Pi 模式的 pi-core，只另带自己的 channel 行',
   assert.equal((body.match(/\{\{channel_rules\}\}/g) ?? []).length, 1, '提示词里只引用一次')
 })
 
-test('补丁里用包名引用的 web.js / settings.js / shell.js 能按 exports 解析', async () => {
+test('补丁里用包名引用的 web.js / settings.js / shell.js / files.js 能按 exports 解析', async () => {
   // 0.2.2 曾给 exports 加了白名单却漏掉这两个子路径；用相对路径 import 文件测不出来，
   // 要等 DSH 新建会话时才报 "web-tools (dsh-pi-mode/web.js): never started"。
-  const [web, settings, shell] = await Promise.all([
+  const [web, settings, shell, files] = await Promise.all([
     import('dsh-pi-mode/web.js'),
     import('dsh-pi-mode/settings.js'),
     import('dsh-pi-mode/shell.js'),
+    import('dsh-pi-mode/files.js'),
   ])
   assert.equal(typeof web.apply, 'function')
   assert.equal(typeof settings.apply, 'function')
   assert.equal(typeof shell.apply, 'function')
+  assert.equal(typeof files.apply, 'function')
 })
 
 test('找文件的规矩按系统填写，shell.js 把对应文本登记为 shell_rules', () => {
@@ -198,4 +202,30 @@ test('glob/grep 与提示词变量随系统开关，两边不混用', () => {
   assert.doesNotMatch(patch, /都用 bash（ls、rg、find）/)
   const body = patch.split(/\r?\n/).filter(line => !/^\s*#/.test(line)).join('\n')
   assert.equal((body.match(/\{\{shell_rules\}\}/g) ?? []).length, 1, '提示词里只引用一次')
+})
+
+test('Pi+ 原样复用核心、present 与桌面 channel，只有文件规则开启补丁', () => {
+  const patch = readFileSync(new URL('../cordis.patch.yml', import.meta.url), 'utf8')
+  const [base, plus] = patch.split(/- id: preset-pi-plus\r?\n/)
+  assert(plus)
+  assert.match(plus, /id: pi-plus\r?\n\s+name: Pi\+模式/)
+  assert.match(plus, /plugins:\r?\n\s+- \*pi-core/)
+  assert.match(plus, /name: 'dsh-pi-mode\/files\.js'\r?\n\s+config:\r?\n\s+applyPatch: true/)
+  assert.match(plus, /- \*pi-present\r?\n\s+- \*pi-desktop/)
+  assert.doesNotMatch(base, /applyPatch: true/)
+  assert.match(base, /- &pi-files\r?\n\s+id: file-rules/)
+  assert.match(base, /- \*pi-files/)
+  assert.match(base, /\{\{file_rules\}\}/)
+})
+
+test('普通模式文件规则保持原文，Pi+ 只替换分工并加匹配和失败恢复一条', () => {
+  assert.equal(fileRules(), EDIT_RULES)
+  assert.equal(fileRules({ applyPatch: false }), EDIT_RULES)
+  assert.equal(fileRules({ applyPatch: true }), PATCH_RULES)
+  assert.equal(PATCH_RULES.split('\n').length, 2)
+  assert.match(PATCH_RULES, /单处局部修改用 edit；同一文件多处或跨文件修改优先用 apply_patch/)
+  assert.match(PATCH_RULES, /预检拒绝不改文件/)
+  assert.match(PATCH_RULES, /不会整批回滚/)
+  assert.match(PATCH_RULES, /失败或中断后先重读受影响文件/)
+  assert.doesNotMatch(PATCH_RULES, /本次试用|Delete File|Move to|只用于新增和更新/)
 })

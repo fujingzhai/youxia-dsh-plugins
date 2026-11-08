@@ -1,7 +1,8 @@
-# Pi 模式：对齐 pi 的工具与系统提示词。插入两个预设，DSH 自带的几个模式原样不动：
+# 一个插件，三个预设，DSH 自带模式原样不动：
 # - pi（Pi 模式）：桌面端／网页端用；
-# - pi-im（Pi-IM）：给 IM 机器人用（在 IM 插件的机器人设置里选它），差别只在交付方式与 IM 工具。
-# 两者共用 pi-core 一组（Pi-IM 用 YAML 别名 *pi-core 原样引用），改 pi-core 两边同时生效；各自只多一行 channel。
+# - pi-im（Pi-IM）：IM 版，只调整交付方式与全局工具个人名单；
+# - pi-plus（Pi+模式）：Pi 模式加官方 apply_patch 与对应两条文件编辑规矩。
+# 三者原样引用 *pi-core；Pi / Pi-IM 共用 *pi-files，Pi / Pi+ 共用 present 与桌面 channel。
 # 与标准模式相比去掉了：子代理与 workflow、目标、计划模式、todo、定时提醒。
 # glob/grep 只在 Windows 上挂（官方工具自带 ripgrep，不依赖本机是否安装 rg）；macOS / Linux 不挂，改用 bash。
 # 联网由本包 web.js 接入（默认 DSH 自带工具，可被 pi 同款工具接管）；全局工具只挡点名的（默认为空），由本包 index.js 限制，
@@ -38,7 +39,7 @@
                     - 非特殊情况，回复尽可能简洁。
                     - 遇到该由用户拿主意、且答案会改变下一步做法的决定时，才用 ask_user_question，一次问完；能自己查清的事实、有惯常做法的选择，自行决定并在回复里说明。
                     {{shell_rules}}
-                    - 局部修改用 edit，write 只用于新建或整篇重写；修改或覆盖文件前先 read 一遍。
+                    {{file_rules}}
                     {{channel_rules}}
                     - 看文件用 read，不要用 cat 或 sed。
                     {{web_rules}}
@@ -65,8 +66,6 @@
                   sampleOverCapGlobResults: false
               - id: shell-rules
                 name: 'dsh-pi-mode/shell.js'
-              - id: tool-fs
-                name: '@deepseek-ai/dsh-tool-fs'
               - id: tool-jobs
                 name: '@deepseek-ai/dsh-tool-jobs'
               - id: skill-filesystem
@@ -91,11 +90,17 @@
               # 联网工具＋变量 {{web_rules}}：默认 DSH 自带工具；有插件登记了 pi 同款工具（如 dsh-agent-web）就改用它，见 web.js
               - id: web-tools
                 name: 'dsh-pi-mode/web.js'
-          # 以下只属于 Pi 模式（桌面端／网页端）：present 交付卡片＋对应规矩
-          - id: present
+          # 标准文件规则只在这里定义一次，Pi-IM 原样引用；Pi+ 使用补丁版。
+          - &pi-files
+            id: file-rules
+            name: 'dsh-pi-mode/files.js'
+          # Pi / Pi+ 共用桌面交付与个人 deny；Pi-IM 另用 imDeny。
+          - &pi-present
+            id: present
             name: '@deepseek-ai/dsh-tool-present'
           # channel 行：提供 {{channel_rules}}，并只挡点名的全局工具（个人名单取 pi-mode-settings 的 deny），其余全局工具照常给模型
-          - id: channel
+          - &pi-desktop
+            id: channel
             name: 'dsh-pi-mode'
             config:
               channel: desktop
@@ -113,6 +118,7 @@
         plugins:
           # 与 Pi 模式共用的整组（YAML 别名），不要在这里另抄一份
           - *pi-core
+          - *pi-files
           # IM 里看不到 present 卡片和本机文件链接，所以不挂 present；个人名单取 pi-mode-settings 的 imDeny。
           # 规矩只写 IM 工具的用法，不在系统提示词里交代"用户在用某个 IM"：渠道由 dsh-im 的「上下文增强」逐条消息附带（见 README）。
           - id: channel
@@ -122,7 +128,22 @@
               deny: []
               rules: |-
                 - 要把文件或图片交给用户，用 dsh_im_return_file 登记路径（已有文件直接登记，不必为发送重建或改名）；本轮结束后才发出，回复里说"已备好"，不说"已发送"。
-    # 个人设置入口：在自己 profile 的 cordis.patch.yml 里用同一 id 覆盖 config（deny 管 Pi 模式、imDeny 管 Pi-IM），改完无需重启。
+    - id: preset-pi-plus
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: pi-plus
+        name: Pi+模式
+        description: Pi 模式加官方 apply_patch，同一文件多处或跨文件修改一次完成
+        order: 2
+        plugins:
+          - *pi-core
+          - id: file-rules
+            name: 'dsh-pi-mode/files.js'
+            config:
+              applyPatch: true
+          - *pi-present
+          - *pi-desktop
+    # 个人设置入口：deny 管 Pi / Pi+，imDeny 管 Pi-IM；改完无需重启。
     - id: pi-mode-settings
       name: 'dsh-pi-mode/settings.js'
       config:

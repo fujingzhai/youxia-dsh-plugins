@@ -6,7 +6,7 @@
 
 | 插件 | 当前版本 | 作用 |
 |---|---|---|
-| [dsh-pi-mode](dsh-pi-mode) | 0.2.5 | 以 Pi 为蓝本，精简工具与系统提示词；Windows 自动改用 glob/grep；另带 IM 版 Pi-IM |
+| [dsh-pi-mode](dsh-pi-mode) | 0.3.0 | 同包提供 Pi 模式、Pi-IM 与启用官方 apply_patch 的 Pi+模式；三者共用精简核心 |
 | [dsh-session-fee](dsh-session-fee) | 0.4.5 | 在统计条显示会话（含子代理）按市面 token 价折算的费用 |
 | [dsh-session-labels](dsh-session-labels) | 0.1.4 | Finder 风格会话标签：悬浮按钮与右键打标、标题着色或标签符号、视图筛选 |
 | [dsh-settings-customizer](dsh-settings-customizer) | 0.3.2 | 用个人配置覆盖设置导航的顺序、名称、图标；公共默认为空 |
@@ -23,10 +23,10 @@
 
 打开 **插件 → 添加插件**，按需粘贴其中一条。地址包含版本标签及子目录，**不要只填仓库首页地址**：
 
-**Pi 模式：**
+**Pi 模式／Pi-IM／Pi+模式（同一个插件）：**
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.2.5&path:/dsh-pi-mode
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.3.0&path:/dsh-pi-mode
 ```
 
 **会话费用：**
@@ -71,13 +71,13 @@ git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.4&pa
 git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-agents-cli@0.1.5&path:/dsh-agents-cli
 ```
 
-各插件按需安装，装完重启 DSH。DeepSeek 网页插件会在左侧增加「DeepSeek」，首次需登录；CLI Agents 增加「Agents」，自动检测本机 CLI，首次进入只启动第一个可用入口，其余点到才启动。Pi 模式需新建会话并在模式菜单中选择；会话费用无需设置，有 token 用量的会话会在统计条里显示；会话标签可悬浮会话行后点击「固定」后面的标签按钮，或在右键菜单打标，无需另选模式；输出速度双口径顶替原来的会话统计项，括号内即 pi 底栏口径；顿号触发无需选模式，在已选工作区的会话输入框开头敲「、」即可。
+各插件按需安装，装完重启 DSH。DeepSeek 网页插件会在左侧增加「DeepSeek」，首次需登录；CLI Agents 增加「Agents」，自动检测本机 CLI，首次进入只启动第一个可用入口，其余点到才启动。Pi 插件安装一次提供「Pi 模式」「Pi-IM」「Pi+模式」，需新建会话并在模式菜单中选择（Pi+ 多一个官方 apply_patch 工具，要求 DSH 0.2.2-rc.1 及以上）；会话费用无需设置，有 token 用量的会话会在统计条里显示；会话标签可悬浮会话行后点击「固定」后面的标签按钮，或在右键菜单打标，无需另选模式；输出速度双口径顶替原来的会话统计项，括号内即 pi 底栏口径；顿号触发无需选模式，在已选工作区的会话输入框开头敲「、」即可。
 
 ### 命令行
 
 ```sh
 # 各条互相独立，按需执行；Web 版将 desktop 换成 web
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.2.5&path:/dsh-pi-mode"
+dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.3.0&path:/dsh-pi-mode"
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-fee@0.4.5&path:/dsh-session-fee"
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-labels@0.1.4&path:/dsh-session-labels"
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-settings-customizer@0.3.2&path:/dsh-settings-customizer"

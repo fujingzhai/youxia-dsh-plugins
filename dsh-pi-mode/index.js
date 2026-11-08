@@ -1,5 +1,5 @@
 /**
- * Pi 模式的 channel 行（Pi 模式、Pi-IM 各挂一行，config.channel 分别为 desktop / im）：
+ * 三种预设的 channel 行（Pi / Pi+ 共用 desktop，Pi-IM 用 im）：
  *
  * 1. 提供系统提示词变量 {{channel_rules}}＝config.rules（交付方式等随渠道变化的规矩）。
  * 2. 全局工具屏蔽：只挡点名的全局工具，其余全局工具（以后新装插件带来的也一样）照常给模型；预设各行自己注册的工具不受影响。

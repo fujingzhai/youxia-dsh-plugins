@@ -1,8 +1,14 @@
 # dsh-pi-mode
 
-给 DeepSeek Harness（DSH）新增「Pi 模式」：工具与系统提示词以 [pi](https://github.com/earendil-works/pi) 为蓝本，精简、直接，少走弯路。DSH 自带的几个模式不受影响，可在新对话里切换对照。
+给 DeepSeek Harness（DSH）新增三个模式：工具与系统提示词以 [pi](https://github.com/earendil-works/pi) 为蓝本，精简、直接。一个插件安装一次，DSH 自带模式不受影响。
 
-另带一个 IM 版「Pi-IM」，给 IM 机器人（[dsh-im](https://github.com/xmanrui/dsh-im) 接入的微信、飞书等）用，见下文「Pi-IM」。两者共用同一组核心定义，改 Pi 模式时 Pi-IM 自动跟上。
+| 模式 | ID | 用途 |
+|---|---|---|
+| Pi 模式 | `pi` | 桌面／Web 的精简基线 |
+| Pi-IM | `pi-im` | IM 版，调整交付方式与个人工具屏蔽名单 |
+| Pi+模式 | `pi-plus` | Pi 模式加官方 `apply_patch`，批量修改同一文件多处或多个文件 |
+
+三者共用同一组核心、联网和命令行定义；Pi / Pi+ 共用桌面交付，Pi / Pi-IM 共用原文件编辑规矩，不复制整份预设或另装插件。
 
 ## 与标准模式的差别
 
@@ -17,7 +23,7 @@ AGENTS.md、技能清单、时间照常注入；自动压缩、后台任务照�
 
 ## 要求与限制
 
-- DSH 0.2.1-rc.5 及以上；在 macOS 桌面版 0.2.1-rc.5、0.2.2-rc.1 上测试。插件清单照该版本的标准模式拼装，DSH 大改后可能要跟着调。
+- 0.3.0 起要求 DSH 0.2.2-rc.1 及以上，以确保内置 `apply_patch` 可用；旧版 DSH 请停留在插件 0.2.5。基于 macOS 桌面版 0.2.2-rc.1 验证，Windows / Linux 完整 GUI 未实测，DSH 大改后可能要跟着调。
 - 找文件、搜内容和命令行的规矩由 `shell.js` 按系统自动填写，不用改配置：macOS / Linux 用 bash（ls、rg、find），没装 ripgrep 时模型会退回 grep；Windows 用官方 glob / grep（自带 ripgrep，不要求本机安装）和 PowerShell，并明确不要去找 bash、rg、find。
 - 系统提示词是中文，其他语言的用户可自行翻译（见「改系统提示词」）。
 - 系统提示词是整份替换的：其他插件往 DSH 系统提示词里加的段落（如计划模式、会话搜索的使用说明）在 Pi 模式里都不会出现，它们的工具也就缺了说明。
@@ -27,18 +33,30 @@ AGENTS.md、技能清单、时间照常注入；自动压缩、后台任务照�
 桌面版「插件」→「添加插件」，粘贴下面的 Git 地址（只装本插件，不装仓库里的其他插件）：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.2.5&path:/dsh-pi-mode
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.3.0&path:/dsh-pi-mode
 ```
 
 也可以使用命令行（Web 版将 `desktop` 换成 `web`）：
 
 ```sh
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.2.5&path:/dsh-pi-mode"
+dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.3.0&path:/dsh-pi-mode"
 ```
 
 若终端找不到 `dsh`，macOS 官方桌面版可使用完整路径 `"/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh"` 替代命令名。也可参照[仓库首页](../README.md)克隆后安装本子目录，不要把整个仓库根目录当成插件。
 
-装好后**重启 DSH**：预设里的插件在启动时加载，热重载不会替换。新建对话时在模式菜单里选「Pi 模式」。以后更新或修改本包，也都要重启。版本更新与卸载见[仓库首页](../README.md)。
+装好后**重启 DSH**：预设里的插件在启动时加载，热重载不会替换。新建对话时在模式菜单里选「Pi 模式」或「Pi+模式」；机器人使用「Pi-IM」。以后更新或修改本包，也都要重启。版本更新与卸载见[仓库首页](../README.md)。
+
+## Pi+模式
+
+Pi+ 与 Pi 模式只差一个工具和两条文件编辑规矩；其他核心、系统提示词、交付方式与全局工具个人名单完全共用。Pi 模式与 Pi-IM 仍不启用补丁。
+
+- **工具**：开启 DSH 官方内置、默认关闭的 `apply_patch`，在原有 `edit` 旁增加一个工具；macOS / Linux 预设工具为 14 个，Windows 为 16 个，不计全局工具。
+- **分工改为**：单处局部修改用 edit；同一文件多处或跨文件修改优先用 apply_patch；write 只用于新建或整篇重写。修改或覆盖文件前先 read 一遍。
+- **新增提醒**：apply_patch 各补丁块保留足够且不重叠的上下文以准确匹配；预检拒绝不改文件，但执行中失败会保留已完成的改动，不会整批回滚。失败或中断后先重读受影响文件，再按实际状态重试。
+
+没有额外禁用工具的新增、删除或移动能力；仍须遵守用户的文件操作规则。补丁整份预检通过后才开始写入，但不是跨文件原子事务；已完成的效果可在 Review 查看。
+
+用法：重启后新建对话选「Pi+模式」（ID `pi-plus`）。这是原插件内的第三个模式，不需另装插件，也不替换默认模式。
 
 ## Pi-IM
 
@@ -87,7 +105,7 @@ DSH 的工具分两类：模式（预设）里各行注册的，和全局插件�
 | session_search 等 5 个 | 插件页的「会话搜索」（实验） | 不需要就在插件页关掉；它还会往系统提示词加一段说明，Pi 模式里那段会缺失 |
 | 其他插件的工具（IM、MCP 等） | 各插件 | 默认照常可用 |
 
-Pi 模式与 Pi-IM 默认都**不挡任何全局工具**。想在其中挡掉某个、又不想在全局关掉，在自己 profile 的 `cordis.patch.yml`（桌面版在 `~/.dsh/profiles/desktop/`）末尾加一条（文件里若只有一行 `[]`，先删掉它），保存即生效，无需重启。`deny` 管 Pi 模式，`imDeny` 管 Pi-IM：
+三个模式默认都**不挡任何全局工具**。想在其中挡掉某个、又不想在全局关掉，在自己 profile 的 `cordis.patch.yml`（桌面版在 `~/.dsh/profiles/desktop/`）末尾加一条（文件里若只有一行 `[]`，先删掉它），保存即生效，无需重启。`deny` 共管 Pi / Pi+，`imDeny` 只管 Pi-IM：
 
 ```yaml
 - id: pi-mode-settings
@@ -110,7 +128,7 @@ Pi 模式与 Pi-IM 默认都**不挡任何全局工具**。想在其中挡掉某
 
 1. 安装并重启 DSH，请用户开一个 Pi 模式对话、随便发一句话。
 2. 读这次请求的实际内容：最新的 `~/.dsh/sessions/<工作区目录名>/<会话>/session.v4.jsonl.zstd`，用 `zstd -dcq` 解开，每行一个 JSON 事件。
-   - `request/header` 事件的 `data.header.tools[].name`：发给模型的工具。除上文 13 个（以及按平台二选一的 bash / PowerShell）之外，都是全局工具。
+   - `request/header` 事件的 `data.header.tools[].name`：发给模型的工具。Pi+ 应比 Pi 多 `apply_patch`，Pi / Pi-IM 不应出现它；Windows 另有 glob / grep，Pi-IM 没有 present。其他是全局工具。
    - `system/message` 事件：系统提示词，确认 `{{web_rules}}` 已展开。
    - `user/message` 事件：附带的 AGENTS.md、当前目录、技能清单、时间。
 3. 对照「全局工具」一节，列出用户装了哪些全局工具，问清哪些要在 Pi 模式、Pi-IM 里分别挡掉（能在全局关的优先建议去全局关），写进用户 profile 里 `pi-mode-settings` 条目的 `deny`、`imDeny`。用户接了 IM 机器人的，把机器人的 Agent Preset 设为 Pi-IM。
@@ -120,11 +138,19 @@ Pi 模式与 Pi-IM 默认都**不挡任何全局工具**。想在其中挡掉某
 
 ## 改系统提示词
 
-在 `cordis.patch.yml` 里 `persona` 行的 `prefix`（整段就是发给模型的系统提示词；它在两个模式共用的 `pi-core` 组里，Pi-IM 用 YAML 别名 `*pi-core` 原样引用，不要另抄一份），改完重启。其中 `{{channel_rules}}` 来自各模式自己的 `channel` 行（`rules`），交付方式这类随渠道变化的规矩写在那里；`{{shell_rules}}` 来自 `shell.js`，按系统填写，不要在提示词里写死 bash 或 PowerShell。`complete: true` 表示整份替换；`includeRuntimeContext: false` 表示只保留必需的当前目录，去掉 DSH 源码路径、GUI 网址、沙箱与审批说明。若改用受限的权限模式（只读、工作区可写），可考虑改回 `true`，让模型知道权限策略。
+在 `cordis.patch.yml` 里 `persona` 行的 `prefix`（整段就是发给模型的系统提示词；三个模式原样引用同一个 `pi-core`，不要另抄一份），改完重启。变量来源：
+
+- `{{file_rules}}`：`files.js`，Pi / Pi-IM 保持原文，Pi+ 换成上面的两条规矩。
+- `{{channel_rules}}`：各模式的 `channel` 行（`rules`），Pi / Pi+ 共用桌面规则，Pi-IM 使用 IM 规则。
+- `{{shell_rules}}`：`shell.js` 按系统填写，不要写死 bash 或 PowerShell。
+- `{{web_rules}}`：`web.js` 或可选联网接口。
+
+`complete: true` 表示整份替换，所以官方 `apply_patch` 另行贡献的英文系统提示也不会保留；Pi+ 已把必要指导放进 `{{file_rules}}`，工具 schema 照常提供。`includeRuntimeContext: false` 表示只保留必需的当前目录，去掉 DSH 源码路径、GUI 网址、沙箱与审批说明。若改用受限的权限模式（只读、工作区可写），可考虑改回 `true`，让模型知道权限策略。
 
 ## 文件
 
-- `cordis.patch.yml`：插入预设 `pi`（「Pi 模式」）与 `pi-im`（「Pi-IM」），含系统提示词与插件清单。
+- `cordis.patch.yml`：插入预设 `pi`（「Pi 模式」）、`pi-im`（「Pi-IM」）与 `pi-plus`（「Pi+模式」），共用核心与交付定义。
+- `files.js`：文件工具入口与 `{{file_rules}}`；只有 Pi+ 开启 `applyPatch`。
 - `web.js`：联网工具入口与 `{{web_rules}}`。
 - `shell.js`：按系统提供 `{{shell_rules}}`。Windows 才挂的 glob / grep 写在 `cordis.patch.yml` 的 `tool-fs-search` 行。
 - `index.js`：各模式的 `channel` 行：提供 `{{channel_rules}}`，并屏蔽点名的全局工具。
