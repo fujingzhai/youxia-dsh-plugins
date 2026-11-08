@@ -194,6 +194,29 @@ test('找文件的规矩按系统填写，shell.js 把对应文本登记为 shel
   assert.equal(variables.get('shell_rules')?.(), shellRules())
 })
 
+test('前后台与批量并行规则在共用核心各出现一次，平台规则不再重复注入', () => {
+  const patch = readFileSync(new URL('../cordis.patch.yml', import.meta.url), 'utf8')
+  const prefix = patch.match(/prefix: \|-\r?\n([\s\S]*?)(?=\r?\n {14}- id: agent-instructions)/)?.[1]
+    .split(/\r?\n/).map(line => line.trimStart()).join('\n')
+  assert(prefix, '缺少共用核心提示词')
+  const background = '- 短任务默认前台，勿为几秒等待设置极短超时或转后台；仅耗时较久且有独立工作可推进，或需持续运行时才主动转后台，下一步依赖结果则优先前台。后台须跟踪 job id，等完成通知，不重复启动或轮询；取回必要结果，及时停止无用任务。'
+  const parallel = '- 互不依赖且无资源冲突的操作优先批量处理，能安全并行则并行，并汇总结果；有前后依赖或可能相互影响的操作按顺序执行，不把同批调用视为已经并行。'
+  assert.equal(patch.split(background).length - 1, 1)
+  assert.equal(patch.split(parallel).length - 1, 1)
+  assert(prefix.indexOf(background) < prefix.indexOf(parallel))
+  assert(prefix.indexOf(parallel) < prefix.indexOf('{{shell_rules}}'))
+  for (const platform of ['darwin', 'linux', 'win32']) {
+    const shell = shellRules(platform)
+    assert.doesNotMatch(shell, /长命令转后台|短任务默认前台|job id|安全并行/)
+    for (const applyPatch of [false, true]) {
+      const prompt = prefix.replace('{{shell_rules}}', shell).replace('{{file_rules}}', fileRules({ applyPatch }))
+      assert.equal(prompt.split(background).length - 1, 1)
+      assert.equal(prompt.split(parallel).length - 1, 1)
+      assert.doesNotMatch(prompt, /长命令转后台|\{\{(?:shell|file)_rules\}\}/)
+    }
+  }
+})
+
 test('glob/grep 与提示词变量随系统开关，两边不混用', () => {
   const patch = readFileSync(new URL('../cordis.patch.yml', import.meta.url), 'utf8')
   assert.match(patch, /- id: tool-fs-search\r?\n\s+name: '@deepseek-ai\/dsh-tool-fs-search'\r?\n\s+disabled: !!js process\.platform !== 'win32'\r?\n\s+config:\r?\n\s+sampleOverCapGlobResults: false/)

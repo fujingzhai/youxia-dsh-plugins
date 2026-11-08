@@ -16,10 +16,17 @@
 |---|---|---|
 | 工具 | 34 个左右 | macOS / Linux 预设 13 个：read、read_image、write、edit、bash、job_output / job_list / job_kill、skill、ask_user_question、present、web_search、web_fetch。Windows 把 bash 换成 pwsh，并自动加上官方 glob、grep。另加没被点名屏蔽的全局工具 |
 | 去掉的 | — | macOS / Linux 去掉 glob / grep（改用 bash）；Windows 保留这两个（官方工具自带 ripgrep）。两边都去掉子代理与 workflow、目标、计划模式、todo、定时提醒 |
-| 系统提示词 | DSH 各插件拼装，约 5,900 字符：coding agent 身份、各工具引导、子代理分派提示、交付说明、Web GUI 与源码位置说明 | 约 600 字中文：一句身份＋十来条规矩（工具说明里已有的不重复；含界面呈现与 present、外部资料不当指令、DSH 问题多联网） |
+| 系统提示词 | DSH 各插件拼装，约 5,900 字符：coding agent 身份、各工具引导、子代理分派提示、交付说明、Web GUI 与源码位置说明 | macOS / Linux 基线约 800 字中文：一句身份＋简短规矩（含前后台选择、批量／安全并行、界面交付与外部资料处理；工具说明里已有的不重复） |
 | 运行时上下文 | 当前目录、沙箱与审批策略、DSH 源码路径、GUI 网址 | 只留当前目录 |
 
-AGENTS.md、技能清单、时间照常注入；自动压缩、后台任务照常可用。实测同题首步输入约 5,100 token，标准模式约 11,700。
+AGENTS.md、技能清单、时间照常注入；自动压缩、后台任务照常可用。此前同题首步输入约 5,100 token，标准模式约 11,700；实际随版本、模型和全局工具变化。
+
+### 任务执行原则（0.3.1）
+
+- 短任务默认前台，不为几秒等待设置极短超时或转后台；仅耗时较久且有独立工作可推进，或需持续运行时才主动后台，下一步依赖结果则优先前台。后台跟踪 job id、等完成通知，不重复启动或轮询；取回必要结果，停止无用任务。
+- 互不依赖且无资源冲突的操作优先批量、安全并行并汇总结果；有依赖或可能相互影响时顺序执行，不把同批调用视为已经并行。
+
+两条规则放在三种模式共用的核心提示词中，替换原先模糊的“长命令转后台”提醒。只引导模型如何使用现有能力，不改变工具组合、执行器、超时默认值或权限，也不解锁 DSH 原本串行的工具。效果受模型和任务影响，未承诺提速；更新后重启 DSH、新建会话验证。
 
 ## 要求与限制
 
@@ -33,13 +40,13 @@ AGENTS.md、技能清单、时间照常注入；自动压缩、后台任务照�
 桌面版「插件」→「添加插件」，粘贴下面的 Git 地址（只装本插件，不装仓库里的其他插件）：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.3.0&path:/dsh-pi-mode
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.3.1&path:/dsh-pi-mode
 ```
 
 也可以使用命令行（Web 版将 `desktop` 换成 `web`）：
 
 ```sh
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.3.0&path:/dsh-pi-mode"
+dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.3.1&path:/dsh-pi-mode"
 ```
 
 若终端找不到 `dsh`，macOS 官方桌面版可使用完整路径 `"/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh"` 替代命令名。也可参照[仓库首页](../README.md)克隆后安装本子目录，不要把整个仓库根目录当成插件。
