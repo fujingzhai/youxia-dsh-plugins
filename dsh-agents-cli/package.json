@@ -1,6 +1,6 @@
 {
   "name": "dsh-agents-cli",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "在 DSH 主面板中使用本机 CLI Agents：默认 Claude Code、Codex、Antigravity、Pi，支持持久终端和自定义入口。",
   "type": "module",
   "main": "./lib/index.js",
@@ -13,6 +13,8 @@
   },
   "files": [
     "lib/**/*.js",
+    "lib/**/*.mjs",
+    "lib/**/*.cjs",
     "cordis.patch.yml",
     "locale/*.json",
     "icon.svg",

@@ -13,6 +13,8 @@ import { existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSyn
 import { createRequire } from 'node:module'
 import { homedir } from 'node:os'
 import { delimiter, dirname, join, resolve } from 'node:path'
+import { ActivityTracker } from './activity.js'
+import { activityCommand } from './launch.js'
 
 /** Stable cordis plugin name. */
 export const name = 'agents-cli'
@@ -426,8 +428,14 @@ export class ManagedTerminal {
     this.completionToken = info.completionToken
     delete info.completionToken
     this.closing = null
+    this.activity = new ActivityTracker((activity) => {
+      this.info = { ...this.info, activity }
+      this.broadcastState()
+    }, (reply) => { void this.handle.write(reply).catch(() => {}) })
+    this.info.activity = this.activity.activity
     this.completion = this.completionToken ? createCompletionFilter(this.completionToken, () => {
       this.info = { ...this.info, agentState: 'exited' }
+      this.activity.set('unknown')
       this.broadcastState()
     }) : null
     this.drained = this.consume()
@@ -564,6 +572,7 @@ export class ManagedTerminal {
   async pushOutput(data, final = false) {
     await this.enqueue(async () => {
       const visible = this.completion ? this.completion.push(data, final) : data
+      this.activity.push(visible)
       if (!visible) return
       await this.screen.write(visible)
       this.broadcast({ type: 'output', sequence: ++this.sequence, data: visible })
@@ -701,7 +710,7 @@ export function createAgentsCliController(subprocess, { defaultDirectory = () =>
       }
       const managed = new ManagedTerminal(id, handle, info)
       terminals.set(id, managed)
-      const keystrokes = agentKeystrokes(command, launch.name, managed.completionToken)
+      const keystrokes = agentKeystrokes(activityCommand(command || '', launch.name), launch.name, managed.completionToken)
       managed.startCommand = () => {
         if (managed.commandStarted) return
         managed.commandStarted = true
@@ -750,6 +759,7 @@ export function createAgentsCliController(subprocess, { defaultDirectory = () =>
         id,
         state: term.info.state,
         agentState: term.info.agentState,
+        activity: term.info.activity,
         cwd: term.info.cwd,
         command: term.info.command,
         exitCode: term.info.exitCode,

@@ -41,7 +41,7 @@ function harness() {
     fetch: async (path, init) => { requests.push({ path, body: JSON.parse(init.body) }); return { ok: true, json: async () => ({ ok: true }) } },
   }
   vm.createContext(sandbox)
-  vm.runInContext(source.replace("    return { inject: ['slots', 'theme'], apply }", "    globalThis.api = { Session, sessions, readFrames, publish, select, snapshot, pendingStarts, updateAgent, availableAgents, adopt, AgentsPanel }; return { inject: ['slots', 'theme'], apply }"), sandbox)
+  vm.runInContext(source.replace("    return { inject: ['slots', 'theme'], apply }", "    globalThis.api = { Session, sessions, readFrames, publish, select, snapshot, pendingStarts, updateAgent, availableAgents, adopt, AgentsPanel, activities, viewed, receiveActivity, activityBadge, acknowledge }; return { inject: ['slots', 'theme'], apply }"), sandbox)
   return {
     ...sandbox.api, sandbox, requests, terminals, Node, plugin,
     dark(value) { dark = value },
@@ -248,6 +248,44 @@ test('first render creates only the first screen; unopened tabs stay grey until 
   assert.equal(dots.map((dot) => dot.props['data-status']).join(','), 'running,running,unopened,exited')
   // The actual CSS rule greys every data-status except running, including unopened/exited.
   assert.match(source, /ac-dot\[data-status\]:not\(\[data-status=running\]\).*#9ca3af/)
+})
+
+test('sidebar aggregates task activity, not process liveness, and acknowledges only the viewed agent', () => {
+  const env = harness()
+  const info = (phase, completed = 0, revision = 1) => ({ state: 'running', agentState: 'running', activity: { phase, completed, revision } })
+  env.publish({ statuses: { claude: 'running', codex: 'running' } })
+  assert.equal(env.activityBadge(), '')
+  env.receiveActivity('claude', info('working'))
+  assert.equal(env.activityBadge(), 'working')
+  env.receiveActivity('codex', info('done', 1))
+  assert.equal(env.activityBadge(), 'working')
+  env.receiveActivity('claude', info('done', 1, 2))
+  assert.equal(env.activityBadge(), 'done')
+  env.acknowledge('claude'); assert.equal(env.activityBadge(), 'done')
+  env.acknowledge('codex'); assert.equal(env.activityBadge(), '')
+  env.receiveActivity('codex', info('blocked', 1, 3)); assert.equal(env.activityBadge(), 'blocked')
+  env.receiveActivity('codex', { ...info('working', 1, 4), agentState: 'exited' }); assert.equal(env.activityBadge(), '')
+})
+
+test('completion is marked read only in a visible active terminal and resets after restart', () => {
+  const env = harness(), session = new env.Session('pi')
+  env.sessions.set('pi', session)
+  session.connection = new AbortController()
+  session.mount(new env.Node())
+  session.active = true
+  env.receiveActivity('pi', { state: 'running', activity: { phase: 'done', completed: 2, revision: 4 } })
+  assert.equal(env.activityBadge(), '')
+  env.sandbox.document.hidden = true
+  env.receiveActivity('pi', { state: 'running', activity: { phase: 'done', completed: 3, revision: 5 } })
+  assert.equal(env.activityBadge(), 'done')
+  env.receiveActivity('pi', { state: 'running', activity: { phase: 'idle', completed: 0, revision: 1 } })
+  assert.equal(env.viewed.has('pi'), false)
+  session.detach(session.node.parentNode)
+  session.active = true // React cleanup may reorder activation and parking effects.
+  env.sandbox.document.hidden = false
+  env.receiveActivity('pi', { state: 'running', activity: { phase: 'done', completed: 1, revision: 2 } })
+  assert.equal(env.activityBadge(), 'done')
+  session.dispose()
 })
 
 test('toolbar stays centered and exposes only settings; themes are read-only', () => {

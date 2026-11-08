@@ -18,6 +18,10 @@ window.__ModuleLoader__.load({
     ]
     const CUSTOM_COLORS = ['#8b5cf6', '#ec4899', '#eab308', '#06b6d4', '#f97316', '#14b8a6', '#6366f1']
     const CSS = `
+.ac-sidebar-state{display:inline-flex;align-items:center;justify-content:center;flex:none;width:14px;height:16px;margin-left:6px;pointer-events:none;color:var(--dsw-alias-label-tertiary,#9ca3af)}
+.ac-sidebar-state[hidden]{display:none!important}.ac-sidebar-state[data-phase=done]{color:var(--dsw-alias-state-success-primary,#22a06b)}.ac-sidebar-state[data-phase=blocked]{color:var(--dsw-alias-state-warn-primary,#d89614)}.ac-sidebar-state[data-phase=error]{color:var(--dsw-alias-state-error-primary,#d14343)}
+.ac-sidebar-state[data-phase]:not([data-phase=working])::after{content:'';display:block;width:6px;height:6px;border-radius:50%;background:currentColor}.ac-sidebar-state svg{width:14px;height:14px}.ac-sidebar-state:not([data-phase=working]) svg{display:none}.ac-sidebar-motion{transform-origin:center;animation:ac-state-spin 1.5s linear infinite}.ac-sidebar-track,.ac-sidebar-arc{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}.ac-sidebar-track{opacity:.25}.ac-sidebar-arc{stroke-dasharray:12 150;animation:ac-state-dash 1.5s ease-in-out infinite}
+@keyframes ac-state-spin{to{transform:rotate(360deg)}}@keyframes ac-state-dash{0%{stroke-dasharray:12 150;stroke-dashoffset:0}50%{stroke-dasharray:24 150;stroke-dashoffset:-6}100%{stroke-dasharray:12 150;stroke-dashoffset:0}}@media(prefers-reduced-motion:reduce){.ac-sidebar-motion,.ac-sidebar-arc{animation:none}.ac-sidebar-arc{stroke-dasharray:18 150;stroke-dashoffset:-3}}
 .ac{box-sizing:border-box;display:flex;flex-direction:column;width:100%;height:100%;min-width:0;min-height:0;color:var(--dsw-alias-label-primary,#202124);background:var(--dsw-alias-bg-base,#fff);font:13px/1.5 var(--dsw-font-family,-apple-system,BlinkMacSystemFont,sans-serif);overflow:hidden}
 .ac *,.ac-dialog *{box-sizing:border-box}
 .ac button,.ac input,.ac select,.ac-dialog button,.ac-dialog input{-webkit-app-region:no-drag;font:inherit}
@@ -58,13 +62,13 @@ window.__ModuleLoader__.load({
       return zh ? {
         label: 'Agents', manage: '设置入口', add: '添加', edit: '编辑', save: '保存', cancel: '取消', remove: '移除', close: '关闭',
         name: '名称', command: '终端指令', color: '颜色', cwd: '启动目录（留空使用 DSH 默认目录）', defaultCwd: 'DSH 默认目录：', cwdNote: '仅影响下次启动。命令或 shell 函数若自行切换目录，以它们为准。', empty: '还没有入口',
-        loading: '正在连接终端…', failed: '终端连接中断', retry: '重新连接', exited: '终端已退出', reopen: '重新启动', need: '请填写名称和指令',
+        loading: '正在连接终端…', failed: '终端连接中断', retry: '重新连接', exited: '终端已退出', reopen: '重新启动', need: '请填写名称和指令', working: '工作中', done: '工作完成，尚未查看', blocked: '等待您的操作', taskError: '任务出错',
         up: '上移', down: '下移', stopped: '已退出，点击入口重新启动', restore: '恢复', disabled: '已停用', missing: '未检测到 CLI', detected: '已检测到', unknown: '检测暂不可用', noAgents: '尚无可用的 CLI 入口', inventory: '安装 CLI 后会自动检测。已停用的入口可在设置中单独恢复。',
         note: '每个入口首次打开时启动，切换入口或离开面板仍继续运行，DSH 重启后才需重新启动。移除仅停用入口并结束对应进程，可单独恢复。编辑指令和目录对下次启动生效。',
       } : {
         label: 'Agents', manage: 'Entry settings', add: 'Add', edit: 'Edit', save: 'Save', cancel: 'Cancel', remove: 'Remove', close: 'Close',
         name: 'Name', command: 'Shell command', color: 'Color', cwd: 'Launch directory (blank uses DSH default)', defaultCwd: 'DSH default directory: ', cwdNote: 'Applies on next launch. Commands and shell functions may change the directory themselves.', empty: 'No entries',
-        loading: 'Connecting terminal…', failed: 'Terminal disconnected', retry: 'Reconnect', exited: 'Terminal exited', reopen: 'Start again', need: 'Name and command are required',
+        loading: 'Connecting terminal…', failed: 'Terminal disconnected', retry: 'Reconnect', exited: 'Terminal exited', reopen: 'Start again', need: 'Name and command are required', working: 'Working', done: 'Completed, not viewed', blocked: 'Waiting for your attention', taskError: 'Task failed',
         up: 'Move up', down: 'Move down', stopped: 'Exited; click this entry to start again', restore: 'Restore', disabled: 'Disabled', missing: 'CLI not detected', detected: 'Detected', unknown: 'Detection unavailable', noAgents: 'No available CLI entries yet', inventory: 'Newly installed CLIs are detected automatically. Restore disabled entries individually in settings.',
         note: 'Entries start on first use and keep running when switching tabs or panels, until DSH restarts. Removing disables an entry and stops its process; each entry can be restored. Command and directory edits apply on next launch.',
       }
@@ -125,7 +129,55 @@ window.__ModuleLoader__.load({
     let pluginLife = new AbortController()
     const sessions = new Map()
     let parking
-    function publish(patch) { state = { ...state, ...patch }; for (const fn of listeners) fn() }
+    const activities = new Map(), viewed = new Map(), sidebarListeners = new Set()
+    const sidebarRefresh = () => { for (const fn of sidebarListeners) fn() }
+    function activityBadge() {
+      const entries = [...activities].filter(([id]) => !state.settings || state.settings.agents.some((agent) => agent.id === id && agent.enabled !== false))
+      for (const phase of ['working', 'blocked', 'error']) if (entries.some(([, value]) => value.phase === phase)) return phase
+      return entries.some(([id, value]) => value.completed > (viewed.get(id) || 0)) ? 'done' : ''
+    }
+    function acknowledge(id) { const value = activities.get(id); if (value) viewed.set(id, value.completed || 0); sidebarRefresh() }
+    function receiveActivity(id, info) {
+      if (!info?.activity) return
+      const next = info.state === 'running' && info.agentState !== 'exited' ? info.activity : { ...info.activity, phase: 'unknown' }
+      const previous = activities.get(id)
+      if (previous && next.revision < previous.revision) viewed.delete(id)
+      activities.set(id, next)
+      const session = sessions.get(id)
+      if (session?.active && session.node.parentNode !== parking && !document.hidden && (!document.hasFocus || document.hasFocus())) acknowledge(id)
+      else sidebarRefresh()
+    }
+    // The panel slot owns only its left glyph. Attach a non-interactive sibling to the exact owning
+    // button, not to a label query or hashed DSH class. React still owns navigation and selection.
+    function SidebarIcon(props) {
+      const anchor = React.useRef(null)
+      React.useEffect(() => {
+        const marker = anchor.current, row = marker?.closest('button')
+        if (!row) return
+        const badge = document.createElement('span')
+        badge.className = 'ac-sidebar-state'; badge.setAttribute('role', 'status')
+        badge.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><g class="ac-sidebar-motion"><circle class="ac-sidebar-track" cx="12" cy="12" r="9.5"/><circle class="ac-sidebar-arc" cx="12" cy="12" r="9.5"/></g></svg>'
+        const update = () => {
+          // Expanded DSH rows have a text sibling after the glyph. Never put a ring over the left icon.
+          const label = [...row.children].find((child) => child !== badge && !child.contains(marker) && child.textContent?.trim())
+          const phase = activityBadge(), text = copy()
+          const wide = label && label !== badge && label.textContent?.trim()
+          badge.hidden = !wide || !phase
+          badge.dataset.phase = phase
+          badge.title = phase === 'error' ? text.taskError : text[phase] || ''
+          badge.setAttribute('aria-label', badge.title)
+          for (const animation of badge.getAnimations?.({ subtree: true }) || []) animation.startTime = 0
+        }
+        row.appendChild(badge)
+        sidebarListeners.add(update)
+        const observer = typeof MutationObserver === 'function' ? new MutationObserver(update) : null
+        observer?.observe(row, { childList: true })
+        update()
+        return () => { observer?.disconnect(); badge.remove(); sidebarListeners.delete(update) }
+      }, [])
+      return h('span', { ref: anchor, style: { display: 'inline-flex' } }, h(Icon, props))
+    }
+    function publish(patch) { state = { ...state, ...patch }; for (const fn of listeners) fn(); sidebarRefresh() }
     const subscribe = (fn) => { listeners.add(fn); return () => listeners.delete(fn) }
     const snapshot = () => state
     function useStore() { return React.useSyncExternalStore(subscribe, snapshot, snapshot) }
@@ -148,6 +200,7 @@ window.__ModuleLoader__.load({
       loadTask ??= post(ROUTES.state, {}, pluginLife.signal).then((payload) => {
         publish({ availability: payload.availability || {}, defaultCwd: payload.defaultCwd || '', statuses: Object.fromEntries(Object.entries(payload.terminals || {}).map(([id, info]) => [id, info.state === 'running' && info.agentState !== 'exited' ? 'running' : 'exited'])) })
         adopt(payload.settings)
+        for (const [id, info] of Object.entries(payload.terminals || {})) receiveActivity(id, info)
       }).catch((error) => {
         loadTask = null
         if (!disposed) publish({ error: error.message })
@@ -219,6 +272,7 @@ window.__ModuleLoader__.load({
         this.body.className = 'ac-term-body'
         this.node.appendChild(this.body)
         this.term.open(this.body)
+        this.inputCompatibility = runtime.installInputCompatibility?.(this.term)
         this.dataListener = this.term.onData((data) => this.send(data))
         this.observer = typeof ResizeObserver === 'function' ? new ResizeObserver(() => this.fit()) : null
         this.observer?.observe(this.node)
@@ -246,7 +300,7 @@ window.__ModuleLoader__.load({
         if (this.life.signal.aborted) return
         this.active = active
         this.term.options.cursorBlink = active
-        if (active) { this.fit(); this.term.focus() }
+        if (active) { this.fit(); this.term.focus(); if (this.node.parentNode !== parking && !document.hidden) acknowledge(this.id) }
       }
       updateTheme() {
         const style = getComputedStyle(this.node)
@@ -319,11 +373,14 @@ window.__ModuleLoader__.load({
       render(data) { return new Promise((resolve) => this.term.write(data, resolve)) }
       async apply(frame, signal) {
         if (signal.aborted) return
+        if (frame.info) receiveActivity(this.id, frame.info)
         if (frame.type === 'snapshot') {
           this.writable = frame.writable === true
           this.remoteSize = { cols: frame.info.cols, rows: frame.info.rows }
           this.sequence = frame.sequence
+          this.inputCompatibility?.()
           this.term.reset()
+          this.inputCompatibility = runtime.installInputCompatibility?.(this.term)
           this.term.resize(frame.info.cols, frame.info.rows)
           await this.render(frame.screen || '')
           if (signal.aborted) return
@@ -386,6 +443,7 @@ window.__ModuleLoader__.load({
         if (this.fitFrame) cancelAnimationFrame(this.fitFrame)
         this.observer?.disconnect()
         this.dataListener.dispose()
+        this.inputCompatibility?.()
         this.term.dispose()
         this.node.remove()
         this.listeners.clear()
@@ -539,13 +597,19 @@ window.__ModuleLoader__.load({
       let themeFrame = 0
       syncTheme()
       ctx.on('theme/change', syncTheme)
-      ctx.slots.inject('sidebar.panellist', () => ctx.slots.register({ name: 'sidebar.panellist', id: PANEL_ID, order: 16, label: () => copy().label }, Icon))
+      const viewedOnFocus = () => { if (!document.hidden) for (const [id, session] of sessions) if (session.active && session.node.parentNode !== parking) acknowledge(id) }
+      document.addEventListener?.('visibilitychange', viewedOnFocus)
+      window.addEventListener?.('focus', viewedOnFocus)
+      ctx.slots.inject('sidebar.panellist', () => ctx.slots.register({ name: 'sidebar.panellist', id: PANEL_ID, order: 16, label: () => copy().label }, SidebarIcon))
       ctx.slots.inject('main', () => ctx.slots.register({ name: 'main', key: PANEL_ID }, AgentsPanel))
       ctx.effect(() => () => {
         disposed = true
         pluginLife.abort()
         if (themeFrame) cancelAnimationFrame(themeFrame)
         for (const session of sessions.values()) session.dispose()
+        document.removeEventListener?.('visibilitychange', viewedOnFocus)
+        window.removeEventListener?.('focus', viewedOnFocus)
+        activities.clear(); viewed.clear(); sidebarListeners.clear()
         sessions.clear(); pendingStarts.clear(); listeners.clear(); parking?.remove(); parking = null
         document.getElementById(STYLE_ID)?.remove(); document.getElementById(XTERM_STYLE_ID)?.remove()
       }, 'dsh-agents-cli: sessions and styles')

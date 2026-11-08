@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url'
 import test from 'node:test'
 import { Readable } from 'node:stream'
 
+import { activityCommand } from '../lib/launch.js'
 import {
   BUILTINS,
   LIMITS,
@@ -197,7 +198,7 @@ test('opening a terminal types the command and reattach does not type it again',
   assert.equal(subprocess.handles.length, 1)
   assert.deepEqual(subprocess.handles[0].spec.argv.slice(0, 2), [subprocess.handles[0].spec.argv[0], '-il'])
   await new Promise((resolve) => setTimeout(resolve, 20))
-  assert.deepEqual(subprocess.handles[0].writes, [agentKeystrokes('agy', 'zsh', first.completionToken)])
+  assert.deepEqual(subprocess.handles[0].writes, [agentKeystrokes(activityCommand('agy', 'zsh'), 'zsh', first.completionToken)])
   const again = await controller.openTerminal({ id: 'agy', command: 'agy', cols: 100, rows: 40 })
   assert.equal(again, first)
   assert.equal(subprocess.handles.length, 1)
@@ -265,13 +266,13 @@ test('concurrent opens share one process, and refresh does not rerun commands', 
     await results[0].operations
     assert.equal(subprocess.handles.length, 1)
     assert.equal(subprocess.handles[0].writes.length, 1)
-    assert.match(subprocess.handles[0].writes[0], /^eval 'codex'; printf /)
+    assert.match(subprocess.handles[0].writes[0], /^eval 'codex -c /)
     const detach = await results[0].attachSse(response())
     detach()
     await controller.openTerminal(options)
     assert.equal(subprocess.handles[0].terminated, false)
     assert.equal(subprocess.handles[0].writes.length, 1)
-    assert.match(subprocess.handles[0].writes[0], /^eval 'codex'; printf /)
+    assert.match(subprocess.handles[0].writes[0], /^eval 'codex -c /)
   } finally { await controller.dispose() }
 })
 
@@ -286,7 +287,7 @@ test('deferred commands start once after the follower attaches', async () => {
     term.startCommand()
     await term.operations
     assert.equal(subprocess.handles[0].writes.length, 1)
-    assert.match(subprocess.handles[0].writes[0], /^eval 'codex'; printf /)
+    assert.match(subprocess.handles[0].writes[0], /^eval 'codex -c /)
     detach()
   } finally { await controller.dispose() }
 })
@@ -407,6 +408,22 @@ test('migration keeps a manually added Pi id, custom order and active selection'
   assert.equal(custom.agents[0].name, 'Mine')
   assert.equal(custom.agents[1].id, 'pi')
   assert.equal(parseSettings({ ...migrated, agents: migrated.agents.slice(0, 1) }).agents.length, 1)
+})
+
+test('task activity reaches SSE and status snapshots without ending the interactive CLI', async () => {
+  const subprocess = fakeSubprocess(), controller = createAgentsCliController(subprocess)
+  try {
+    const term = await controller.openTerminal({ id: 'custom', command: 'custom-cli' })
+    const res = response()
+    await term.attachSse(res)
+    await term.pushOutput('\x1b]7501;?\x1b\\\x1b]7501;state=working\x07')
+    assert.equal(controller.listStatus().custom.activity.phase, 'working')
+    assert(subprocess.handles[0].writes.some((text) => text.includes('7501;?:states=')))
+    await term.pushOutput('\x1b]7501;state=done\x07')
+    assert.equal(controller.listStatus().custom.activity.completed, 1)
+    assert.equal(term.info.agentState, 'running')
+    assert(res.chunks.some((text) => text.includes('"phase":"done"')))
+  } finally { await controller.dispose() }
 })
 
 test('completion markers are split-safe and cannot be confused with ordinary terminal output', () => {
