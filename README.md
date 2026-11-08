@@ -7,7 +7,7 @@
 | 插件 | 当前版本 | 作用 |
 |---|---|---|
 | [dsh-pi-mode](dsh-pi-mode) | 0.2.5 | 以 Pi 为蓝本，精简工具与系统提示词；Windows 自动改用 glob/grep；另带 IM 版 Pi-IM |
-| [dsh-session-fee](dsh-session-fee) | 0.4.4 | 在统计条显示会话（含子代理）按市面 token 价折算的费用 |
+| [dsh-session-fee](dsh-session-fee) | 0.4.5 | 在统计条显示会话（含子代理）按市面 token 价折算的费用 |
 | [dsh-session-labels](dsh-session-labels) | 0.1.4 | Finder 风格会话标签：悬浮按钮与右键打标、标题着色或标签符号、视图筛选 |
 | [dsh-settings-customizer](dsh-settings-customizer) | 0.3.2 | 用个人配置覆盖设置导航的顺序、名称、图标；公共默认为空 |
 | [dsh-speed-pair](dsh-speed-pair) | 0.1.0 | 输出速度改双口径 `X(Y) tok/s`：括号外是首字后的解码速度，括号内是含首字延迟的整段速度 |
@@ -32,7 +32,7 @@ git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.2.5&path:
 **会话费用：**
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-fee@0.4.4&path:/dsh-session-fee
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-fee@0.4.5&path:/dsh-session-fee
 ```
 
 **会话标签：**
@@ -78,7 +78,7 @@ git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-agents-cli@0.1.5&pa
 ```sh
 # 各条互相独立，按需执行；Web 版将 desktop 换成 web
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.2.5&path:/dsh-pi-mode"
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-fee@0.4.4&path:/dsh-session-fee"
+dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-fee@0.4.5&path:/dsh-session-fee"
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-labels@0.1.4&path:/dsh-session-labels"
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-settings-customizer@0.3.2&path:/dsh-settings-customizer"
 dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-speed-pair@0.1.0&path:/dsh-speed-pair"
@@ -129,7 +129,7 @@ dsh plugin --profile desktop add "link:$PWD/dsh-pi-mode"
 ## 更新与卸载
 
 - **版本安装**：查看 [Releases](https://github.com/fujingzhai/youxia-dsh-plugins/releases)，在插件页更新来源到新版地址，或重新执行该版本的安装命令。版本标签固定，不会自动跟随 `main`。
-- **跟随开发版**：将地址里的 `#<插件名>@<版本>`（如 `#dsh-session-fee@0.4.4`）换成 `#main`。这是滚动版本；需要最新提交时重新安装，不能保证 DSH 自动更新分支引用。
+- **跟随开发版**：将地址里的 `#<插件名>@<版本>`（如 `#dsh-session-fee@0.4.5`）换成 `#main`。这是滚动版本；需要最新提交时重新安装，不能保证 DSH 自动更新分支引用。
 - **本地链接**：先保存自己的改动，再在克隆目录执行 `git pull --ff-only`；有冲突先合并，不要强制重置。
 - **卸载**：在插件页卸载对应插件；也可执行 `dsh plugin --profile desktop remove <插件名>`，如 `dsh-zh-slash`。
 - 每次安装、更新、卸载后重启 DSH；插件各自独立，卸载一个不影响其他。

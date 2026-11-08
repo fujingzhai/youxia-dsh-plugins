@@ -47,7 +47,7 @@
     },
     {
       "name": "Kimi-K3",
-      "match": ["*/kimi-k3"],
+      "match": ["*/kimi-k3", "*/kimi-k3-1"],
       "rules": [
         {"name": "Kimi-K3", "currency": "CNY", "input": 20, "cacheRead": 2, "cacheWrite": 20, "output": 100}
       ]
@@ -88,6 +88,13 @@
       ]
     },
     {
+      "name": "Qwen3.8-27B",
+      "match": ["*/qwen3.8-27b"],
+      "rules": [
+        {"name": "Qwen3.8-27B", "currency": "CNY", "input": 3, "cacheRead": 0.6, "cacheWrite": 0, "output": 12}
+      ]
+    },
+    {
       "name": "MiniMax-M3.1-Flash",
       "match": ["dsh-provider-qoder/mmodel", "*/minimax-m3.1-flash"],
       "rules": [
@@ -117,7 +124,7 @@
     },
     {
       "name": "Hy4",
-      "match": ["*/hy4-preview", "*/hy4"],
+      "match": ["*/hy4-preview", "*/hy4", "*/hy4std"],
       "rules": [
         {"name": "Hy4", "currency": "CNY", "input": 6, "cacheRead": 0.3, "cacheWrite": 0, "output": 18}
       ]

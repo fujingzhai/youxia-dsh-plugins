@@ -17,17 +17,18 @@
 | DeepSeek-V4.1-Flash 闲时 | Qoder `dfmodel`、任意 `deepseek-flash` / `deepseek-v4.1-flash` | 1 | 0.02 | 0 | 4 |
 | DeepSeek-V4-Pro 闲时 | Qoder `dmodel`、任意 `deepseek-v4-pro` | 4.5 | 0.15 | 0 | 13.5 |
 | Kimi-K3.1-Pro | Qoder `kmodel_latest`、任意 `kimi-k3.1-pro` | 13 | 1.3 | 13 | 68 |
-| Kimi-K3 | 任意 `kimi-k3` | 20 | 2 | 20 | 100 |
+| Kimi-K3 | 任意 `kimi-k3`、`kimi-k3-1` | 20 | 2 | 20 | 100 |
 | Kimi-K2.8-Preview | Qoder `kmodel`、任意 `kimi-k2.8-preview` | 6.5 | 1.3 | 0 | 27 |
 | GLM-5.3 | Qoder `gmodel`、任意 `glm-5.3` | 8 | 2 | 0 | 28 |
 | GLM-5.3-Flash | Qoder `gfmodel`、任意 `glm-5.3-flash` | 0.8 | 0.23 | 0 | 2.8 |
 | Qwen3.8-Max | Qoder `qmodel_38max`、任意 `qwen3.8-max` | 12 | 1.5 | 0 | 36 |
 | Qwen3.8-Flash | Qoder `qfmodel`、任意 `qwen3.8-flash` | 1 | 0.1 | 0 | 3 |
+| Qwen3.8-27B | 任意 `qwen3.8-27b` | 3 | 0.6 | 0 | 12 |
 | MiniMax-M3.1-Flash | Qoder `mmodel`、任意 `minimax-m3.1-flash` | 1 | 0.1 | 0 | 4 |
 | Step-5-Preview | Qoder `jmodel`、任意 `step-5-preview` | 7 | 0.35 | 7 | 20 |
 | MiMo-V2.6-Pro | 任意 `mimo-v2.6-pro` | 3 | 0.025 | 0 | 6 |
 | MiMo-V2.6-Flash | 任意 `mimo-v2.6-flash` | 1 | 0.02 | 0 | 2 |
-| Hy4（腾讯混元 4） | 任意 `hy4-preview`、`hy4` | 6 | 0.3 | 0 | 18 |
+| Hy4（腾讯混元 4） | 任意 `hy4-preview`、`hy4`、`hy4std` | 6 | 0.3 | 0 | 18 |
 
 Qoder（经 [dsh-provider-qoder](https://www.npmjs.com/package/dsh-provider-qoder) 接入，中国区）内部代号与模型名的对应取自 Qoder 的模型目录接口。Qoder 的 Auto、Fast 是路由，没有市面价，不写。
 
