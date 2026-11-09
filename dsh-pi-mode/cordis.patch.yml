@@ -2,6 +2,8 @@
 # - pi（Pi 模式）：桌面端／网页端用；
 # - pi-im（Pi-IM）：IM 版，只调整交付方式与全局工具个人名单；
 # - pi-plus（Pi+模式）：Pi 模式加官方 apply_patch 与对应两条文件编辑规矩。
+# 列表顺序由 order 决定（值小在前，同值再按 id 字典序）：内置模式为 standard 1、ptc 2、minimal 3、cordis 4，
+# 这里用 5、6、7，排在自带模式之后，且不与内置值相同；Pi-IM 排最后（7）。
 # 三者原样引用 *pi-core；Pi / Pi-IM 共用 *pi-files，Pi / Pi+ 共用 present 与桌面 channel。
 # 与标准模式相比去掉了：子代理与 workflow、目标、计划模式、todo、定时提醒。
 # glob/grep 只在 Windows 上挂（官方工具自带 ripgrep，不依赖本机是否安装 rg）；macOS / Linux 不挂，改用 bash。
@@ -16,7 +18,7 @@
         id: pi
         name: Pi 模式
         description: 对齐 pi：无子代理、目标与计划，系统提示词只有身份与规矩；Windows 另挂 glob/grep
-        order: 0
+        order: 5
         plugins:
           - &pi-core
             id: pi-core
@@ -116,7 +118,7 @@
         id: pi-im
         name: Pi-IM
         description: Pi 模式的 IM 版：给 IM 机器人用，交付改走 IM 回传，IM 插件的工具照常可用
-        order: 1
+        order: 7
         plugins:
           # 与 Pi 模式共用的整组（YAML 别名），不要在这里另抄一份
           - *pi-core
@@ -136,7 +138,7 @@
         id: pi-plus
         name: Pi+模式
         description: Pi 模式加官方 apply_patch，同一文件多处或跨文件修改一次完成
-        order: 2
+        order: 6
         plugins:
           - *pi-core
           - id: file-rules

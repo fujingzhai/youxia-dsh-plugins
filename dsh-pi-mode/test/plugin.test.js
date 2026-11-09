@@ -252,3 +252,15 @@ test('普通模式文件规则保持原文，Pi+ 只替换分工并加匹配和�
   assert.match(PATCH_RULES, /失败或中断后先重读受影响文件/)
   assert.doesNotMatch(PATCH_RULES, /本次试用|Delete File|Move to|只用于新增和更新/)
 })
+
+test('模式菜单顺序固定：order 5 / 6 / 7，Pi-IM 最后，且不与 DSH 内置值 1–4 相同', () => {
+  const patch = readFileSync(new URL('../cordis.patch.yml', import.meta.url), 'utf8')
+  const body = patch.split(/\r?\n/).filter(line => !/^\s*#/.test(line)).join('\n')
+  const orders = new Map()
+  for (const [, id, order] of body.matchAll(/^\s+id: (pi(?:-im|-plus)?)\r?\n(?:.*\r?\n)*?\s+order: (\d+)/gm)) {
+    orders.set(id, Number(order))
+  }
+  assert.deepEqual([...orders.entries()], [['pi', 5], ['pi-im', 7], ['pi-plus', 6]])
+  // DSH 内置预设占用 1–4（standard / ptc / minimal / cordis）；同值会被 id 字典序打散。
+  for (const order of orders.values()) assert(order > 4, 'order 须大于内置最大值 4，避免与其他预设同值')
+})

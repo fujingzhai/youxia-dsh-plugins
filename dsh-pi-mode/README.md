@@ -2,13 +2,15 @@
 
 给 DeepSeek Harness（DSH）新增三个模式：工具与系统提示词以 [pi](https://github.com/earendil-works/pi) 为蓝本，精简、直接。一个插件安装一次，DSH 自带模式不受影响。
 
-| 模式 | ID | 用途 |
-|---|---|---|
-| Pi 模式 | `pi` | 桌面／Web 的精简基线 |
-| Pi-IM | `pi-im` | IM 版，调整交付方式与个人工具屏蔽名单 |
-| Pi+模式 | `pi-plus` | Pi 模式加官方 `apply_patch`，批量修改同一文件多处或多个文件 |
+| 模式 | ID | order | 用途 |
+|---|---|---|---|
+| Pi 模式 | `pi` | 5 | 桌面／Web 的精简基线 |
+| Pi+模式 | `pi-plus` | 6 | Pi 模式加官方 `apply_patch`，批量修改同一文件多处或多个文件 |
+| Pi-IM | `pi-im` | 7 | IM 版，调整交付方式与个人工具屏蔽名单 |
 
 三者共用同一组核心、联网和命令行定义；Pi / Pi+ 共用桌面交付，Pi / Pi-IM 共用原文件编辑规矩，不复制整份预设或另装插件。
+
+模式菜单按 `order` 升序排列，同值再按 ID 字典序。DSH 自带模式是 `standard` 1、`ptc` 2、`minimal` 3、`cordis` 4，所以这里取 5、6、7：三个模式排在自带模式之后、彼此顺序固定，也不会因与内置值相同而被字典序打散。Pi-IM 排最后，因为只给 IM 机器人用。
 
 ## 与标准模式的差别
 
@@ -40,13 +42,13 @@ AGENTS.md、技能清单、时间照常注入；自动压缩、后台任务照�
 桌面版「插件」→「添加插件」，粘贴下面的 Git 地址（只装本插件，不装仓库里的其他插件）：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.3.1&path:/dsh-pi-mode
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.3.2&path:/dsh-pi-mode
 ```
 
 也可以使用命令行（Web 版将 `desktop` 换成 `web`）：
 
 ```sh
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.3.1&path:/dsh-pi-mode"
+dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.3.2&path:/dsh-pi-mode"
 ```
 
 若终端找不到 `dsh`，macOS 官方桌面版可使用完整路径 `"/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh"` 替代命令名。也可参照[仓库首页](../README.md)克隆后安装本子目录，不要把整个仓库根目录当成插件。
