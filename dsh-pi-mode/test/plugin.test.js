@@ -164,6 +164,20 @@ test('Pi-IM 原样引用 Pi 模式的 pi-core，只另带自己的 channel 行',
   assert.equal((body.match(/\{\{channel_rules\}\}/g) ?? []).length, 1, '提示词里只引用一次')
 })
 
+test('官方插件管理工具只在共用核心注册一次，三个预设共用且不另加提示词', () => {
+  const patch = readFileSync(new URL('../cordis.patch.yml', import.meta.url), 'utf8')
+  const [base, remainder] = patch.split(/- id: preset-pi-im\r?\n/)
+  const [im, plus] = remainder.split(/- id: preset-pi-plus\r?\n/)
+  const core = base.split(/- &pi-files\r?\n/)[0]
+  assert.match(core, /- id: tool-plugin-manager\r?\n\s+name: '@deepseek-ai\/dsh-plugin-manager\/tools'\r?\n\s+disabled: !!js "!ctx\.get\('profileContext'\)"/)
+  assert.equal((patch.match(/- id: tool-plugin-manager\r?\n/g) ?? []).length, 1)
+  assert.match(im, /- \*pi-core\r?\n/)
+  assert.match(plus, /- \*pi-core\r?\n/)
+  const prefix = core.match(/prefix: \|-\r?\n([\s\S]*?)(?=\r?\n {14}- id: agent-instructions)/)?.[1]
+  assert(prefix, '缺少共用核心提示词')
+  assert.doesNotMatch(prefix, /plugin_manager|插件管理/)
+})
+
 test('补丁里用包名引用的 web.js / settings.js / shell.js / files.js 能按 exports 解析', async () => {
   // 0.2.2 曾给 exports 加了白名单却漏掉这两个子路径；用相对路径 import 文件测不出来，
   // 要等 DSH 新建会话时才报 "web-tools (dsh-pi-mode/web.js): never started"。

@@ -16,12 +16,16 @@
 
 | | 标准模式 | Pi 模式 |
 |---|---|---|
-| 工具 | 34 个左右 | macOS / Linux 预设 13 个：read、read_image、write、edit、bash、job_output / job_list / job_kill、skill、ask_user_question、present、web_search、web_fetch。Windows 把 bash 换成 pwsh，并自动加上官方 glob、grep。另加没被点名屏蔽的全局工具 |
+| 工具 | 数量随版本、profile 变化 | macOS / Linux 预设 14 个：read、read_image、write、edit、bash、job_output / job_list / job_kill、skill、ask_user_question、plugin_manager、present、web_search、web_fetch。Windows 把 bash 换成 pwsh，并自动加上官方 glob、grep。另加没被点名屏蔽的全局工具；无 profile 上下文时不挂 plugin_manager |
 | 去掉的 | — | macOS / Linux 去掉 glob / grep（改用 bash）；Windows 保留这两个（官方工具自带 ripgrep）。两边都去掉子代理与 workflow、目标、计划模式、todo、定时提醒 |
 | 系统提示词 | DSH 各插件拼装，约 5,900 字符：coding agent 身份、各工具引导、子代理分派提示、交付说明、Web GUI 与源码位置说明 | macOS / Linux 基线约 800 字中文：一句身份＋简短规矩（含前后台选择、批量／安全并行、界面交付与外部资料处理；工具说明里已有的不重复） |
 | 运行时上下文 | 当前目录、沙箱与审批策略、DSH 源码路径、GUI 网址 | 只留当前目录 |
 
 AGENTS.md、技能清单、时间照常注入；自动压缩、后台任务照常可用。此前同题首步输入约 5,100 token，标准模式约 11,700；实际随版本、模型和全局工具变化。
+
+### 插件管理（0.3.3）
+
+Pi / Pi+ / Pi-IM 在共用 `pi-core` 中启用官方 `plugin_manager`，可查询、安装、启停与移除当前 profile 的插件。与标准模式一样，仅在有 profile 上下文时挂载；沿用官方工具描述、参数授权要求、权限检查和返回的 `nextStep`，不另加系统提示词。工具变更会影响同一 profile 的所有会话，安装可能运行获准的构建脚本；已有完全访问权限时不保证每次弹确认。未改变会话权限、个人屏蔽名单或最低 DSH 版本。
 
 ### 任务执行原则（0.3.1）
 
@@ -54,7 +58,7 @@ dsh plugin --profile desktop add dsh-pi-mode
 仅需固定 Git 版本时使用下面地址；Git 安装不显示原生 npm 更新入口：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.3.2&path:/dsh-pi-mode
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.3.3&path:/dsh-pi-mode
 ```
 
 ### 检查更新
@@ -69,7 +73,7 @@ DSH 0.2.2-rc.1 已支持 npm 插件原生更新：打开「插件」点「刷新
 
 Pi+ 与 Pi 模式只差一个工具和两条文件编辑规矩；其他核心、系统提示词、交付方式与全局工具个人名单完全共用。Pi 模式与 Pi-IM 仍不启用补丁。
 
-- **工具**：开启 DSH 官方内置、默认关闭的 `apply_patch`，在原有 `edit` 旁增加一个工具；macOS / Linux 预设工具为 14 个，Windows 为 16 个，不计全局工具。
+- **工具**：开启 DSH 官方内置、默认关闭的 `apply_patch`，在原有 `edit` 旁增加一个工具；有 profile 上下文时，macOS / Linux 预设工具为 15 个，Windows 为 17 个，不计全局工具。
 - **分工改为**：单处局部修改用 edit；同一文件多处或跨文件修改优先用 apply_patch；write 只用于新建或整篇重写。修改或覆盖文件前先 read 一遍。
 - **新增提醒**：apply_patch 各补丁块保留足够且不重叠的上下文以准确匹配；预检拒绝不改文件，但执行中失败会保留已完成的改动，不会整批回滚。失败或中断后先重读受影响文件，再按实际状态重试。
 
@@ -147,7 +151,7 @@ DSH 的工具分两类：模式（预设）里各行注册的，和全局插件�
 
 1. 安装并重启 DSH，请用户开一个 Pi 模式对话、随便发一句话。
 2. 读这次请求的实际内容：最新的 `~/.dsh/sessions/<工作区目录名>/<会话>/session.v4.jsonl.zstd`，用 `zstd -dcq` 解开，每行一个 JSON 事件。
-   - `request/header` 事件的 `data.header.tools[].name`：发给模型的工具。Pi+ 应比 Pi 多 `apply_patch`，Pi / Pi-IM 不应出现它；Windows 另有 glob / grep，Pi-IM 没有 present。其他是全局工具。
+   - `request/header` 事件的 `data.header.tools[].name`：发给模型的工具。有 profile 上下文时，三个模式都应有 `plugin_manager`；Pi+ 应比 Pi 多 `apply_patch`，Pi / Pi-IM 不应出现它；Windows 另有 glob / grep，Pi-IM 没有 present。其他是全局工具。
    - `system/message` 事件：系统提示词，确认 `{{web_rules}}` 已展开。
    - `user/message` 事件：附带的 AGENTS.md、当前目录、技能清单、时间。
 3. 对照「全局工具」一节，列出用户装了哪些全局工具，问清哪些要在 Pi 模式、Pi-IM 里分别挡掉（能在全局关的优先建议去全局关），写进用户 profile 里 `pi-mode-settings` 条目的 `deny`、`imDeny`。用户接了 IM 机器人的，把机器人的 Agent Preset 设为 Pi-IM。

@@ -91,6 +91,11 @@
                     name: '@deepseek-ai/dsh-compaction-tool-result-pruner'
               - id: tool-ask-user
                 name: '@deepseek-ai/dsh-tool-ask-user'
+              # 三个预设共用官方插件管理工具；与标准模式一致，仅在有 profile 上下文时启用。
+              # 使用与授权说明由工具自身提供，不另加系统提示词。
+              - id: tool-plugin-manager
+                name: '@deepseek-ai/dsh-plugin-manager/tools'
+                disabled: !!js "!ctx.get('profileContext')"
               # 联网工具＋变量 {{web_rules}}：默认 DSH 自带工具；有插件登记了 pi 同款工具（如 dsh-agent-web）就改用它，见 web.js
               - id: web-tools
                 name: 'dsh-pi-mode/web.js'
