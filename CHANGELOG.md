@@ -4,6 +4,15 @@
 
 ## 2026-11-09
 
+### dsh-pi-mode 0.3.4
+
+- 三种预设共用核心恢复 `includeRuntimeContext: true`，保留原生目录、权限、审批、实现位置、GUI 地址和插件附加的动态上下文；仍用 `complete: true` 精简 system，不恢复标准模式的长引导，也不改变真实权限。
+- 补回 @路径输入约定；shell 退出码结合命令语义判断，不再一律将非零、空／null 或含 error 的输出判为失败；保留 Windows 中断后裸 exit 1 的说明。
+- 按审阅意见简写身份，删除询问用户、英文搜索及文末列来源的独立规则；增加 offset／limit 续读，将全文跟进和 URL 引用合并到共用外部资料规则，不再引用可被联网 hook 替换的 `web_rules`。
+- 文件规则改为针对性修改用 edit、write 新建／整篇重写、覆盖前 read；桌面结果展示与 present 合并，补齐文件链接、图片引用、当前 GUI 和构建／核验边界，Pi-IM 不带桌面规则。Windows 明确保留 glob／grep 工具及两项对应声明。
+- system 按文件与命令、任务执行、联网资料、结果交付、DSH 环境分组；前后台选择与跟踪拆行，交付与 GUI 分别插入对应主题。
+- 删除重复的 PowerShell 命令／路径／环境变量说明；DSH 目录核实也按平台注入，macOS／Linux 只出现 bash／pwd，Windows 只出现 glob／grep、pwsh／Get-Location 与中断说明，不夹带另一平台规则。不改变工具组合、真实权限或最低 DSH 版本。
+
 ### dsh-pi-mode 0.3.3
 
 - 在共用 `pi-core` 加回官方 `plugin_manager`，Pi / Pi+ / Pi-IM 同时可用，不复制工具定义；与标准模式一致，仅在有 profile 上下文时启用。

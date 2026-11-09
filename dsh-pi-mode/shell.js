@@ -1,5 +1,5 @@
 /**
- * Pi 模式的 {{shell_rules}}：按运行 DSH 的系统填写找文件、搜内容和命令行的规矩。
+ * 按运行 DSH 的系统提供 {{shell_rules}}（搜索与退出码）及 {{dsh_rules}}（工作目录与实现位置）。
  *
  * 提示词是整份替换的，官方工具自己注入的英文段落不会出现，所以对应说法写在这里。
  * Windows 挂了官方 glob / grep（自带 ripgrep，不要求本机安装 rg），命令行是 PowerShell；
@@ -11,19 +11,24 @@ export const inject = ['systemPrompt']
 
 const RULES = {
   win32: [
-    '- 找文件用 glob，搜文件内容用 grep，不要用 PowerShell 的 Get-ChildItem、Select-String，也不要找 bash、rg、find。',
-    '- 需要上下文时，对 grep 命中的文件用 read，不要为了多看几行再搜一遍。',
-    '- 跑命令用 pwsh，写 PowerShell，不要写 bash：路径用 Windows 形式，环境变量用 $env:NAME。',
-    '- pwsh 结果末尾的 [exit code: N] 不是 0，或 exit 0 但本应有输出却为空、null、带 error，即没拿到结果，先查再走。被中断后单独一个 [exit code: 1] 且没有信号标记，是终止，不是命令本身失败。',
+    '- 用 glob 工具——而不是 shell find——按路径模式查找文件。',
+    '- 用 grep 工具——而不是 shell grep 或 rg——搜索文件内容。需要上下文时，对命中的文件用 read。',
+    '- 检查 pwsh 的 [exit code: N] 标记并结合命令语义判断；非预期失败或输出异常先查明再继续，不把无匹配等正常状态当失败。被中断后单独一个 [exit code: 1] 且没有信号标记，是终止，不是命令本身失败。',
   ].join('\n'),
   posix: [
     '- 列目录、找文件、搜内容都用 bash（ls、rg、find）。',
-    '- bash 结果末尾的 [exit code: N] 不是 0，或 exit 0 但本应有输出却为空、null、带 error，即没拿到结果，先查再走。',
+    '- 检查 bash 的 [exit code: N] 标记并结合命令语义判断；非预期失败或输出异常先查明再继续，不把无匹配等正常状态当失败。',
   ].join('\n'),
 }
 
 export const shellRules = (platform = process.platform) => platform === 'win32' ? RULES.win32 : RULES.posix
 
+export function dshRules(platform = process.platform) {
+  const cwdCommand = platform === 'win32' ? 'Get-Location' : 'pwd'
+  return `- DSH 实现位置与当前工作目录由 runtime-context 给出，两者独立；勿从实现位置推断工作目录，用 ${cwdCommand} 确认。仅检查或扩展 DSH 时使用该实现。`
+}
+
 export function apply(ctx) {
   ctx.systemPrompt.variable('shell_rules', () => shellRules())
+  ctx.systemPrompt.variable('dsh_rules', () => dshRules())
 }

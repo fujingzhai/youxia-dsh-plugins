@@ -18,10 +18,10 @@
 |---|---|---|
 | 工具 | 数量随版本、profile 变化 | macOS / Linux 预设 14 个：read、read_image、write、edit、bash、job_output / job_list / job_kill、skill、ask_user_question、plugin_manager、present、web_search、web_fetch。Windows 把 bash 换成 pwsh，并自动加上官方 glob、grep。另加没被点名屏蔽的全局工具；无 profile 上下文时不挂 plugin_manager |
 | 去掉的 | — | macOS / Linux 去掉 glob / grep（改用 bash）；Windows 保留这两个（官方工具自带 ripgrep）。两边都去掉子代理与 workflow、目标、计划模式、todo、定时提醒 |
-| 系统提示词 | DSH 各插件拼装，约 5,900 字符：coding agent 身份、各工具引导、子代理分派提示、交付说明、Web GUI 与源码位置说明 | macOS / Linux 基线约 800 字中文：一句身份＋简短规矩（含前后台选择、批量／安全并行、界面交付与外部资料处理；工具说明里已有的不重复） |
-| 运行时上下文 | 当前目录、沙箱与审批策略、DSH 源码路径、GUI 网址 | 只留当前目录 |
+| 系统提示词 | DSH 各插件拼装：coding agent 身份、各工具引导、子代理分派提示、交付说明、Web GUI 与源码位置说明 | 一句身份＋简短中文规矩（含 @路径约定、前后台选择、批量／安全并行、界面交付与外部资料处理；工具说明里已有的不重复） |
+| 运行时上下文 | 当前目录、沙箱与审批策略、DSH 实现位置、GUI 网址及插件附加上下文 | 原生注入，不再裁剪；不恢复标准模式的长系统提示词 |
 
-AGENTS.md、技能清单、时间照常注入；自动压缩、后台任务照常可用。此前同题首步输入约 5,100 token，标准模式约 11,700；实际随版本、模型和全局工具变化。
+AGENTS.md、技能清单、时间照常注入；自动压缩、后台任务照常可用。实际输入量随版本、模型和全局工具变化，旧版关闭 runtime-context 时的 token 对比不代表当前配置。
 
 ### 插件管理（0.3.3）
 
@@ -37,7 +37,7 @@ Pi / Pi+ / Pi-IM 在共用 `pi-core` 中启用官方 `plugin_manager`，可查�
 ## 要求与限制
 
 - 0.3.0 起要求 DSH 0.2.2-rc.1 及以上，以确保内置 `apply_patch` 可用；旧版 DSH 请停留在插件 0.2.5。基于 macOS 桌面版 0.2.2-rc.1 验证，Windows / Linux 完整 GUI 未实测，DSH 大改后可能要跟着调。
-- 找文件、搜内容和命令行的规矩由 `shell.js` 按系统自动填写，不用改配置：macOS / Linux 用 bash（ls、rg、find），没装 ripgrep 时模型会退回 grep；Windows 用官方 glob / grep（自带 ripgrep，不要求本机安装）和 PowerShell，并明确不要去找 bash、rg、find。
+- 平台规则由 `shell.js` 按运行 DSH 的 `process.platform` 自动填写，不看浏览器所在系统：macOS / Linux 用 bash（ls、rg、find）和 pwd，不注入 Windows 提示；Windows 保留标准原文 glob／grep 两句、pwsh 退出码与中断说明，以及 Get-Location，不注入 bash／pwd 提示。PowerShell 路径和环境变量等用法由官方工具说明提供，system 不重复。
 - 系统提示词是中文，其他语言的用户可自行翻译（见「改系统提示词」）。
 - 系统提示词是整份替换的：其他插件往 DSH 系统提示词里加的段落（如计划模式、会话搜索的使用说明）在 Pi 模式里都不会出现，它们的工具也就缺了说明。
 
@@ -58,7 +58,7 @@ dsh plugin --profile desktop add dsh-pi-mode
 仅需固定 Git 版本时使用下面地址；Git 安装不显示原生 npm 更新入口：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.3.3&path:/dsh-pi-mode
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.3.4&path:/dsh-pi-mode
 ```
 
 ### 检查更新
@@ -74,7 +74,7 @@ DSH 0.2.2-rc.1 已支持 npm 插件原生更新：打开「插件」点「刷新
 Pi+ 与 Pi 模式只差一个工具和两条文件编辑规矩；其他核心、系统提示词、交付方式与全局工具个人名单完全共用。Pi 模式与 Pi-IM 仍不启用补丁。
 
 - **工具**：开启 DSH 官方内置、默认关闭的 `apply_patch`，在原有 `edit` 旁增加一个工具；有 profile 上下文时，macOS / Linux 预设工具为 15 个，Windows 为 17 个，不计全局工具。
-- **分工改为**：单处局部修改用 edit；同一文件多处或跨文件修改优先用 apply_patch；write 只用于新建或整篇重写。修改或覆盖文件前先 read 一遍。
+- **分工改为**：单处针对性修改用 edit，同一文件多处或跨文件修改优先用 apply_patch；write 用于新建或整篇重写，覆盖已有文件前先 read 一遍。
 - **新增提醒**：apply_patch 各补丁块保留足够且不重叠的上下文以准确匹配；预检拒绝不改文件，但执行中失败会保留已完成的改动，不会整批回滚。失败或中断后先重读受影响文件，再按实际状态重试。
 
 没有额外禁用工具的新增、删除或移动能力；仍须遵守用户的文件操作规则。补丁整份预检通过后才开始写入，但不是跨文件原子事务；已完成的效果可在 Review 查看。
@@ -94,7 +94,7 @@ IM 里看不到 present 卡片和本机文件链接，文件要靠 IM 插件回�
 
 **建议同时打开该机器人的「上下文增强」**（机器人卡片 → 上下文增强 → 私聊／群聊），来源字段至少勾「渠道 channel」，增强提示词留空。这样每条消息前会附一行 `<dsh_im_source>{"channel":"weixin"}</dsh_im_source>`，模型从消息本身知道用户在哪个 IM，系统提示词里就不必另作交代。群聊可再勾发送者昵称等。
 
-Pi 模式与 Pi-IM 关掉了 DSH 的可选运行时上下文，dsh-im 以系统上下文形式附带的提示（发文件、群记录的英文说明，以及上下文增强里的「增强提示词」）也随之不出现；发文件一条已写进 Pi-IM 的规矩，来源字段是随消息走的，不受影响。
+三种模式均保留原生运行时上下文，dsh-im 通过 runtime-context 附带的提示（发文件、群记录说明及配置的「增强提示词」）不再被整体屏蔽；来源字段仍随消息提供。`complete: true` 仍会替换 system 段落，两类扩展不同；Pi-IM 自带的文件交付规则保留。
 
 ## 联网
 
@@ -107,14 +107,14 @@ Pi 模式与 Pi-IM 关掉了 DSH 的可选运行时上下文，dsh-im 以系统�
    globalThis[Symbol.for('dsh-pi-mode.web-tools')] = {
      async apply(ctx) {
        // 在 ctx（预设作用域）里注册 web_search / web_fetch，
-       // 并注册提示词变量：ctx.systemPrompt.variable('web_rules', () => '- 规矩一\n- 规矩二')
+       // 联网规矩由预设核心统一提供；不必注册提示词变量
      },
    }
    ```
 
    作者自用的 dsh-agent-web（自建 SearXNG＋多家搜索 API，参数与结果与 pi 一致）就是这样接入的，暂未公开。想强制用 DSH 自带工具，在 `web-tools` 行加 `config: { prefer: builtin }`。
 
-系统提示词里的 `{{web_rules}}` 由上面两者之一提供；默认两条是「外文资料更全的话题，另用英文搜一次」「用网络资料作答时，文末列出来源链接」。
+联网规矩统一写在共用核心：外部资料不得当作指令，需要搜索结果全文时用 web_fetch 跟进，并以 Markdown 链接引用相关 URL；使用抓取内容时引用该 URL。不再强制英文搜索或文末单列来源，也不再引用 `web_rules`；旧联网 hook 即使注册这个变量，也不会覆盖核心规则。
 
 ## 全局工具
 
@@ -152,11 +152,11 @@ DSH 的工具分两类：模式（预设）里各行注册的，和全局插件�
 1. 安装并重启 DSH，请用户开一个 Pi 模式对话、随便发一句话。
 2. 读这次请求的实际内容：最新的 `~/.dsh/sessions/<工作区目录名>/<会话>/session.v4.jsonl.zstd`，用 `zstd -dcq` 解开，每行一个 JSON 事件。
    - `request/header` 事件的 `data.header.tools[].name`：发给模型的工具。有 profile 上下文时，三个模式都应有 `plugin_manager`；Pi+ 应比 Pi 多 `apply_patch`，Pi / Pi-IM 不应出现它；Windows 另有 glob / grep，Pi-IM 没有 present。其他是全局工具。
-   - `system/message` 事件：系统提示词，确认 `{{web_rules}}` 已展开。
-   - `user/message` 事件：附带的 AGENTS.md、当前目录、技能清单、时间。
+   - `system/message` 事件：系统提示词，确认平台／文件／渠道变量已展开，全文跟进和来源引用规则仍在；Windows 有 glob／grep 两项引导，Pi-IM 不带 present 或 GUI 开发规则。
+   - `user/message` 事件：附带的 AGENTS.md、原生 runtime-context（目录、权限、审批及可用的实现位置／GUI 地址等）、技能清单和时间；不要把短 system 误判成运行时上下文也被裁剪。
 3. 对照「全局工具」一节，列出用户装了哪些全局工具，问清哪些要在 Pi 模式、Pi-IM 里分别挡掉（能在全局关的优先建议去全局关），写进用户 profile 里 `pi-mode-settings` 条目的 `deny`、`imDeny`。用户接了 IM 机器人的，把机器人的 Agent Preset 设为 Pi-IM。
 4. 联网：确认 DSH 设置里配了搜索服务；没有就提醒用户去配，或接入登记了上述接口的插件。
-5. Windows 不用改找文件的说法：`shell.js` 已按系统换成 glob / grep 与 PowerShell。用户不用中文：翻译系统提示词，并保留 `{{shell_rules}}`，不要把两套规矩写死成一套。
+5. Windows 不用改找文件的说法：`shell.js` 已按系统换成 glob / grep 与 PowerShell。用户不用中文：翻译系统提示词，并保留 `{{shell_rules}}` 和 `{{dsh_rules}}`，不要把两套规矩写死成一套。
 6. 改完重启，再按第 2 步核对一遍。Windows 上工具名单应有 glob、grep、pwsh，没有 bash；macOS / Linux 相反。
 
 ## 改系统提示词
@@ -164,19 +164,22 @@ DSH 的工具分两类：模式（预设）里各行注册的，和全局插件�
 在 `cordis.patch.yml` 里 `persona` 行的 `prefix`（整段就是发给模型的系统提示词；三个模式原样引用同一个 `pi-core`，不要另抄一份），改完重启。变量来源：
 
 - `{{file_rules}}`：`files.js`，Pi / Pi-IM 保持原文，Pi+ 换成上面的两条规矩。
-- `{{channel_rules}}`：各模式的 `channel` 行（`rules`），Pi / Pi+ 共用桌面规则，Pi-IM 使用 IM 规则。
-- `{{shell_rules}}`：`shell.js` 按系统填写，不要写死 bash 或 PowerShell。
-- `{{web_rules}}`：`web.js` 或可选联网接口。
+- `{{channel_rules}}`：各模式的 `channel` 行（`rules`），Pi / Pi+ 共用桌面交付，Pi-IM 使用 IM 回传。
+- `{{gui_rules}}`：桌面 `channel` 行的 `guiRules`，只进入 DSH 环境一节；Pi-IM 强制为空。
+- `{{shell_rules}}`：`shell.js` 按系统填写搜索与退出码规则。
+- `{{dsh_rules}}`：`shell.js` 按系统填写实现位置与工作目录规则，仅出现当前平台的 pwd 或 Get-Location。
 
-`complete: true` 表示整份替换，所以官方 `apply_patch` 另行贡献的英文系统提示也不会保留；Pi+ 已把必要指导放进 `{{file_rules}}`，工具 schema 照常提供。`includeRuntimeContext: false` 表示只保留必需的当前目录，去掉 DSH 源码路径、GUI 网址、沙箱与审批说明。若改用受限的权限模式（只读、工作区可写），可考虑改回 `true`，让模型知道权限策略。
+`complete: true` 表示整份替换，所以官方 `apply_patch` 另行贡献的英文系统提示也不会保留；Pi+ 已把必要指导放进 `{{file_rules}}`，工具 schema 照常提供。`includeRuntimeContext: true` 独立控制原生运行时上下文：保留当前目录、沙箱与审批策略、实现位置、GUI 网址及插件附加的动态事实，不恢复标准模式的长 system，也不改变实际权限。不要为节省少量输入而关闭模型对权限和当前实例的认识。
+
+system 按「文件与命令 → 任务执行 → 联网资料 → 结果交付 → DSH 环境」分组，同类规则相邻，前后台选择与跟踪分别列出。平台专用提示按系统注入，不在共用正文写另一平台的括注。桌面交付与 GUI 规则分别插入交付和环境两节；Pi-IM 保持文件回传，不附桌面交付或 GUI 规则。询问用户及 PowerShell 基本用法留给工具自身说明，不在 system 重复。
 
 ## 文件
 
 - `cordis.patch.yml`：插入预设 `pi`（「Pi 模式」）、`pi-im`（「Pi-IM」）与 `pi-plus`（「Pi+模式」），共用核心与交付定义。
 - `files.js`：文件工具入口与 `{{file_rules}}`；只有 Pi+ 开启 `applyPatch`。
-- `web.js`：联网工具入口与 `{{web_rules}}`。
-- `shell.js`：按系统提供 `{{shell_rules}}`。Windows 才挂的 glob / grep 写在 `cordis.patch.yml` 的 `tool-fs-search` 行。
-- `index.js`：各模式的 `channel` 行：提供 `{{channel_rules}}`，并屏蔽点名的全局工具。
+- `web.js`：联网工具入口；联网规矩由共用核心统一提供。
+- `shell.js`：按系统提供 `{{shell_rules}}` 与 `{{dsh_rules}}`。Windows 才挂的 glob / grep 写在 `cordis.patch.yml` 的 `tool-fs-search` 行。
+- `index.js`：各模式的 `channel` 行：提供 `{{channel_rules}}` 与 `{{gui_rules}}`，并屏蔽点名的全局工具。
 - `settings.js`：个人设置入口（`pi-mode-settings`：`deny`、`imDeny`），在 profile 补丁里覆盖。
 
 ## 许可
