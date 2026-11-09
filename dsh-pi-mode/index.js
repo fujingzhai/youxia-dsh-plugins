@@ -22,26 +22,34 @@ export function apply(ctx, config) {
   let current = '[]'
   let disposeMask
   let refreshing = false
+  let refreshPending = false
   let disposed = false
 
   ctx.systemPrompt.variable('channel_rules', () => rules)
   ctx.systemPrompt.variable('gui_rules', () => guiRules)
 
   function refresh() {
-    if (refreshing || disposed) return
-    const personal = globalThis[SETTINGS]?.[personalKey]
-    const deny = [...new Set([...own, ...(Array.isArray(personal) ? personal : [])])]
-      .filter(name => typeof name === 'string' && ctx.tools.get(name) !== undefined).sort()
-    const key = JSON.stringify(deny)
-    if (key === current) return
-    // restrict 和 dispose 都会发 tools/change；避免因自己的变更递归刷新。
+    if (disposed) return
+    if (refreshing) {
+      refreshPending = true
+      return
+    }
+    // restrict 和 dispose 也会发 tools/change；不递归，但须补算期间收到的变更。
     refreshing = true
     try {
-      const next = deny.length ? ctx.tools.restrict({ deny }) : undefined
-      const previous = disposeMask
-      disposeMask = next
-      current = key
-      previous?.()
+      do {
+        refreshPending = false
+        const personal = globalThis[SETTINGS]?.[personalKey]
+        const deny = [...new Set([...own, ...(Array.isArray(personal) ? personal : [])])]
+          .filter(name => typeof name === 'string' && ctx.tools.get(name) !== undefined).sort()
+        const key = JSON.stringify(deny)
+        if (key === current) continue
+        const next = deny.length ? ctx.tools.restrict({ deny }) : undefined
+        const previous = disposeMask
+        disposeMask = next
+        current = key
+        previous?.()
+      } while (refreshPending && !disposed)
     } finally {
       refreshing = false
     }

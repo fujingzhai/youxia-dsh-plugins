@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import { apply } from '../index.js'
-import { apply as applyShell, dshRules, shellRules } from '../shell.js'
+import { apply as applyShell, dshRules, shellRules, shellTool } from '../shell.js'
 import { apply as applyWeb } from '../web.js'
 import { apply as applySettings } from '../settings.js'
 import { EDIT_RULES, PATCH_RULES, fileRules } from '../files.js'
@@ -92,6 +92,35 @@ test('点名工具延迟注册、卸载、重新注册时同步限制', () => {
   assert.deepEqual(result.visible(['late']), ['late'])
   result.register('late')
   assert.deepEqual(result.visible(['late']), [])
+})
+
+test('刷新屏蔽名单期间新注册的点名工具也立即受限', () => {
+  const result = mask({ deny: ['first', 'late'] })
+  result.ctx.on('tools/change', () => {
+    if (result.ctx.tools.get('first') && !result.ctx.tools.get('late')) result.register('late')
+  })
+  result.register('first')
+  assert.deepEqual(result.visible(['read', 'first', 'late']), ['read'])
+  result.dispose()
+  assert.deepEqual(result.visible(['first', 'late']), ['first', 'late'])
+})
+
+test('刷新期间再次修改个人名单，以最后一份设置为准', () => {
+  const effects = []
+  const result = mask({ channel: 'desktop' }, ['first', 'late'])
+  let changed = false
+  result.ctx.on('tools/change', () => {
+    if (changed) return
+    changed = true
+    applySettings({ effect: fn => effects.push(fn()), emit: result.ctx.emit }, { deny: ['first', 'late'] })
+  })
+  try {
+    applySettings({ effect: fn => effects.push(fn()), emit: result.ctx.emit }, { deny: ['first'] })
+    assert.deepEqual(result.visible(['read', 'first', 'late']), ['read'])
+  } finally {
+    for (const dispose of effects) dispose()
+    result.dispose()
+  }
 })
 
 test('卸载插件释放限制，后续注册表事件不会恢复限制', () => {
@@ -214,6 +243,7 @@ test('找文件的规矩按系统填写，shell.js 把对应文本登记为 shel
   assert.doesNotMatch(windows, /bash|跑命令用|PowerShell|\$env:NAME|Windows 形式/)
   const variables = new Map()
   applyShell({ systemPrompt: { variable: (name, provider) => variables.set(name, provider) } })
+  assert.equal(variables.get('shell_tool')?.(), shellTool())
   assert.equal(variables.get('shell_rules')?.(), shellRules())
   assert.equal(variables.get('dsh_rules')?.(), dshRules())
 })
@@ -282,7 +312,7 @@ test('前后台与批量并行规则在共用核心各出现一次，平台规�
   assert(prefix, '缺少共用核心提示词')
   const foreground = '- 短任务默认前台，勿为几秒等待设置极短超时或转后台；仅耗时较久且有独立工作可推进，或需持续运行时才主动转后台，下一步依赖结果则优先前台。'
   const background = '- 后台须跟踪 job id，等完成通知，不重复启动或轮询；取回必要结果，及时停止无用任务。'
-  const parallel = '- 互不依赖且无资源冲突的操作优先批量处理，能安全并行则并行，并汇总结果；有前后依赖或可能相互影响的操作按顺序执行，不把同批调用视为已经并行。'
+  const parallel = '- 互不依赖且无资源冲突的操作优先批量处理，能安全并行则并行，并汇总结果；多条独立命令需要并发时，在同一次 {{shell_tool}} 调用内用脚本实现，并汇总各项输出与退出码；有前后依赖或可能相互影响的操作按顺序执行，不把同批调用视为已经并行。'
   assert.equal(patch.split(foreground).length - 1, 1)
   assert.equal(patch.split(background).length - 1, 1)
   assert.equal(patch.split(parallel).length - 1, 1)
@@ -293,11 +323,12 @@ test('前后台与批量并行规则在共用核心各出现一次，平台规�
     const shell = shellRules(platform)
     assert.doesNotMatch(shell, /长命令转后台|短任务默认前台|job id|安全并行/)
     for (const applyPatch of [false, true]) {
-      const prompt = prefix.replace('{{shell_rules}}', shell).replace('{{file_rules}}', fileRules({ applyPatch }))
+      const prompt = prefix.replace('{{shell_rules}}', shell).replace('{{shell_tool}}', shellTool(platform))
+        .replace('{{file_rules}}', fileRules({ applyPatch }))
       assert.equal(prompt.split(foreground).length - 1, 1)
       assert.equal(prompt.split(background).length - 1, 1)
-      assert.equal(prompt.split(parallel).length - 1, 1)
-      assert.doesNotMatch(prompt, /长命令转后台|\{\{(?:shell|file)_rules\}\}/)
+      assert.equal(prompt.split(parallel.replace('{{shell_tool}}', shellTool(platform))).length - 1, 1)
+      assert.doesNotMatch(prompt, /长命令转后台|\{\{(?:shell|file)_rules\}\}|\{\{shell_tool\}\}/)
     }
   }
 })
@@ -319,16 +350,19 @@ test('提示词按主题排序，整份展开后严格隔离平台命令', () =>
     assert.match(dshRules(platform), /仅检查或扩展 DSH 时使用该实现/)
     for (const applyPatch of [false, true]) {
       const prompt = prefix.replace('{{shell_rules}}', shellRules(platform))
+        .replace('{{shell_tool}}', shellTool(platform))
         .replace('{{file_rules}}', fileRules({ applyPatch }))
         .replace('{{channel_rules}}', '').replace('{{dsh_rules}}', dshRules(platform)).replace('{{gui_rules}}', '')
       assert.doesNotMatch(prompt, /\{\{[a-z_]+\}\}|跑命令用 pwsh|\$env:NAME/)
       if (platform === 'win32') {
         assert.match(prompt, /用 Get-Location 确认/)
         assert.match(prompt, /检查 pwsh 的/)
+        assert.match(prompt, /在同一次 pwsh 调用内用脚本实现，并汇总各项输出与退出码/)
         assert.doesNotMatch(prompt, /\bbash\b|\bpwd\b/)
       } else {
         assert.match(prompt, /用 pwd 确认/)
         assert.match(prompt, /检查 bash 的/)
+        assert.match(prompt, /在同一次 bash 调用内用脚本实现，并汇总各项输出与退出码/)
         assert.doesNotMatch(prompt, /Windows|PowerShell|Get-Location|pwsh|glob 工具|grep 工具|被中断后单独一个/)
       }
     }

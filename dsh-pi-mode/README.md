@@ -27,10 +27,10 @@ AGENTS.md、技能清单、时间照常注入；自动压缩、后台任务照�
 
 Pi / Pi+ / Pi-IM 在共用 `pi-core` 中启用官方 `plugin_manager`，可查询、安装、启停与移除当前 profile 的插件。与标准模式一样，仅在有 profile 上下文时挂载；沿用官方工具描述、参数授权要求、权限检查和返回的 `nextStep`，不另加系统提示词。工具变更会影响同一 profile 的所有会话，安装可能运行获准的构建脚本；已有完全访问权限时不保证每次弹确认。未改变会话权限、个人屏蔽名单或最低 DSH 版本。
 
-### 任务执行原则（0.3.1）
+### 任务执行原则（0.3.1 起，0.3.5 补充）
 
 - 短任务默认前台，不为几秒等待设置极短超时或转后台；仅耗时较久且有独立工作可推进，或需持续运行时才主动后台，下一步依赖结果则优先前台。后台跟踪 job id、等完成通知，不重复启动或轮询；取回必要结果，停止无用任务。
-- 互不依赖且无资源冲突的操作优先批量、安全并行并汇总结果；有依赖或可能相互影响时顺序执行，不把同批调用视为已经并行。
+- 互不依赖且无资源冲突的操作优先批量、安全并行并汇总结果；多条独立命令需要并发时，在同一次命令行工具调用内用脚本实现，并汇总各项输出与退出码：macOS / Linux 为 bash，Windows 为 pwsh。有依赖或可能相互影响时顺序执行，不把同批调用视为已经并行。
 
 两条规则放在三种模式共用的核心提示词中，替换原先模糊的“长命令转后台”提醒。只引导模型如何使用现有能力，不改变工具组合、执行器、超时默认值或权限，也不解锁 DSH 原本串行的工具。效果受模型和任务影响，未承诺提速；更新后重启 DSH、新建会话验证。
 
@@ -58,7 +58,7 @@ dsh plugin --profile desktop add dsh-pi-mode
 仅需固定 Git 版本时使用下面地址；Git 安装不显示原生 npm 更新入口：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.3.4&path:/dsh-pi-mode
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.3.5&path:/dsh-pi-mode
 ```
 
 ### 检查更新
@@ -166,7 +166,7 @@ DSH 的工具分两类：模式（预设）里各行注册的，和全局插件�
 - `{{file_rules}}`：`files.js`，Pi / Pi-IM 保持原文，Pi+ 换成上面的两条规矩。
 - `{{channel_rules}}`：各模式的 `channel` 行（`rules`），Pi / Pi+ 共用桌面交付，Pi-IM 使用 IM 回传。
 - `{{gui_rules}}`：桌面 `channel` 行的 `guiRules`，只进入 DSH 环境一节；Pi-IM 强制为空。
-- `{{shell_rules}}`：`shell.js` 按系统填写搜索与退出码规则。
+- `{{shell_tool}}` 与 `{{shell_rules}}`：`shell.js` 按系统填写命令行工具名、搜索与退出码规则。
 - `{{dsh_rules}}`：`shell.js` 按系统填写实现位置与工作目录规则，仅出现当前平台的 pwd 或 Get-Location。
 
 `complete: true` 表示整份替换，所以官方 `apply_patch` 另行贡献的英文系统提示也不会保留；Pi+ 已把必要指导放进 `{{file_rules}}`，工具 schema 照常提供。`includeRuntimeContext: true` 独立控制原生运行时上下文：保留当前目录、沙箱与审批策略、实现位置、GUI 网址及插件附加的动态事实，不恢复标准模式的长 system，也不改变实际权限。不要为节省少量输入而关闭模型对权限和当前实例的认识。

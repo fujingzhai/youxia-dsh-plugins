@@ -1,5 +1,5 @@
 /**
- * 按运行 DSH 的系统提供 {{shell_rules}}（搜索与退出码）及 {{dsh_rules}}（工作目录与实现位置）。
+ * 按运行 DSH 的系统提供 {{shell_tool}}、{{shell_rules}}（搜索与退出码）及 {{dsh_rules}}（工作目录与实现位置）。
  *
  * 提示词是整份替换的，官方工具自己注入的英文段落不会出现，所以对应说法写在这里。
  * Windows 挂了官方 glob / grep（自带 ripgrep，不要求本机安装 rg），命令行是 PowerShell；
@@ -22,6 +22,7 @@ const RULES = {
 }
 
 export const shellRules = (platform = process.platform) => platform === 'win32' ? RULES.win32 : RULES.posix
+export const shellTool = (platform = process.platform) => platform === 'win32' ? 'pwsh' : 'bash'
 
 export function dshRules(platform = process.platform) {
   const cwdCommand = platform === 'win32' ? 'Get-Location' : 'pwd'
@@ -29,6 +30,7 @@ export function dshRules(platform = process.platform) {
 }
 
 export function apply(ctx) {
+  ctx.systemPrompt.variable('shell_tool', () => shellTool())
   ctx.systemPrompt.variable('shell_rules', () => shellRules())
   ctx.systemPrompt.variable('dsh_rules', () => dshRules())
 }
