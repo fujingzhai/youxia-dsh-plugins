@@ -5,13 +5,16 @@ import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)))
-const read = path => readFileSync(path, 'utf8')
+const read = path => readFileSync(path, 'utf8').replace(/\r\n/g, '\n')
 const rootReadme = read(join(root, 'README.md'))
 const changelog = read(join(root, 'CHANGELOG.md'))
-const plugins = readdirSync(root, { withFileTypes: true })
-  .filter(entry => entry.isDirectory() && entry.name.startsWith('dsh-'))
-  .map(entry => entry.name).sort()
-assert(plugins.length > 0, '没有发现插件')
+// 只检查已纳入 Git 的独立包；本地未提交的原型不是公开插件。
+const tracked = spawnSync('git', ['ls-files', '--', 'dsh-*/package.json'], { cwd: root, encoding: 'utf8' })
+assert.equal(tracked.status, 0, tracked.stderr || '无法读取 Git 插件清单')
+const plugins = tracked.stdout.trim().split(/\r?\n/)
+  .filter(path => /^dsh-[^/]+\/package\.json$/.test(path))
+  .map(path => path.split('/')[0]).sort()
+assert(plugins.length > 0, '没有发现已纳入 Git 的插件')
 
 function run(args, cwd = root) {
   const result = spawnSync(process.execPath, args, { cwd, encoding: 'utf8' })
@@ -54,6 +57,15 @@ for (const name of plugins) {
     assert(existsSync(join(directory, manifest.exports?.['./client'] ?? '')), `${name}: Client 入口缺失`)
   }
   const readme = read(join(directory, 'README.md'))
+  // DSH 的 npm 版本检查由 Host 提供，不另写更新器；守住安装来源与清单条件。
+  const npmBlock = `\`\`\`text\n${manifest.name}\n\`\`\``
+  const gitPosition = readme.indexOf('git+https://')
+  assert(readme.indexOf(npmBlock) >= 0 && (gitPosition < 0 || readme.indexOf(npmBlock) < gitPosition), `${name}: 安装须优先推荐 npm 包名，Git 仅作固定版本备选`)
+  assert(readme.includes(`dsh plugin --profile desktop add ${manifest.name}`), `${name}: 缺少 npm 命令行安装方式`)
+  for (const marker of ['### 检查更新', '重新检查', '更新到 <版本>', '无需手动卸载重装', '不是全局推送', '不自动升级', 'link:']) {
+    assert(readme.includes(marker), `${name}: 更新说明缺少 ${marker}`)
+  }
+  assert(rootReadme.includes(`\n${manifest.name}\n`), `${name}: 首页缺少 npm 安装清单`)
   if (manifest.name !== name) {
     assert(rootReadme.includes(manifest.name), `${name}: 首页未写明 npm 包名 ${manifest.name}`)
     assert(readme.includes(manifest.name), `${name}: 插件说明未写明 npm 包名 ${manifest.name}`)

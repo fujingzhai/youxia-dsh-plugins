@@ -10,17 +10,27 @@
 
 ## 安装
 
-桌面版「插件」→「添加插件」，粘贴：
+桌面版「插件」→「添加插件」，优先填 npm 包名：
+
+```text
+dsh-zh-slash
+```
+
+命令行（Web 版将 `desktop` 换成 `web`）：
+
+```sh
+dsh plugin --profile desktop add dsh-zh-slash
+```
+
+仅需固定 Git 版本时使用下面地址；Git 安装不显示原生 npm 更新入口：
 
 ```text
 git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-zh-slash@0.1.1&path:/dsh-zh-slash
 ```
 
-或用命令行（Web 版将 `desktop` 换成 `web`）：
+### 检查更新
 
-```sh
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-zh-slash@0.1.1&path:/dsh-zh-slash"
-```
+DSH 0.2.2-rc.1 已支持 npm 插件原生更新：打开「插件」点「刷新」，或进本插件详情的「版本 → 重新检查」；发现兼容新版后点击「更新到 <版本>」并确认，无需手动卸载重装。只在打开详情／刷新列表时检查，不是全局推送，不自动升级。本插件无独立数据文件；按结果提示刷新／重启。Git、压缩包和 `link:` 不适用，先保留定制与数据，勿贸然卸载；详见[仓库更新说明](../README.md#检查更新与原地升级)。
 
 若终端找不到 `dsh`，macOS 官方桌面版可用 `"/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh"` 替代命令名。也可参照[仓库首页](../README.md)克隆后安装本子目录。
 

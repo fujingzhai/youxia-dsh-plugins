@@ -11,10 +11,10 @@
 
 ## 修改与验证
 
-1. 只修改本次涉及的插件；首次检查先在 `dsh-settings-customizer` 目录运行 `npm install --ignore-scripts --package-lock=false`，再在根目录运行 `npm run check`。
+1. 只修改本次涉及的插件；首次检查先在 `dsh-settings-customizer` 目录运行 `npm install --ignore-scripts --package-lock=false`，再在根目录运行 `npm run check`。清单来自 Git 已跟踪的 `dsh-*/package.json`，避免把未提交原型或兼容软链接当作已发布插件；新插件需先明确加入 Git，再完整检查。
 2. 影响输入、菜单或预设加载时，额外用对应版本的 DSH 在隔离 profile 做安装／GUI 验证。不得覆盖正在使用的 profile。
 3. 新增依赖、提高最低 DSH 版本或改变提示词时，在插件 README 和 CHANGELOG 写明影响。
-4. 安装文档必须给出可复制的 Git 子目录地址（`&path:/<插件名>`），禁止放作者本机安装路径。
+4. 安装文档首先推荐 npm 包名与 `dsh plugin --profile desktop add <包名>`，使 DSH 原生版本检查可用；固定 Git 子目录地址（`&path:/<插件名>`）只作备选，禁止作者本机路径。每款必须包含「检查更新」：插件页刷新／详情重新检查 → 更新到目标版本 → 用户确认，无需手动卸载；说明不是全局推送、不自动升级、Git／压缩包／`link:` 不适用，以及数据位置与重启／活进程风险。不再重复实现宿主更新器。
 5. `dsh-pi-mode` 已按系统填写找文件与命令行的规矩；CI 语法／单元测试通过不等于 GUI 或 PowerShell 行为已经在 Windows 上验证。
 6. `dsh-session-fee` 的价格表只收当前主流在线模型。改价或增删模型也要按插件发新版本（固定版本的安装不会自动拿到新价格），同步 `prices.json`、`PRICES.md` 与 CHANGELOG。目录、Git 标签和 npm 包名都用这个名字。
 
@@ -27,6 +27,7 @@
 5. 为变化的插件创建 `<插件名>@<版本>` 标签及 Release。标签是固定版本，不移动已发布标签；修复时发新版本。
 6. 按 Release 中的地址，在隔离 DSH profile 完整安装；确认包名、版本、`dsh.profile.bundles` 和导出的入口。
 7. DSH 上游升级后重新验证；没有测试过的平台明确写「未实测」，不把最低版本范围当成兼容保证。
-8. 标签推送后，用 `scripts/publish-npm.sh` 把变化的插件发到 npm。只发布子目录，不发布合集根。npm 上已有的版本不能覆盖；包名被占用时改包名并升一版，不抢别人的名字。
+8. 标签推送后，用 `scripts/publish-npm.sh <插件名>...` 显式指定变化的插件发到 npm，不把本地未发布原型一并带上。只发布子目录，不发布合集根。npm 上已有版本不能覆盖；包名被占用时改包名并升一版，不抢别人的名字。
+9. 发布后核验官方 npm 的 `latest`、版本号、`dsh.bundle.patch`、`engines.dsh` 与 Git 标签一致；兼容范围要真实，让宿主能拒绝不兼容更新。新插件／更新相关变更在隔离 profile 用旧版 npm 包验证发现新版、确认更新与配置保留，不能只检查 Git 安装；Windows／Linux 未实测须说明。只改说明且现有 npm 包已符合原生更新条件时，不为“添加更新按钮”虚增所有版本；下一次实际发布会携带新版 README。
 
 不强制安装整个合集，不为维护任务加常驻服务。

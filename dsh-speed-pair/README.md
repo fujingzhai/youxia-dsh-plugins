@@ -17,17 +17,27 @@
 
 ## 安装
 
-桌面版「插件」→「添加插件」粘贴：
+桌面版「插件」→「添加插件」优先填 npm 包名：
+
+```text
+dsh-speed-pair
+```
+
+命令行（Web 版把 `desktop` 换成 `web`）：
+
+```sh
+dsh plugin --profile desktop add dsh-speed-pair
+```
+
+仅需固定 Git 版本时使用下面地址；Git 安装不显示原生 npm 更新入口：
 
 ```text
 git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-speed-pair@0.1.0&path:/dsh-speed-pair
 ```
 
-或命令行（Web 版把 `desktop` 换成 `web`）：
+### 检查更新
 
-```sh
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-speed-pair@0.1.0&path:/dsh-speed-pair"
-```
+DSH 0.2.2-rc.1 已支持 npm 插件原生更新：打开「插件」点「刷新」，或进本插件详情的「版本 → 重新检查」；发现兼容新版后点击「更新到 <版本>」并确认，无需手动卸载重装。只在打开详情／刷新列表时检查，不是全局推送，不自动升级。按结果提示刷新／重启；若自己改过包内的 `SHOW_COUNTS`，升级前保存改动，包文件会被替换。Git、压缩包和 `link:` 不适用，先保留定制与数据，勿贸然卸载；详见[仓库更新说明](../README.md#检查更新与原地升级)。
 
 装完刷新桌面窗口；还没载入就重开 DSH。底栏应显示 `N 轮 M 步 · 207(122) tok/s`，点开有明细。
 

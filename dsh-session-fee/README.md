@@ -14,21 +14,31 @@
 
 ## 安装
 
-桌面版「插件」→「添加插件」，粘贴：
+桌面版「插件」→「添加插件」，优先填 npm 包名：
+
+```text
+dsh-session-fee
+```
+
+命令行（Web 版将 `desktop` 换成 `web`）：
+
+```sh
+dsh plugin --profile desktop add dsh-session-fee
+```
+
+仅需固定 Git 版本时使用下面地址；Git 安装不显示原生 npm 更新入口：
 
 ```text
 git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-fee@0.4.5&path:/dsh-session-fee
 ```
 
-或用命令行（Web 版将 `desktop` 换成 `web`）：
+### 检查更新
 
-```sh
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-fee@0.4.5&path:/dsh-session-fee"
-```
+DSH 0.2.2-rc.1 已支持 npm 插件原生更新：打开「插件」点「刷新」，或进本插件详情的「版本 → 重新检查」；发现兼容新版后点击「更新到 <版本>」并确认，无需手动卸载重装。只在打开详情／刷新列表时检查，不是全局推送，不自动升级。新价格表随插件更新；自定义价格表放在包外，通过 profile 的 `priceBook` 指定，更新不会覆盖它。按结果提示刷新／重启。Git、压缩包和 `link:` 不适用，先保留定制与数据，勿贸然卸载；详见[仓库更新说明](../README.md#检查更新与原地升级)。
 
 若终端找不到 `dsh`，macOS 官方桌面版可用 `"/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh"` 替代命令名。也可参照[仓库首页](../README.md)克隆后安装本子目录。
 
-连不上 GitHub 时填 npm 包名 `dsh-session-fee`。不要填 `dsh-session-cost`，那是别人的包。已安装旧目录或旧包名的，先卸载再装这一版。
+不要填 `dsh-session-cost`，那是别人的 npm 包。历史本地目录／旧名称的迁移需先核对实际来源、备份配置与价格表，不能当作同名 npm 插件的日常更新。
 
 安装后重启 DSH。有 token 用量的会话，会在统计条的用时、用量两项之后显示费用。版本更新与卸载见[仓库首页](../README.md)。
 

@@ -2,7 +2,7 @@
 
 [![检查](https://github.com/fujingzhai/youxia-dsh-plugins/actions/workflows/check.yml/badge.svg)](https://github.com/fujingzhai/youxia-dsh-plugins/actions/workflows/check.yml)
 
-自用并持续维护的 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）插件合集。
+自用并持续维护的 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）插件合集。各插件独立安装、独立更新。
 
 | 插件 | 当前版本 | 作用 |
 |---|---|---|
@@ -17,87 +17,9 @@
 
 兼容要求与使用说明见各插件目录。
 
-## 安装
+## 安装（推荐 npm，保留原生更新入口）
 
-### 桌面 GUI（推荐）
-
-打开 **插件 → 添加插件**，按需粘贴其中一条。地址包含版本标签及子目录，**不要只填仓库首页地址**：
-
-**Pi 模式／Pi-IM／Pi+模式（同一个插件）：**
-
-```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.3.2&path:/dsh-pi-mode
-```
-
-**会话费用：**
-
-```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-fee@0.4.5&path:/dsh-session-fee
-```
-
-**会话标签：**
-
-```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-labels@0.1.4&path:/dsh-session-labels
-```
-
-**设置导航定制：**
-
-```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-settings-customizer@0.3.2&path:/dsh-settings-customizer
-```
-
-**输出速度双口径：**
-
-```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-speed-pair@0.1.0&path:/dsh-speed-pair
-```
-
-**顿号触发：**
-
-```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-zh-slash@0.1.1&path:/dsh-zh-slash
-```
-
-**DeepSeek：**
-
-```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.4&path:/dsh-quick-chat
-```
-
-**CLI Agents：**
-
-```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-agents-cli@0.1.5&path:/dsh-agents-cli
-```
-
-各插件按需安装，装完重启 DSH。DeepSeek 网页插件会在左侧增加「DeepSeek」，首次需登录；CLI Agents 增加「Agents」，自动检测本机 CLI，首次进入只启动第一个可用入口，其余点到才启动。Pi 插件安装一次提供「Pi 模式」「Pi-IM」「Pi+模式」，需新建会话并在模式菜单中选择（Pi+ 多一个官方 apply_patch 工具，要求 DSH 0.2.2-rc.1 及以上）；会话费用无需设置，有 token 用量的会话会在统计条里显示；会话标签可悬浮会话行后点击「固定」后面的标签按钮，或在右键菜单打标，无需另选模式；输出速度双口径顶替原来的会话统计项，括号内即 pi 底栏口径；顿号触发无需选模式，在已选工作区的会话输入框开头敲「、」即可。
-
-### 命令行
-
-```sh
-# 各条互相独立，按需执行；Web 版将 desktop 换成 web
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.3.2&path:/dsh-pi-mode"
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-fee@0.4.5&path:/dsh-session-fee"
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-labels@0.1.4&path:/dsh-session-labels"
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-settings-customizer@0.3.2&path:/dsh-settings-customizer"
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-speed-pair@0.1.0&path:/dsh-speed-pair"
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-zh-slash@0.1.1&path:/dsh-zh-slash"
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.4&path:/dsh-quick-chat"
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-agents-cli@0.1.5&path:/dsh-agents-cli"
-```
-
-若终端找不到 `dsh`，macOS 官方桌面版可把命令名替换成带引号的完整路径：
-
-```sh
-"/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh" plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-zh-slash@0.1.1&path:/dsh-zh-slash"
-```
-
-其他平台使用自己的 DSH 命令位置，不要照抄 macOS 路径。
-
-### npm
-
-连不上 GitHub，或桌面端提示改用国内镜像时，在同一输入框填包名。镜像同步可能晚几分钟。
+打开 **插件 → 添加插件**，按需填一个包名，不要填整个仓库首页：
 
 ```text
 dsh-pi-mode
@@ -110,36 +32,86 @@ dsh-quick-chat
 dsh-agents-cli
 ```
 
+**优先用包名从 npm 安装。** DSH 0.2.2-rc.1 已提供第三方 npm 插件的版本检查与确认更新；固定 Git 标签、压缩包和本地链接安装不显示这套更新入口。国内镜像可在安装源中选择，同步可能晚几分钟。
+
 不要安装 npm 上的 `dsh-session-cost`，那是别人的包。本插件的目录、Git 地址和 npm 包名都是 `dsh-session-fee`。
 
-### 克隆后安装（需自行定制时）
+命令行（各条独立、按需执行；Web 版将 `desktop` 换成 `web`）：
+
+```sh
+dsh plugin --profile desktop add dsh-pi-mode
+dsh plugin --profile desktop add dsh-session-fee
+dsh plugin --profile desktop add dsh-session-labels
+dsh plugin --profile desktop add dsh-settings-customizer
+dsh plugin --profile desktop add dsh-speed-pair
+dsh plugin --profile desktop add dsh-zh-slash
+dsh plugin --profile desktop add dsh-quick-chat
+dsh plugin --profile desktop add dsh-agents-cli
+```
+
+若终端找不到 `dsh`，macOS 官方桌面版可用带引号的完整路径 `"/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh"` 替代命令名；其他平台使用自己的命令位置。
+
+安装后按界面提示启用，必要时重启 DSH。Pi 模式需重启并新建会话；DeepSeek 网页插件会在左侧增加「DeepSeek」，首次需登录；CLI Agents 增加「Agents」，只启动点到的入口；其他插件的用法见各自说明。
+
+## 检查更新与原地升级
+
+适用于 **DSH 0.2.2-rc.1 的第三方 npm 安装**；更早或更晚版本的界面可能不同：
+
+1. 打开 **插件**，点击 **刷新**，检查已安装、可更新的插件；发现新版时卡片标记 **可更新**。
+2. 进入对应插件详情，**版本 → 重新检查** 可单独检查。打开详情也会检查一次；发现兼容新版后，页头出现 **更新到 <版本>**。
+3. 点击更新，核对目标版本与安装源并确认。**不需要手动卸载重装**；Host 负责替换包、保留启用选择，安装失败时保留或尝试恢复旧版本。恢复也可能失败，须查看结果，不能把它当作无条件回滚保证。
+4. 按结果决定是否重启；Pi 模式等启动时加载的预设仍需重启，新建会话验证。Agents 更新可能结束正在运行的终端，请先完成任务。
+
+这是**打开详情或刷新列表时检查**，不是全局即时推送，不自动下载或升级。新版要求更高的 DSH 时会说明原因；网络失败或镜像尚未同步时可重新检查／换源，不会把“检查失败”当成“已是最新”。
+
+个人配置、标签数据库与登录快照应留在 profile 或 DSH 数据目录中，不要改发布包内的文件；更新会替换包文件。更新前备份重要数据，勿删除这些目录。插件自己的 README 列出具体存储位置。
+
+已用 Git 标签、压缩包或 `link:` 安装的，不会因此自动转成 npm。需要保留源码定制时继续按原方式维护；要迁移先备份配置与数据，再单独评估来源切换，**不要为了找更新按钮先卸载插件**。
+
+## 其他安装方式（不提供原生 npm 版本检查）
+
+### 固定 Git 标签
+
+只在有意固定版本时使用，地址必须包含标签和子目录；各地址独立：
+
+```text
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.3.2&path:/dsh-pi-mode
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-fee@0.4.5&path:/dsh-session-fee
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-labels@0.1.4&path:/dsh-session-labels
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-settings-customizer@0.3.2&path:/dsh-settings-customizer
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-speed-pair@0.1.0&path:/dsh-speed-pair
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-zh-slash@0.1.1&path:/dsh-zh-slash
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.4&path:/dsh-quick-chat
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-agents-cli@0.1.5&path:/dsh-agents-cli
+```
+
+固定标签不会跟随 `main`；新版见 [Releases](https://github.com/fujingzhai/youxia-dsh-plugins/releases)。将标签换成 `#main` 只是滚动开发来源，不保证 DSH 自动刷新分支。
+
+### 本地链接（开发／定制）
 
 ```sh
 git clone https://github.com/fujingzhai/youxia-dsh-plugins.git
 cd youxia-dsh-plugins
 dsh plugin --profile desktop add "link:$PWD/dsh-pi-mode"
-# 或：dsh plugin --profile desktop add "link:$PWD/dsh-session-fee"
-# 或：dsh plugin --profile desktop add "link:$PWD/dsh-session-labels"
-# 或：dsh plugin --profile desktop add "link:$PWD/dsh-speed-pair"
-# 或：dsh plugin --profile desktop add "link:$PWD/dsh-zh-slash"
+# 换成需要的插件子目录；不要安装合集根目录。
 ```
 
-链接安装依赖本地目录，请勿移走或删除目录。个人定制不要覆盖公共默认值：Pi 模式的工具屏蔽名单写在自己 profile 补丁的 `pi-mode-settings` 条目里，个性化提示词留在自己的副本；会话费用的自定义价格表放在插件目录之外，用配置 `priceBook` 指过去；设置导航定制的规则写在自己 profile 的 `settings-customizer` 条目中，源码默认不含任何个人规则（各见其 README）。
+链接依赖本地目录，请勿移走或删除。更新前保存自己的改动，再 `git pull --ff-only`；有冲突先合并，不强制重置。
 
-## 更新与卸载
+个人定制与公共默认值分开：Pi 的工具屏蔽名单写在自己 profile 的 `pi-mode-settings`；自定义价格表放在包外，用 `priceBook` 指过去；设置导航规则写在自己 profile 的 `settings-customizer`（各见对应 README）。
 
-- **版本安装**：查看 [Releases](https://github.com/fujingzhai/youxia-dsh-plugins/releases)，在插件页更新来源到新版地址，或重新执行该版本的安装命令。版本标签固定，不会自动跟随 `main`。
-- **跟随开发版**：将地址里的 `#<插件名>@<版本>`（如 `#dsh-session-fee@0.4.5`）换成 `#main`。这是滚动版本；需要最新提交时重新安装，不能保证 DSH 自动更新分支引用。
-- **本地链接**：先保存自己的改动，再在克隆目录执行 `git pull --ff-only`；有冲突先合并，不要强制重置。
-- **卸载**：在插件页卸载对应插件；也可执行 `dsh plugin --profile desktop remove <插件名>`，如 `dsh-zh-slash`。
-- 每次安装、更新、卸载后重启 DSH；插件各自独立，卸载一个不影响其他。
+## 卸载
+
+在插件详情卸载对应插件，或执行 `dsh plugin --profile desktop remove <插件名>`。卸载不同于更新，不要用卸载作为日常升级步骤。按界面提示刷新／重启；插件各自独立。
 
 ## 维护与反馈
 
 - [变更记录](CHANGELOG.md) · [维护约定](CONTRIBUTING.md) · [问题反馈](https://github.com/fujingzhai/youxia-dsh-plugins/issues)
-- 各插件独立版本、独立标签：`<插件名>@<版本>`。不会为新增插件强制升级其他插件。
-- 先在 `dsh-settings-customizer` 中执行 `npm install --ignore-scripts --package-lock=false`，再在根目录执行 `npm run check`：校验清单、入口、安装文档、语法、测试及打包内容。检查需要设置导航插件的配置定义依赖；GitHub Actions 在 Linux、macOS、Windows 运行 Node 24 检查。这不等于各平台已做过完整 DSH GUI 实测。
-- 报错时请提供 DSH 版本、操作系统、插件版本、安装来源及复现步骤；不要上传账号密钥、完整会话日志或私人配置。
+- 各插件独立版本、独立标签：`<插件名>@<版本>`。不会为新增插件或只改说明强制升级其他插件。
+- 先在 `dsh-settings-customizer` 中执行 `npm install --ignore-scripts --package-lock=false`，再在根目录执行 `npm run check`：校验已纳入 Git 的插件清单、原生更新条件、安装与更新说明、语法、测试及打包内容。未提交的本地开发目录不当作已发布插件。CI 在 Linux、macOS、Windows 运行 Node 24；不等于三个平台均做过完整 GUI 实测。
+- 2026-11-09 在 macOS、DSH 0.2.2-rc.1、隔离 Web profile 从 npm 安装会话标签 0.1.3，原生检查发现 0.1.4，点击 **更新到 0.1.4** 并确认后成功热更新；测试标签的名称、颜色、ID 与会话关联全部保留，插件仍启用。其他七款仅核验 npm 清单与相同的更新资格，不宣称逐款完成 GUI 升级。
+- 原生机制：[DSH 0.2.2-rc.1 插件页说明](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.2-rc.1/packages/client/ui-plugin-manager/README.zh.md#更新注册表组合包)。不重复内置更新器，不额外安装常驻更新服务。
+- 报错请提供 DSH／系统／插件版本、安装来源及复现步骤；不要上传密钥、完整会话或私人配置。
 
 ## 许可
 

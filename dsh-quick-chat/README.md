@@ -10,19 +10,29 @@ DSH 主面板里的 **DeepSeek** 官方网页：复用桌面端原生浏览器�
 
 ## 安装
 
-GUI：**插件 → 添加插件**，粘贴：
+GUI：**插件 → 添加插件**，优先填 npm 包名：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.4&path:/dsh-quick-chat
+dsh-quick-chat
 ```
 
 命令行：
 
 ```sh
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.4&path:/dsh-quick-chat"
+dsh plugin --profile desktop add dsh-quick-chat
 ```
 
-npm（连不上 GitHub 时）：包名 `dsh-quick-chat`。装完重启 DSH，左侧出现 **DeepSeek**。
+仅需固定 Git 版本时使用下面地址；Git 安装不显示原生 npm 更新入口：
+
+```text
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.4&path:/dsh-quick-chat
+```
+
+### 检查更新
+
+DSH 0.2.2-rc.1 已支持 npm 插件原生更新：打开「插件」点「刷新」，或进本插件详情的「版本 → 重新检查」；发现兼容新版后点击「更新到 <版本>」并确认，无需手动卸载重装。只在打开详情／刷新列表时检查，不是全局推送，不自动升级。登录快照保存在 DSH 数据目录，不在包内；勿删除它，更新前先完成网页中的工作。按结果提示刷新／重启。Git、压缩包和 `link:` 不适用，先保留定制与数据，勿贸然卸载；详见[仓库更新说明](../README.md#检查更新与原地升级)。
+
+装完重启 DSH，左侧出现 **DeepSeek**。
 
 需要 DSH Desktop 0.2.2-rc.1 或更新版本；纯 `dsh web` 没有原生网页通道，面板只会提示不支持。
 

@@ -6,13 +6,7 @@
 
 ## 安装
 
-需要 DSH **0.2.2-rc.1** 或更新版本，并在本机安装要使用的 CLI。打开 **插件 → 添加插件**，填入：
-
-```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-agents-cli@0.1.5&path:/dsh-agents-cli
-```
-
-也可直接填 npm 包名：
+需要 DSH **0.2.2-rc.1** 或更新版本，并在本机安装要使用的 CLI。打开 **插件 → 添加插件**，优先填 npm 包名：
 
 ```text
 dsh-agents-cli
@@ -21,8 +15,18 @@ dsh-agents-cli
 命令行（各系统相同；Web 版将 `desktop` 换成 `web`）：
 
 ```sh
-dsh plugin --profile desktop add "git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-agents-cli@0.1.5&path:/dsh-agents-cli"
+dsh plugin --profile desktop add dsh-agents-cli
 ```
+
+仅需固定 Git 版本时使用下面地址；Git 安装不显示原生 npm 更新入口：
+
+```text
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-agents-cli@0.1.5&path:/dsh-agents-cli
+```
+
+### 检查更新
+
+DSH 0.2.2-rc.1 已支持 npm 插件原生更新：打开「插件」点「刷新」，或进本插件详情的「版本 → 重新检查」；发现兼容新版后点击「更新到 <版本>」并确认，无需手动卸载重装。只在打开详情／刷新列表时检查，不是全局推送，不自动升级。**先完成正在运行的 CLI 任务**：Host 热更新可能卸下旧插件、结束终端，保留设置不等于保留活进程。设置文件留在 DSH 数据目录，不在包内；按结果提示刷新／重启。Git、压缩包和 `link:` 不适用，先保留定制与数据，勿贸然卸载；详见[仓库更新说明](../README.md#检查更新与原地升级)。
 
 安装后重启 DSH，左侧出现 **Agents**。插件不安装 CLI、不接管登录，也不提供安装按钮。
 
