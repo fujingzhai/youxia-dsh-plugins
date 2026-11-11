@@ -6,7 +6,7 @@
 
 | 插件 | 当前版本 | 作用 |
 |---|---|---|
-| [dsh-pi-mode](dsh-pi-mode) | 0.4.2 | Pi / Pi+ / Pi-IM 共用精简核心、按需 Office 工具、低频静默提醒与联网及文档入口 |
+| [dsh-pi-mode](dsh-pi-mode) | 0.4.3 | Pi / Pi+ / Pi-IM 共用精简核心、按需 Office 工具、低频静默提醒与官方 dsh-doc 入口 |
 | [dsh-session-fee](dsh-session-fee) | 0.4.5 | 在统计条显示会话（含子代理）按市面 token 价折算的费用 |
 | [dsh-session-labels](dsh-session-labels) | 0.1.4 | Finder 风格会话标签：悬浮按钮与右键打标、标题着色或标签符号、视图筛选 |
 | [dsh-settings-customizer](dsh-settings-customizer) | 0.3.2 | 用个人配置覆盖设置导航的顺序、名称、图标；公共默认为空 |
@@ -75,7 +75,7 @@ dsh plugin --profile desktop add dsh-agents-cli
 只在有意固定版本时使用，地址必须包含标签和子目录；各地址独立：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.4.2&path:/dsh-pi-mode
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.4.3&path:/dsh-pi-mode
 git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-fee@0.4.5&path:/dsh-session-fee
 git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-labels@0.1.4&path:/dsh-session-labels
 git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-settings-customizer@0.3.2&path:/dsh-settings-customizer

@@ -1,5 +1,5 @@
 /**
- * 按运行 DSH 的系统提供 {{shell_tool}}、{{shell_rules}}（搜索与退出码）及 {{dsh_rules}}（实现定位与随包文档入口）。
+ * 按运行 DSH 的系统提供 {{shell_tool}}、{{shell_rules}}（搜索与退出码）及 {{dsh_rules}}（实现定位与 dsh-doc 入口）。
  *
  * 提示词是整份替换的，官方工具自己注入的英文段落不会出现，所以对应说法写在这里。
  * Windows 挂了官方 glob / grep（自带 ripgrep，不要求本机安装 rg），命令行是 PowerShell；
@@ -25,7 +25,7 @@ export const shellRules = (platform = process.platform) => platform === 'win32' 
 export const shellTool = (platform = process.platform) => platform === 'win32' ? 'pwsh' : 'bash'
 
 export function dshRules() {
-  return '- DSH 实现位置由 runtime-context 给出，仅供定位；DSH 问题先用 read 查 <实现位置>/node_modules/@deepseek-ai/<相关包>/README.zh.md（无中文则 README.md），不足再联网；不默认遍历、解包或通读源码。'
+  return '- DSH 实现位置以 runtime-context 为准；涉及 DSH 自身的功能、配置、插件、预设、工具或升级时，先加载 dsh-doc，按需查阅当前安装版本的文档，不默认遍历、解包或通读源码，信息不足则进行联网搜索。'
 }
 
 export function apply(ctx) {

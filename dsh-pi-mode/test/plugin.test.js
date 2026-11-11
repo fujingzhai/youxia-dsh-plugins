@@ -214,18 +214,25 @@ test('官方插件管理工具只在共用核心注册一次，三个预设共�
   assert.doesNotMatch(prefix, /approvedBuilds|pendingBuilds|danger-full-access|构建脚本|版本豁免/)
 })
 
-test('DSH 插件分三点，明确管理安装、寻找与随包开发入口', () => {
+test('关于DSH 合并文档与插件指引，保留 GUI 占位并把插件规则放最后', () => {
   const patch = readFileSync(new URL('../cordis.patch.yml', import.meta.url), 'utf8')
   const prefix = patch.match(/prefix: \|-\r?\n([\s\S]*?)(?=\r?\n {14}- id: agent-instructions)/)?.[1]
-  const rules = [
-    '- DSH 插件管理与安装用 plugin_manager。',
-    '- 寻找新插件查 npm、项目仓库或可选集市。',
-    '- 开发插件先用 read 读取 <实现位置>/node_modules/@deepseek-ai/dsh-agent-preset/skills/cordis-plugin-development/SKILL.md，按 Cordis API 扩展。',
-  ]
-  assert.equal((prefix.match(/## DSH 插件/g) ?? []).length, 1)
-  assert.deepEqual(prefix.split('## DSH 插件')[1].trim().split(/\r?\n/).map(line => line.trim()), rules)
-  for (const rule of rules) assert.equal(patch.split(rule).length - 1, 1, '三个模式复用同一组规则')
-  assert.doesNotMatch(rules.join('\n'), /cordis_inspect|plugin_market|https?:/)
+  const pluginRule = '- DSH 插件管理与安装用 plugin_manager；寻找新插件查 npm、项目仓库或可选集市。'
+  assert.equal((prefix.match(/## 关于DSH/g) ?? []).length, 1)
+  assert.deepEqual(prefix.split('## 关于DSH')[1].trim().split(/\r?\n/).map(line => line.trim()).filter(Boolean), [
+    '{{dsh_rules}}', '{{gui_rules}}', pluginRule,
+  ])
+  assert.equal(patch.split(pluginRule).length - 1, 1, '三个模式复用同一条插件规则')
+  assert.doesNotMatch(prefix, /## DSH 环境|## DSH 插件|cordis-plugin-development|<实现位置>/)
+  assert.equal(dshRules(), '- DSH 实现位置以 runtime-context 为准；涉及 DSH 自身的功能、配置、插件、预设、工具或升级时，先加载 dsh-doc，按需查阅当前安装版本的文档，不默认遍历、解包或通读源码，信息不足则进行联网搜索。')
+})
+
+test('共用技能目录从当前安装包解析，提供官方 dsh-doc 而不复制内容', () => {
+  const patch = readFileSync(new URL('../cordis.patch.yml', import.meta.url), 'utf8')
+  assert.match(patch, /- id: skill-filesystem\r?\n\s+name: '@deepseek-ai\/dsh-skill-filesystem'\r?\n\s+config:\r?\n\s+customSkillDirs:/)
+  assert.match(patch, /createRequire\(baseUrl\)\.resolve\('@deepseek-ai\/dsh-agent-preset\/package\.json'\)/)
+  assert.equal((patch.match(/customSkillDirs:/g) ?? []).length, 1)
+  assert.doesNotMatch(patch, /\/Users\/|\.agents\/skills|\.dsh\/skills|cordis-plugin-development/)
 })
 
 test('三个模式共用官方按需 Office 工具，不复制工具、技能或宿主引擎', () => {
@@ -382,7 +389,7 @@ test('提示词按主题排序，整份展开后严格隔离平台命令', () =>
     .split(/\r?\n/).map(line => line.trimStart()).join('\n')
   assert(prefix)
   assert.deepEqual([...prefix.matchAll(/^## (.+)$/gm)].map(match => match[1]), [
-    '文件与命令', '任务执行', '联网资料', '结果交付', 'DSH 环境', 'DSH 插件',
+    '文件与命令', '任务执行', '联网资料', '结果交付', '关于DSH',
   ])
   assert(prefix.indexOf('用户以 @') < prefix.indexOf('看文件用 read'))
   assert(prefix.indexOf('看文件用 read') < prefix.indexOf('{{file_rules}}'))
@@ -391,9 +398,9 @@ test('提示词按主题排序，整份展开后严格隔离平台命令', () =>
   assert(prefix.indexOf('{{dsh_rules}}') < prefix.indexOf('{{gui_rules}}'))
   for (const platform of ['darwin', 'linux', 'win32']) {
     const environment = dshRules(platform)
-    assert.equal(environment.split('\n').length, 1, '随包文档入口合在环境首条，不另起条目')
-    assert.match(environment, /DSH 实现位置由 runtime-context 给出，仅供定位；DSH 问题先用 read 查/)
-    assert.match(environment, /<实现位置>\/node_modules\/@deepseek-ai\/<相关包>\/README\.zh\.md（无中文则 README\.md），不足再联网/)
+    assert.equal(environment.split('\n').length, 1, 'dsh-doc 入口合在关于DSH首条，不另起条目')
+    assert.match(environment, /DSH 实现位置以 runtime-context 为准；涉及 DSH 自身的功能、配置、插件、预设、工具或升级时，先加载 dsh-doc/)
+    assert.match(environment, /按需查阅当前安装版本的文档.*信息不足则进行联网搜索/)
     assert.match(environment, /不默认遍历、解包或通读源码/)
     assert.doesNotMatch(environment, /https?:|工作目录|\bpwd\b|Get-Location|当前实例|仅检查或扩展 DSH 时使用该实现/)
     for (const applyPatch of [false, true]) {

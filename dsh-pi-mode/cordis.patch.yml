@@ -61,16 +61,12 @@
 
                     {{channel_rules}}
 
-                    ## DSH 环境
+                    ## 关于DSH
 
                     {{dsh_rules}}
                     {{gui_rules}}
 
-                    ## DSH 插件
-
-                    - DSH 插件管理与安装用 plugin_manager。
-                    - 寻找新插件查 npm、项目仓库或可选集市。
-                    - 开发插件先用 read 读取 <实现位置>/node_modules/@deepseek-ai/dsh-agent-preset/skills/cordis-plugin-development/SKILL.md，按 Cordis API 扩展。
+                    - DSH 插件管理与安装用 plugin_manager；寻找新插件查 npm、项目仓库或可选集市。
               - id: agent-instructions
                 name: '@deepseek-ai/dsh-agent-instructions'
                 config:
@@ -99,6 +95,9 @@
                 name: '@deepseek-ai/dsh-tool-jobs'
               - id: skill-filesystem
                 name: '@deepseek-ai/dsh-skill-filesystem'
+                config:
+                  customSkillDirs:
+                    - !!js process.getBuiltinModule('node:path').join(process.getBuiltinModule('node:path').dirname(process.getBuiltinModule('node:module').createRequire(baseUrl).resolve('@deepseek-ai/dsh-agent-preset/package.json')), 'skills')
               - id: tool-skill
                 name: '@deepseek-ai/dsh-tool-skill'
               # 与标准模式共用官方按需工具；Office 技能和引擎由 Web／Desktop 宿主提供。

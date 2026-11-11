@@ -18,7 +18,7 @@
 |---|---|---|
 | 预设工具 | 随 DSH 版本、profile 变化 | macOS / Linux 的基线为 read、read_image、write、edit、bash、job_output / job_list / job_kill、skill、ask_user_question、plugin_manager、present、web_search、web_fetch；Office 技能加载后按需增加三个官方工具；实际可见性受 profile、搜索后端及全局插件影响 |
 | 精简的能力 | 完整默认工具组合 | 预设不挂子代理与 workflow、目标、计划模式、todo、定时任务工具；macOS / Linux 用 bash 搜索文件，Windows 保留官方 glob / grep，并用 pwsh 替代 bash |
-| 系统提示词 | DSH 各插件拼装身份、工具引导及应用说明 | 简短身份＋中文规则，覆盖文件与命令、任务执行、联网、结果交付、DSH 环境和插件入口 |
+| 系统提示词 | DSH 各插件拼装身份、工具引导及应用说明 | 简短身份＋中文规则，覆盖文件与命令、任务执行、联网、结果交付和「关于DSH」 |
 | 运行时上下文 | 当前目录、权限、审批策略、实现位置、GUI 地址及插件附加上下文 | 原生保留，不裁剪，也不恢复标准模式的长 system |
 
 AGENTS.md、技能清单、时间、自动压缩和后台任务照常可用。全局插件注册的工具默认仍可见，可用个人名单屏蔽；实际输入量随版本、模型和工具组合变化，不承诺固定 token 数或提速比例。
@@ -46,7 +46,7 @@ dsh plugin --profile desktop add dsh-pi-mode
 仅需固定 Git 版本时使用下面地址；Git 安装不提供原生 npm 更新入口：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.4.2&path:/dsh-pi-mode
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.4.3&path:/dsh-pi-mode
 ```
 
 ### 检查更新
@@ -115,11 +115,19 @@ Pi／Pi+／Pi-IM 的共用核心挂载官方 `tool-office`，沿用标准模式�
 - Python 文档库仍用于创作与编辑。渲染图片直接返回模型；转换和重算返回临时文件，再由 shell 复制到目标位置。Pi-IM 沿用原 IM 文件交付，不增加 present。
 - 输入遵守文件系统读取权限；原生 LibreOffice Kit 在 Host 进程内运行，不受 shell 沙箱约束。引擎不可用时按官方工具结果说明原因，不另找系统转换器绕过。
 
-## DSH 文档与插件入口
+## 关于DSH
 
-DSH 相关问题优先用 read 定向读取随包组件 README（中文优先），不足再联网；安装位置只作定位，不默认遍历、解包或通读源码，也不重复 runtime-context 的工作目录信息。
+三个模式共用的技能发现配置按当前 DSH 安装解析官方预设包的 `skills` 目录，直接提供 `dsh-doc`；不复制文档、不安装用户级技能，也不自动增加 Cordis 检查工具。技能正文与参考随 DSH 更新。
 
-「DSH 插件」在 system 中分三点：管理与安装用 `plugin_manager`，寻找新插件查 npm、项目仓库或可选集市，开发先读取随包 `cordis-plugin-development/SKILL.md`，通过 Cordis API 扩展。文档入口完整写在提示词里，`<实现位置>` 保持字面原文，由模型结合 runtime-context 使用。
+system 的「关于DSH」首条为：
+
+> DSH 实现位置以 runtime-context 为准；涉及 DSH 自身的功能、配置、插件、预设、工具或升级时，先加载 dsh-doc，按需查阅当前安装版本的文档，不默认遍历、解包或通读源码，信息不足则进行联网搜索。
+
+桌面 GUI 指代、构建与刷新、替代服务器三条规则保持不变；Pi-IM 仍不带桌面 GUI 规则。最后一条统一为：
+
+> DSH 插件管理与安装用 plugin_manager；寻找新插件查 npm、项目仓库或可选集市。
+
+不再单列「DSH 插件」，也不保留已失效的旧开发技能路径。加载 `dsh-doc` 不代表授权修改文件或 profile。
 
 三个模式均在有 profile 上下文时挂载官方 `plugin_manager`，沿用其授权、构建脚本审批、版本兼容检查和 `nextStep`。变更影响同一 profile 的所有会话，不因使用 Pi 而放宽权限。插件未附带 Cordis 检查工具；开发代码调用 Cordis API 不依赖这些检查工具。
 
@@ -168,13 +176,13 @@ DSH 的预设工具与全局工具不同。Pi 不挂某项预设能力，不代�
 
 ## 定制提示词与检查安装
 
-共用 system 位于 `cordis.patch.yml` 的 `persona.config.prefix`，按「文件与命令 → 任务执行 → 联网资料 → 结果交付 → DSH 环境 → DSH 插件」分组。三个模式引用同一个 `pi-core`；定制源码时只改这份，不复制三个版本，更新前自行保留改动。
+共用 system 位于 `cordis.patch.yml` 的 `persona.config.prefix`，按「文件与命令 → 任务执行 → 联网资料 → 结果交付 → 关于DSH」分组。三个模式引用同一个 `pi-core`；定制源码时只改这份，不复制三个版本，更新前自行保留改动。
 
 | 变量 | 来源 |
 |---|---|
 | `{{file_rules}}` | `files.js`：Pi / Pi-IM 用原编辑规则，Pi+ 用补丁规则 |
 | `{{shell_tool}}`、`{{shell_rules}}` | `shell.js`：按系统填写工具名、搜索与退出码规则 |
-| `{{dsh_rules}}` | `shell.js`：实现位置与随包文档入口 |
+| `{{dsh_rules}}` | `shell.js`：实现位置与官方 dsh-doc 入口 |
 | `{{channel_rules}}` | `index.js`：桌面交付或 IM 回传 |
 | `{{gui_rules}}` | `index.js`：仅 Pi / Pi+ 的桌面 GUI 规则 |
 
@@ -193,6 +201,8 @@ DSH 的预设工具与全局工具不同。Pi 不挂某项预设能力，不代�
 0.4.1 另在 macOS、DSH 0.2.2-rc.2 的隔离 profile 通过正式启动器加载 Pi／Pi+／Pi-IM，核对实际组装的提示词均只有一条新版读取规则；未调用模型或操作 GUI。
 
 0.4.2 在同版 DSH 的隔离 profile 验证 3 个预设 × 4 个 Office 技能的工具激活：初始无 Office 声明、加载失败不激活、成功后下一步恰好新增三个工具，Pi system 不变；缺少引擎时保留官方错误。此验证不请求模型，也不包含 GUI、真实转换、渲染或重算。
+
+0.4.3 在同版 DSH 的隔离 profile 核对三个预设的「关于DSH」原文、插件末条和 GUI 规则，并从当前 ASAR 经 `skill` 成功加载官方 `dsh-doc`；加载文档不激活 Office，随后加载 Office 仍可启用三个工具。未请求模型或操作 GUI。
 
 源码入口：`cordis.patch.yml`（组合与提示词）、`index.js`（渠道变量与工具屏蔽）、`files.js`、`shell.js`、`web.js`（工具接入与规则）、`settings.js`（个人设置）、`progress.js`（静默提醒）。
 

@@ -4,6 +4,13 @@
 
 ## 2026-11-12
 
+### dsh-pi-mode 0.4.3
+
+- 三个预设按当前安装解析官方技能目录，接入 `dsh-doc`，不复制技能、文档或模板，不添加 Cordis 检查工具。
+- 原「DSH 环境」「DSH 插件」合为「关于DSH」：首条先加载 `dsh-doc`，按需查当前安装文档，不默认遍历、解包或通读源码，信息不足再联网；管理安装与寻找插件合为末条。移除失效的旧开发路径，桌面 GUI 三条规则保持不变，Pi-IM 仍不注入 GUI 规则。
+- 保留 0.4.2 的按需 Office 工具，最低 DSH 版本仍为 **0.2.2-rc.2**。更新后需重启 DSH、新建会话。
+- 49 项 Pi 测试和仓库完整检查通过；macOS／DSH rc.2 隔离 profile 验证三个预设实际提示词与指定原文一致、插件条目位于最后、GUI 规则按模式保留，从当前 ASAR 中发现并经 `skill` 成功加载官方 `dsh-doc`，加载文档不激活 Office、加载 Office 后仍按需出现三个工具。未请求模型或操作 GUI。
+
 ### dsh-pi-mode 0.4.2
 
 - 三个预设共用核心接入官方 `tool-office`：加载任一 Office 技能后，下一步按需出现 `office_render`、`office_convert`、`office_recalculate`，不增加常驻 system 或复制技能／引擎。
