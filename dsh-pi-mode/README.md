@@ -16,7 +16,7 @@
 
 | | 标准模式 | Pi 模式 |
 |---|---|---|
-| 预设工具 | 随 DSH 版本、profile 变化 | macOS / Linux 的基线为 read、read_image、write、edit、bash、job_output / job_list / job_kill、skill、ask_user_question、plugin_manager、present、web_search、web_fetch；实际可见性受 profile、搜索后端及全局插件影响 |
+| 预设工具 | 随 DSH 版本、profile 变化 | macOS / Linux 的基线为 read、read_image、write、edit、bash、job_output / job_list / job_kill、skill、ask_user_question、plugin_manager、present、web_search、web_fetch；Office 技能加载后按需增加三个官方工具；实际可见性受 profile、搜索后端及全局插件影响 |
 | 精简的能力 | 完整默认工具组合 | 预设不挂子代理与 workflow、目标、计划模式、todo、定时任务工具；macOS / Linux 用 bash 搜索文件，Windows 保留官方 glob / grep，并用 pwsh 替代 bash |
 | 系统提示词 | DSH 各插件拼装身份、工具引导及应用说明 | 简短身份＋中文规则，覆盖文件与命令、任务执行、联网、结果交付、DSH 环境和插件入口 |
 | 运行时上下文 | 当前目录、权限、审批策略、实现位置、GUI 地址及插件附加上下文 | 原生保留，不裁剪，也不恢复标准模式的长 system |
@@ -25,7 +25,7 @@ AGENTS.md、技能清单、时间、自动压缩和后台任务照常可用。�
 
 ## 安装
 
-要求 **DSH 0.2.2-rc.1 或更新版本**。旧版 DSH 请使用插件 0.2.5；后续 DSH 大改仍可能需要适配。
+要求 **DSH 0.2.2-rc.2 或更新版本**。DSH 0.2.2-rc.1 请使用插件 0.4.1；更旧版可使用 0.2.5，但须另核对其兼容要求。后续 DSH 大改仍可能需要适配。
 
 桌面版「插件 → 添加插件」，优先填 npm 包名：
 
@@ -46,7 +46,7 @@ dsh plugin --profile desktop add dsh-pi-mode
 仅需固定 Git 版本时使用下面地址；Git 安装不提供原生 npm 更新入口：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.4.1&path:/dsh-pi-mode
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.4.2&path:/dsh-pi-mode
 ```
 
 ### 检查更新
@@ -106,6 +106,14 @@ globalThis[Symbol.for('dsh-pi-mode.web-tools')] = {
 ```
 
 联网规则不依赖 `web_rules`，旧 hook 不能通过这个变量覆盖核心提示。要强制使用 DSH 内置工具，在 `web-tools` 行设置 `config: { prefer: builtin }`。
+
+## Office
+
+Pi／Pi+／Pi-IM 的共用核心挂载官方 `tool-office`，沿用标准模式的按需激活，不复制工具说明、技能或引擎，也不增加常驻系统提示词。宿主需提供 Office 技能和 `office-kit`；普通 Web／Desktop 已提供，自定义 profile 须自行组合。
+
+- 平时只列出宿主的 `office`、`office-docx`、`office-xlsx`、`office-pptx` 四个技能摘要；成功加载其中任意一个后，下一步才出现 `office_render`（页面图片）、`office_convert`（格式转换）和 `office_recalculate`（公式重算）。加载失败或加载无关技能不激活。
+- Python 文档库仍用于创作与编辑。渲染图片直接返回模型；转换和重算返回临时文件，再由 shell 复制到目标位置。Pi-IM 沿用原 IM 文件交付，不增加 present。
+- 输入遵守文件系统读取权限；原生 LibreOffice Kit 在 Host 进程内运行，不受 shell 沙箱约束。引擎不可用时按官方工具结果说明原因，不另找系统转换器绕过。
 
 ## DSH 文档与插件入口
 
@@ -183,6 +191,8 @@ DSH 的预设工具与全局工具不同。Pi 不挂某项预设能力，不代�
 已在 macOS、DSH 0.2.2-rc.1 隔离 profile 加载三个完整预设并核对请求；静默提醒用真实 AgentLoop 配合模拟模型、时钟和无副作用工具验证阈值、上限、开关及历史前缀。单元测试覆盖平台规则、模式复用、工具限制和提醒状态。Windows / Linux 完整 GUI 与真实供应商缓存命中率未实测。
 
 0.4.1 另在 macOS、DSH 0.2.2-rc.2 的隔离 profile 通过正式启动器加载 Pi／Pi+／Pi-IM，核对实际组装的提示词均只有一条新版读取规则；未调用模型或操作 GUI。
+
+0.4.2 在同版 DSH 的隔离 profile 验证 3 个预设 × 4 个 Office 技能的工具激活：初始无 Office 声明、加载失败不激活、成功后下一步恰好新增三个工具，Pi system 不变；缺少引擎时保留官方错误。此验证不请求模型，也不包含 GUI、真实转换、渲染或重算。
 
 源码入口：`cordis.patch.yml`（组合与提示词）、`index.js`（渠道变量与工具屏蔽）、`files.js`、`shell.js`、`web.js`（工具接入与规则）、`settings.js`（个人设置）、`progress.js`（静默提醒）。
 

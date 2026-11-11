@@ -101,6 +101,10 @@
                 name: '@deepseek-ai/dsh-skill-filesystem'
               - id: tool-skill
                 name: '@deepseek-ai/dsh-tool-skill'
+              # 与标准模式共用官方按需工具；Office 技能和引擎由 Web／Desktop 宿主提供。
+              # 成功加载 Office 技能后，下一步才公开渲染、转换和重算，不增加常驻 system。
+              - id: tool-office
+                name: '@deepseek-ai/dsh-tool-office'
               - id: compaction
                 name: cordis:group
                 group: true

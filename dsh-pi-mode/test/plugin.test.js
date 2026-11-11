@@ -228,6 +228,24 @@ test('DSH 插件分三点，明确管理安装、寻找与随包开发入口', (
   assert.doesNotMatch(rules.join('\n'), /cordis_inspect|plugin_market|https?:/)
 })
 
+test('三个模式共用官方按需 Office 工具，不复制工具、技能或宿主引擎', () => {
+  const patch = readFileSync(new URL('../cordis.patch.yml', import.meta.url), 'utf8')
+  const [base, remainder] = patch.split(/- id: preset-pi-im\r?\n/)
+  const [im, plus] = remainder.split(/- id: preset-pi-plus\r?\n/)
+  const core = base.split(/- &pi-files\r?\n/)[0]
+  assert.match(core, /- id: tool-skill\r?\n\s+name: '@deepseek-ai\/dsh-tool-skill'[\s\S]*?- id: tool-office\r?\n\s+name: '@deepseek-ai\/dsh-tool-office'/)
+  assert.equal((patch.match(/- id: tool-office\r?\n/g) ?? []).length, 1)
+  assert.match(im, /- \*pi-core\r?\n/)
+  assert.match(plus, /- \*pi-core\r?\n/)
+  const prefix = core.match(/prefix: \|-\r?\n([\s\S]*?)(?=\r?\n {14}- id: agent-instructions)/)?.[1]
+  assert.doesNotMatch(prefix, /office_render|office_convert|office_recalculate|LibreOffice/)
+  assert.doesNotMatch(patch, /name: '@deepseek-ai\/dsh-(?:office-kit|skill-office)'/)
+  const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
+  assert.equal(manifest.engines.dsh, '>=0.2.2-rc.2')
+  assert.equal(manifest.peerDependencies['@deepseek-ai/dsh-tool-office'], '>=0.2.2-rc.2')
+  assert(!manifest.dependencies?.['@deepseek-ai/dsh-tool-office'], '宿主包只声明为 peer，不额外安装一套运行时')
+})
+
 test('补丁里用包名引用的 web.js / settings.js / shell.js / files.js 能按 exports 解析', async () => {
   // 0.2.2 曾给 exports 加了白名单却漏掉这两个子路径；用相对路径 import 文件测不出来，
   // 要等 DSH 新建会话时才报 "web-tools (dsh-pi-mode/web.js): never started"。

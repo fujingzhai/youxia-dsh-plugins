@@ -4,6 +4,13 @@
 
 ## 2026-11-12
 
+### dsh-pi-mode 0.4.2
+
+- 三个预设共用核心接入官方 `tool-office`：加载任一 Office 技能后，下一步按需出现 `office_render`、`office_convert`、`office_recalculate`，不增加常驻 system 或复制技能／引擎。
+- 沿用宿主 Office 服务、工具参数、权限与错误处理；Pi-IM 保持原 IM 交付。宿主原生 LibreOffice Kit 不受 shell 沙箱保护，输入仍受文件系统读取权限约束。
+- 最低 DSH 版本提高至 **0.2.2-rc.2**，只把宿主 `dsh-tool-office` 声明为 peer；DSH rc.1 用户保留插件 0.4.1。此次不修改 DSH 文档与插件提示词，也不接入 `dsh-doc`。更新后需重启 DSH、新建会话。
+- 48 项 Pi 测试及仓库完整检查通过；macOS／DSH 0.2.2-rc.2 隔离 profile 经正式启动器验证 3 个预设 × 4 个 Office 技能：初始隐藏、失败加载不激活、成功加载后下一步恰好新增三个工具，system 保持不变；缺失引擎时保留官方不可用错误。未请求模型、操作 GUI 或实测文档转换。
+
 ### dsh-pi-mode 0.4.1
 
 - 三个预设共用读取规则对齐 DSH 0.2.2-rc.2：明确用 `read`，不用 `cat`、`sed`、`head` 或 `tail` 读取文件正文；用 `offset`／`limit` 读取指定行范围或续读大文件。
