@@ -234,13 +234,15 @@ test('找文件的规矩按系统填写，shell.js 把对应文本登记为 shel
   const windows = shellRules('win32')
   assert.equal(posix, linux)
   assert.match(posix, /bash（ls、rg、find）/)
+  assert.match(posix, /围绕同一子目录连续操作时优先传 workdir 或切 working_directory/)
+  assert.match(posix, /内联多行脚本用 <<'EOF' 避免引号转义出错/)
   assert.doesNotMatch(posix, /glob|grep|pwsh|PowerShell/)
   assert.deepEqual(windows.split('\n').slice(0, 2), [
     '- 用 glob 工具——而不是 shell find——按路径模式查找文件。',
     '- 用 grep 工具——而不是 shell grep 或 rg——搜索文件内容。需要上下文时，对命中的文件用 read。',
   ])
   assert.match(windows, /检查 pwsh 的/)
-  assert.doesNotMatch(windows, /bash|跑命令用|PowerShell|\$env:NAME|Windows 形式/)
+  assert.doesNotMatch(windows, /bash|跑命令用|PowerShell|\$env:NAME|Windows 形式|working_directory|<<'EOF'/)
   const variables = new Map()
   applyShell({ systemPrompt: { variable: (name, provider) => variables.set(name, provider) } })
   assert.equal(variables.get('shell_tool')?.(), shellTool())

@@ -37,7 +37,7 @@ Pi / Pi+ / Pi-IM 在共用 `pi-core` 中启用官方 `plugin_manager`，可查�
 ## 要求与限制
 
 - 0.3.0 起要求 DSH 0.2.2-rc.1 及以上，以确保内置 `apply_patch` 可用；旧版 DSH 请停留在插件 0.2.5。基于 macOS 桌面版 0.2.2-rc.1 验证，Windows / Linux 完整 GUI 未实测，DSH 大改后可能要跟着调。
-- 平台规则由 `shell.js` 按运行 DSH 的 `process.platform` 自动填写，不看浏览器所在系统：macOS / Linux 用 bash（ls、rg、find）和 pwd，不注入 Windows 提示；Windows 保留标准原文 glob／grep 两句、pwsh 退出码与中断说明，以及 Get-Location，不注入 bash／pwd 提示。PowerShell 路径和环境变量等用法由官方工具说明提供，system 不重复。
+- 平台规则由 `shell.js` 按运行 DSH 的 `process.platform` 自动填写，不看浏览器所在系统：macOS / Linux 用 bash（ls、rg、find）和 pwd，不注入 Windows 提示；Windows 保留标准原文 glob／grep 两句、pwsh 退出码与中断说明，以及 Get-Location，不注入 bash／pwd 提示。PowerShell 路径和环境变量等用法由官方工具说明提供，system 不重复。macOS / Linux 另明确同目录连续操作优先传 `workdir` 或切 `working_directory`，内联多行脚本用 `<<'EOF'`，减少重复 `cd` 与引号转义错误。
 - 系统提示词是中文，其他语言的用户可自行翻译（见「改系统提示词」）。
 - 系统提示词是整份替换的：其他插件往 DSH 系统提示词里加的段落（如计划模式、会话搜索的使用说明）在 Pi 模式里都不会出现，它们的工具也就缺了说明。
 
@@ -58,7 +58,7 @@ dsh plugin --profile desktop add dsh-pi-mode
 仅需固定 Git 版本时使用下面地址；Git 安装不显示原生 npm 更新入口：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.3.5&path:/dsh-pi-mode
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.3.6&path:/dsh-pi-mode
 ```
 
 ### 检查更新
