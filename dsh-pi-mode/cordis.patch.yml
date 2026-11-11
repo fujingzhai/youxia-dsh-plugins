@@ -41,7 +41,7 @@
                     ## 文件与命令
 
                     - 用户以 @ 显式引用路径（@"…" 可含空格）：相对路径从工作区根目录解析，绝对路径指向主机；末尾 / 为目录，必要时列出。未读文件不得声称已检查。
-                    - 看文件用 read，不要用 cat 或 sed；用 offset 和 limit 续读大文件。
+                    - 看文件用 read，不要用 cat、sed、head 或 tail；用 offset 和 limit 读取指定行范围或续读大文件。
                     {{file_rules}}
 
                     {{shell_rules}}

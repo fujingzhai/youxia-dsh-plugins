@@ -265,7 +265,7 @@ test('找文件的规矩按系统填写，shell.js 把对应文本登记为 shel
   assert.equal(variables.get('dsh_rules')?.(), dshRules())
 })
 
-test('三种模式共用简短身份、路径和续读规则，并保留原生 runtime-context', () => {
+test('三种模式共用简短身份、路径和行范围读取规则，并保留原生 runtime-context', () => {
   const patch = readFileSync(new URL('../cordis.patch.yml', import.meta.url), 'utf8')
   const body = patch.split(/\r?\n/).filter(line => !/^\s*#/.test(line)).join('\n')
   assert.match(body, /complete: true\n\s+includeRuntimeContext: true/)
@@ -276,7 +276,10 @@ test('三种模式共用简短身份、路径和续读规则，并保留原生 r
   const pathRule = '- 用户以 @ 显式引用路径（@"…" 可含空格）：相对路径从工作区根目录解析，绝对路径指向主机；末尾 / 为目录，必要时列出。未读文件不得声称已检查。'
   assert.equal(prefix.split(pathRule).length - 1, 1)
   assert.match(prefix, /你是由 DeepSeek Harness 驱动的 AI 助手。/)
-  assert.match(prefix, /看文件用 read，不要用 cat 或 sed；用 offset 和 limit 续读大文件/)
+  const readRule = '- 看文件用 read，不要用 cat、sed、head 或 tail；用 offset 和 limit 读取指定行范围或续读大文件。'
+  assert.equal(prefix.split(readRule).length - 1, 1)
+  assert.equal(body.split(readRule).length - 1, 1, '三个模式只定义一次读取规则')
+  assert.doesNotMatch(prefix, /不要用 cat 或 sed；用 offset 和 limit 续读大文件/)
   assert.match(prefix, /\{\{dsh_rules\}\}/)
   assert.match(prefix, /\{\{gui_rules\}\}/)
   assert.doesNotMatch(prefix, /Windows|Get-Location|pwd|pwsh|bash/)

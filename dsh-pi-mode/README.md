@@ -46,7 +46,7 @@ dsh plugin --profile desktop add dsh-pi-mode
 仅需固定 Git 版本时使用下面地址；Git 安装不提供原生 npm 更新入口：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.4.0&path:/dsh-pi-mode
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.4.1&path:/dsh-pi-mode
 ```
 
 ### 检查更新
@@ -80,6 +80,8 @@ Pi-IM 与 Pi 共用文件编辑规则，主要区别是交付、GUI 指导与个
 建议打开机器人的「上下文增强」，至少勾选「渠道 channel」，增强提示词可留空。这样消息可附带 `<dsh_im_source>{"channel":"weixin"}</dsh_im_source>`，不用在 system 写死 IM 类型；群聊可再提供发送者昵称等。IM 插件通过 runtime-context 注入的规则仍保留。
 
 ## 任务执行与平台规则
+
+三个模式共用文件读取规则：看文件用 `read`，不用 `cat`、`sed`、`head` 或 `tail`；用 `offset` 和 `limit` 读取指定行范围或续读大文件。此规则针对文件正文读取，不限制这些命令在其他管道处理中的用途；不改变工具、执行器或权限。
 
 共用提示词引导模型：短任务前台执行；只有耗时较久且有独立工作可推进、或需持续运行时才主动后台。后台任务跟踪 job id，不重复启动或轮询，必要结果及时收取，无用任务及时停止。
 
@@ -179,6 +181,8 @@ DSH 的预设工具与全局工具不同。Pi 不挂某项预设能力，不代�
 ## 兼容性与验证范围
 
 已在 macOS、DSH 0.2.2-rc.1 隔离 profile 加载三个完整预设并核对请求；静默提醒用真实 AgentLoop 配合模拟模型、时钟和无副作用工具验证阈值、上限、开关及历史前缀。单元测试覆盖平台规则、模式复用、工具限制和提醒状态。Windows / Linux 完整 GUI 与真实供应商缓存命中率未实测。
+
+0.4.1 另在 macOS、DSH 0.2.2-rc.2 的隔离 profile 通过正式启动器加载 Pi／Pi+／Pi-IM，核对实际组装的提示词均只有一条新版读取规则；未调用模型或操作 GUI。
 
 源码入口：`cordis.patch.yml`（组合与提示词）、`index.js`（渠道变量与工具屏蔽）、`files.js`、`shell.js`、`web.js`（工具接入与规则）、`settings.js`（个人设置）、`progress.js`（静默提醒）。
 
