@@ -1,6 +1,6 @@
 {
   "name": "dsh-pi-mode",
-  "version": "0.3.6",
+  "version": "0.4.0",
   "author": "youxia",
   "repository": {
     "type": "git",
@@ -9,7 +9,7 @@
   },
   "homepage": "https://github.com/fujingzhai/youxia-dsh-plugins/tree/main/dsh-pi-mode#readme",
   "bugs": { "url": "https://github.com/fujingzhai/youxia-dsh-plugins/issues" },
-  "description": "DSH 的 Pi 模式插件：精简工具与中文系统提示词，同包提供 Pi 模式、IM 版 Pi-IM 与开启官方 apply_patch 的 Pi+模式；三者共用核心定义。",
+  "description": "DSH 的 Pi 模式插件：精简工具与中文提示词，同包提供 Pi、Pi+、Pi-IM，内置低频静默提醒、主动查证与随包文档入口。",
   "type": "module",
   "main": "index.js",
   "license": "MIT",
@@ -18,7 +18,7 @@
     "dsh": ">=0.2.2-rc.1"
   },
   "scripts": {
-    "check": "node --check index.js && node --check web.js && node --check settings.js && node --check shell.js && node --check files.js",
+    "check": "node --check index.js && node --check web.js && node --check settings.js && node --check shell.js && node --check files.js && node --check progress.js",
     "test": "node --test"
   },
   "dsh": {
@@ -32,6 +32,7 @@
     "./settings.js": "./settings.js",
     "./shell.js": "./shell.js",
     "./files.js": "./files.js",
+    "./progress.js": "./progress.js",
     "./icon": "./icon.svg",
     "./package.json": "./package.json"
   },
@@ -42,11 +43,13 @@
     "settings.js",
     "shell.js",
     "files.js",
+    "progress.js",
     "cordis.patch.yml",
     "README.md",
     "LICENSE"
   ],
   "peerDependencies": {
+    "@deepseek-ai/dsh-llm": ">=0.2.2-rc.1",
     "@deepseek-ai/dsh-tool-web": ">=0.2.2-rc.1",
     "@deepseek-ai/dsh-tool-fs": ">=0.2.2-rc.1"
   },
