@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
-import { installProgressReminder, POLICY, REMINDER, SOURCE } from '../progress.js'
+import { installProgressReminder, POLICY, REMINDER, ESCALATED_REMINDER, SOURCE } from '../progress.js'
 import { apply as applySettings } from '../settings.js'
 
 const MINUTE = 60_000
@@ -65,10 +65,12 @@ function harness() {
   }
 }
 
-test('默认首次 5 分钟 + 5 步，二次再等 5 分钟 + 5 步，每段最多两次', () => {
-  assert.deepEqual(POLICY, { firstMs: 5 * MINUTE, repeatMs: 5 * MINUTE, minSteps: 5, maxReminders: 2 })
+test('首次和后续提醒均须 5 分钟 + 5 步，不因两次未响应永久放弃', () => {
+  assert.deepEqual(POLICY, { firstMs: 5 * MINUTE, repeatMs: 5 * MINUTE, minSteps: 5 })
   assert(Object.isFrozen(POLICY))
-  assert.equal(REMINDER, '用户已有一段时间未收到更新。如有实质发现、计划变化或阻碍，请简短告知，然后继续；避免重复播报工具操作。')
+  assert.equal(REMINDER, '进度提醒：本次响应必须先向本对话用户发1—2句可见正文，说明进展或阻碍；无进展也说在等什么，不复述工具操作。思考、工具描述不算。任务可继续时，同次响应接着调用工具，勿结束本轮或等用户。')
+  assert.equal(ESCALATED_REMINDER, `上次提醒后仍无可见汇报。${REMINDER}`)
+  assert.doesNotMatch(REMINDER, /如有|随后汇报/)
 })
 
 test('短任务即使连续几十步也不提醒；刚到 5 分钟才有资格', async () => {
@@ -126,20 +128,25 @@ test('只在已完成工具步之后提醒；工具执行中不计步、不插�
   assert.equal((await h.prepare()).messages.length, 1)
 })
 
-test('第二次提醒必须同时满足新增五步和五分钟，之后不再追加', async () => {
+test('第二次及后续提醒升级措辞，但仍须新增五步和五分钟', async () => {
   const h = harness()
   h.startTurn()
   h.silentSteps(5)
   h.advance(5 * MINUTE)
-  assert.equal((await h.prepare()).messages.length, 1)
+  assert.equal((await h.prepare()).messages[0].content[0].text, REMINDER)
   h.silentSteps(5)
   h.advance(5 * MINUTE - 1)
   assert.deepEqual((await h.prepare()).messages, [])
   h.advance(1)
-  assert.equal((await h.prepare()).messages.length, 1)
-  h.silentSteps(100)
-  h.advance(60 * MINUTE)
-  assert.deepEqual((await h.prepare()).messages, [])
+  assert.equal((await h.prepare()).messages[0].content[0].text, ESCALATED_REMINDER)
+  for (let count = 0; count < 3; count++) {
+    assert.deepEqual((await h.prepare()).messages, [])
+    h.silentSteps(5)
+    h.advance(5 * MINUTE - 1)
+    assert.deepEqual((await h.prepare()).messages, [])
+    h.advance(1)
+    assert.equal((await h.prepare()).messages[0].content[0].text, ESCALATED_REMINDER)
+  }
 
   const slow = harness()
   slow.startTurn()
@@ -150,7 +157,7 @@ test('第二次提醒必须同时满足新增五步和五分钟，之后不再�
   slow.silentSteps(4)
   assert.deepEqual((await slow.prepare()).messages, [])
   slow.silentSteps(1)
-  assert.equal((await slow.prepare()).messages.length, 1)
+  assert.equal((await slow.prepare()).messages[0].content[0].text, ESCALATED_REMINDER)
 })
 
 test('主动汇报后重置时间、步数和次数；文字加工具的那一步不算静默', async () => {
@@ -167,7 +174,35 @@ test('主动汇报后重置时间、步数和次数；文字加工具的那一�
   h.advance(5 * MINUTE)
   assert.deepEqual((await h.prepare()).messages, [])
   h.silentSteps(1)
-  assert.equal((await h.prepare()).messages.length, 1)
+  assert.equal((await h.prepare()).messages[0].content[0].text, REMINDER)
+})
+
+test('只在思考里承诺汇报、在工具结果里出现进展，都不解除升级状态', async () => {
+  const h = harness()
+  h.startTurn()
+  h.silentSteps(5)
+  h.advance(5 * MINUTE)
+  await h.prepare()
+  h.toolStep({ reasoning: false })
+  h.append('assistant/message', { message: { content: [{ type: 'reasoning', text: '用户要求更新，我会简要汇报后继续。' }] } })
+  h.append('tool/result', { message: { toolCallId: 'external', content: [text('已接通新顾问，继续等待回复。')] } })
+  h.silentSteps(4)
+  h.advance(5 * MINUTE)
+  assert.equal((await h.prepare()).messages[0].content[0].text, ESCALATED_REMINDER)
+})
+
+test('可见正文与工具同一步输出后继续工作，不产生额外消息或立即再催', async () => {
+  const h = harness()
+  h.startTurn()
+  h.silentSteps(5)
+  h.advance(5 * MINUTE)
+  await h.prepare()
+  h.toolStep({ visible: '已要求邮件升级，正在等顾问回复；我会继续跟进。' })
+  assert.deepEqual((await h.prepare()).messages, [])
+  h.silentSteps(5)
+  assert.deepEqual((await h.prepare()).messages, [])
+  h.advance(5 * MINUTE)
+  assert.equal((await h.prepare()).messages[0].content[0].text, REMINDER)
 })
 
 test('空白文字不是进度更新；内部时间、技能等消息也不重置静默', async () => {
@@ -246,11 +281,11 @@ test('恢复／重挂载从日志还原已发次数，不重复发送最后一�
   assert.deepEqual((await h.prepare()).messages, [])
   h.silentSteps(5)
   h.advance(5 * MINUTE)
-  assert.equal((await h.prepare()).messages.length, 1)
+  assert.equal((await h.prepare()).messages[0].content[0].text, ESCALATED_REMINDER)
   h.install()
   h.silentSteps(5)
   h.advance(5 * MINUTE)
-  assert.deepEqual((await h.prepare()).messages, [])
+  assert.equal((await h.prepare()).messages[0].content[0].text, ESCALATED_REMINDER)
 })
 
 test('消息只追加，原消息与日志前缀不变，并保留钩子元数据和来源', async () => {
@@ -328,7 +363,7 @@ test('个人开关可立即关闭，不丢失原有工具屏蔽配置，卸载�
   }
 })
 
-test('包内入口可解析、打包清单完整，三个预设只挂一次，不改系统提示词', async () => {
+test('包内入口可解析、打包清单完整，三个预设只挂一次，阈值和提醒正文不塞进 system', async () => {
   const module = await import('dsh-pi-mode/progress.js')
   assert.equal(typeof module.apply, 'function')
   const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
@@ -340,5 +375,7 @@ test('包内入口可解析、打包清单完整，三个预设只挂一次，�
   assert(core.includes("name: 'dsh-pi-mode/progress.js'"))
   assert.match(patch, /progressReminder: true/)
   const prefix = patch.match(/prefix: \|-\r?\n([\s\S]*?)(?=\r?\n {14}- id: agent-instructions)/)?.[1]
-  assert.doesNotMatch(prefix, /静默|progressReminder|进度提醒/)
+  assert.doesNotMatch(prefix, /progressReminder|5 分钟|5 个工具步|上次提醒后/)
+  assert(!prefix.includes(REMINDER))
+  assert(!prefix.includes(ESCALATED_REMINDER))
 })

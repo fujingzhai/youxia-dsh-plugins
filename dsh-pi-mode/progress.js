@@ -4,8 +4,9 @@ export const inject = ['agents']
 
 const SETTINGS = Symbol.for('dsh-pi-mode.settings')
 export const SOURCE = 'pi-progress-reminder'
-export const POLICY = Object.freeze({ firstMs: 300_000, repeatMs: 300_000, minSteps: 5, maxReminders: 2 })
-export const REMINDER = '用户已有一段时间未收到更新。如有实质发现、计划变化或阻碍，请简短告知，然后继续；避免重复播报工具操作。'
+export const POLICY = Object.freeze({ firstMs: 300_000, repeatMs: 300_000, minSteps: 5 })
+export const REMINDER = '进度提醒：本次响应必须先向本对话用户发1—2句可见正文，说明进展或阻碍；无进展也说在等什么，不复述工具操作。思考、工具描述不算。任务可继续时，同次响应接着调用工具，勿结束本轮或等用户。'
+export const ESCALATED_REMINDER = `上次提醒后仍无可见汇报。${REMINDER}`
 
 function reset(state, time) {
   state.silentSince = time
@@ -82,12 +83,12 @@ export function installProgressReminder(ctx, { createUserMessage, now = Date.now
     const currentTime = now()
     const anchor = state.lastReminderAt ?? state.silentSince
     const delay = state.lastReminderAt === undefined ? POLICY.firstMs : POLICY.repeatMs
-    if (state.reminders >= POLICY.maxReminders || state.steps - state.lastReminderSteps < POLICY.minSteps ||
+    if (state.steps - state.lastReminderSteps < POLICY.minSteps ||
         !Number.isFinite(anchor) || currentTime - anchor < delay) return decision
     return {
       ...decision,
       messages: [...decision.messages, createUserMessage({
-        content: [{ type: 'text', text: REMINDER }],
+        content: [{ type: 'text', text: state.reminders === 0 ? REMINDER : ESCALATED_REMINDER }],
         source: { kind: SOURCE, form: 'notice', summary: '长任务静默提醒' },
       })],
     }

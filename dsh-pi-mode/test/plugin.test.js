@@ -355,6 +355,19 @@ test('shell 退出码结合命令语义判断，保留 Windows 中断特例', ()
   assert.doesNotMatch(shellRules('darwin'), /被中断后单独一个/)
 })
 
+test('进度简报放在现有任务执行小节，明确正文和同次响应继续工具，不增加大纲', () => {
+  const patch = readFileSync(new URL('../cordis.patch.yml', import.meta.url), 'utf8')
+  const prefix = patch.match(/prefix: \|-\r?\n([\s\S]*?)(?=\r?\n {14}- id: agent-instructions)/)?.[1]
+    .split(/\r?\n/).map(line => line.trimStart()).join('\n')
+  const rule = '- 长任务主动用1—2句可见正文向本对话用户简报进展、计划变化或阻碍；久无进展也说明在等什么，不复述工具操作。思考和工具描述不算汇报；收到进度提醒时先汇报再操作，任务未完且可继续时在同次响应调用工具，勿因汇报结束本轮或等待用户。'
+  const taskSection = prefix.split('## 任务执行\n')[1].split('## 联网资料')[0]
+  assert.equal(taskSection.trim().split('\n')[0], rule)
+  assert.equal(patch.split(rule).length - 1, 1, '三个预设共用一条规则')
+  assert.deepEqual([...prefix.matchAll(/^## (.+)$/gm)].map(match => match[1]), [
+    '文件与命令', '任务执行', '联网资料', '结果交付', '关于DSH',
+  ])
+})
+
 test('前后台与批量并行规则在共用核心各出现一次，平台规则不再重复注入', () => {
   const patch = readFileSync(new URL('../cordis.patch.yml', import.meta.url), 'utf8')
   const prefix = patch.match(/prefix: \|-\r?\n([\s\S]*?)(?=\r?\n {14}- id: agent-instructions)/)?.[1]
