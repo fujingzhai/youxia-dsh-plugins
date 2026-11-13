@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { pricingModelId } from "./model-id.js";
 
 /**
  * Catalog providers whose list prices are first-party USD prices. Chinese
@@ -108,9 +109,11 @@ export function modelIdVariants(model) {
   const add = (value) => {
     if (value !== "" && !variants.includes(value)) variants.push(value);
   };
-  const lower = model.toLowerCase();
-  add(lower);
-  if (lower.includes("/")) add(lower.slice(lower.lastIndexOf("/") + 1));
+  add(model.toLowerCase());
+  add(pricingModelId(model).toLowerCase());
+  for (const value of [...variants]) {
+    if (value.includes("/")) add(value.slice(value.lastIndexOf("/") + 1));
+  }
   for (const value of [...variants]) {
     if (value.endsWith("-thinking")) add(value.slice(0, -"-thinking".length));
   }

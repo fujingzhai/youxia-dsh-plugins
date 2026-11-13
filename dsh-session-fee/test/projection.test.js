@@ -91,6 +91,48 @@ test("a final sample replaces the same attempt and model switches create ordered
   assert.equal(value.segments[2].amounts[0].amount, 1.2);
 });
 
+test("switching between pooled and independent account routes prices every segment and preserves identity", () => {
+  const accountModel = (account) => `~account:${encodeURIComponent(account)}:a`;
+  const first = accountModel(JSON.stringify(["workspace-fixture", "user", "user-first"]));
+  const second = accountModel("second-fixture@example.invalid");
+  const models = ["a", first, second];
+  const events = [];
+  let seq = 0;
+  for (const [index, model] of models.entries()) {
+    const at = time("2026-11-04T12:00:00+08:00") + index * 60_000;
+    events.push(header(seq++, at, model), start(seq++, at, 1, index + 1));
+    events.push(attempt(seq++, at + 100, usage(1000, 100), 1, index + 1));
+    events.push(final(seq++, at + 200, model, usage(1000, 100), 1, index + 1));
+  }
+  const value = fold(events);
+  assert.equal(value.totalCalls, 3);
+  assert.equal(value.pricedCalls, 3);
+  assert.deepEqual(value.segments.map((segment) => segment.model), models);
+  assert.deepEqual(value.segments.map((segment) => segment.unknownCalls), [0, 0, 0]);
+  for (const segment of value.segments) assert.ok(Math.abs(segment.amounts[0].amount - 0.0024) < 1e-12);
+});
+
+test("a restored pre-fix checkpoint reprices account routes and its suffix matches a full replay", () => {
+  const model = `~account:${encodeURIComponent("fixture-account")}:a`;
+  const at = time("2026-11-04T12:00:00+08:00");
+  const prefix = [header(0, at, model), start(1, at), final(2, at + 1000, model, usage(1000, 100))];
+  const suffix = [start(3, at + 2000, 1, 2), final(4, at + 3000, model, usage(2000, 200), 1, 2)];
+  const legacyPricer = { price: () => null };
+  const oldProjection = createSessionCostProjection(legacyPricer);
+  let oldState = oldProjection.init();
+  for (const item of prefix) oldState = oldProjection.apply(oldState, item);
+  assert.equal(oldProjection.wire.view(oldState).pricedCalls, 0);
+  const checkpoint = structuredClone(oldState);
+  const projection = createSessionCostProjection(priceBook());
+  assert.equal(projection.stateVersion, oldProjection.stateVersion);
+  projection.stateSchema.parse(checkpoint);
+  assert.equal(projection.wire.view(checkpoint).pricedCalls, 1);
+  let restored = checkpoint;
+  for (const item of suffix) restored = projection.apply(restored, item);
+  assert.deepEqual(projection.wire.view(restored), fold([...prefix, ...suffix]));
+  assert.equal(checkpoint.attempts[0].route.model, model);
+});
+
 test("retry-started starts a new billable attempt without duplicating stream samples", () => {
   const value = fold([
     header(0, time("2026-11-04T12:00:00+08:00"), "a"),

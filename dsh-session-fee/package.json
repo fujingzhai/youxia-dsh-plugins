@@ -1,6 +1,6 @@
 {
   "name": "dsh-session-fee",
-  "version": "0.4.6",
+  "version": "0.4.7",
   "description": "在 DSH 输入框下显示当前会话（含子代理）按市面 token 价折算的费用：自维护价格表（别名、峰闲时、节假日、限时、长上下文阶梯）＋ pi-ai 模型目录兜底。",
   "author": "youxia",
   "repository": {
@@ -48,7 +48,7 @@
     }
   },
   "scripts": {
-    "check": "node --check index.js && node --check client.js && node --check lib/pricing.js && node --check lib/catalog.js && node --check lib/config.js && node --check lib/projection.js && node --check lib/reload.js",
+    "check": "node --check index.js && node --check client.js && node --check lib/pricing.js && node --check lib/catalog.js && node --check lib/model-id.js && node --check lib/config.js && node --check lib/projection.js && node --check lib/reload.js",
     "test": "node --test"
   },
   "engines": {

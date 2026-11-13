@@ -1,3 +1,5 @@
+import { pricingModelId } from "./model-id.js";
+
 const DEFAULT_TIME_ZONE = "Asia/Shanghai";
 const DEFAULT_UNIT = 1_000_000;
 const PRICE_KEYS = ["input", "output", "cacheRead", "cacheWrite"];
@@ -329,7 +331,9 @@ function tierLabel(above) {
 /**
  * Bind one validated price book and an optional model catalog into a pricer.
  * Resolution order: exact routes in the book, then wildcard routes in file
- * order, then the catalog fallback. Results are cached per route.
+ * order; repeat for an independent account entry's underlying model, then
+ * the catalog fallback. Literal account-specific rules remain authoritative.
+ * Results are cached per original route; session identity is never rewritten.
  */
 export function createPricer({ book, catalog = null, addReasoningToOutput = [] }) {
   const resolved = new Map();
@@ -344,14 +348,16 @@ export function createPricer({ book, catalog = null, addReasoningToOutput = [] }
 
   function lookup(route) {
     const provider = route.provider.toLowerCase();
-    const model = route.model.toLowerCase();
-    for (const entry of book.entries) {
-      if (entry.patterns.some((pattern) => !pattern.wildcard && patternMatches(pattern, provider, model))) return fromEntry(entry);
+    const underlying = pricingModelId(route.model);
+    for (const model of new Set([route.model.toLowerCase(), underlying.toLowerCase()])) {
+      for (const entry of book.entries) {
+        if (entry.patterns.some((pattern) => !pattern.wildcard && patternMatches(pattern, provider, model))) return fromEntry(entry);
+      }
+      for (const entry of book.entries) {
+        if (entry.patterns.some((pattern) => pattern.wildcard && patternMatches(pattern, provider, model))) return fromEntry(entry);
+      }
     }
-    for (const entry of book.entries) {
-      if (entry.patterns.some((pattern) => pattern.wildcard && patternMatches(pattern, provider, model))) return fromEntry(entry);
-    }
-    const hit = catalog?.find(route.provider, route.model) ?? null;
+    const hit = catalog?.find(route.provider, underlying) ?? null;
     return hit === null ? null : { kind: "catalog", name: hit.rule.name, rules: [hit.rule] };
   }
 

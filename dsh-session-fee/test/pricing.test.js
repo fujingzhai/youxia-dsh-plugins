@@ -82,6 +82,57 @@ test("exact routes beat wildcard routes regardless of file order", () => {
   assert.equal(price(pricedBook, { provider: "else", model: "shared" }, usage, "2026-11-04T12:00:00+08:00").rule, "generic");
 });
 
+const accountModel = (account, model) => `~account:${encodeURIComponent(account)}:${encodeURIComponent(model)}`;
+
+test("independent account entries use their underlying model's shipped prices without rewriting routes", () => {
+  const shipped = normalizePriceBook(JSON.parse(readFileSync(new URL("../prices.json", import.meta.url), "utf8")));
+  const pricer = createPricer({ book: shipped });
+  const when = at("2026-11-13T12:00:00+08:00");
+  const samples = [
+    { uncachedInputTokens: 1000, cacheReadTokens: 5000, cacheWriteTokens: 0, outputTokens: 500, reasoningTokens: 100 },
+    { uncachedInputTokens: 100_000, cacheReadTokens: 200_000, cacheWriteTokens: 1000, outputTokens: 10_000, reasoningTokens: 5000 }
+  ];
+  for (const [provider, model] of [
+    ["codex", "gpt-6.1-sol"], ["codex", "gpt-6-astra"], ["claude", "claude-opus-5.5"],
+    ["grok", "grok-4.7"], ["antigravity", "gemini-4-carbon"], ["copilot", "gpt-6.1-sol"]
+  ]) {
+    for (const account of [JSON.stringify(["workspace-fixture", "user", "user-fixture"]), "person+test@example.invalid", "工作账号:/%测试"]) {
+      const wrapped = Object.freeze({ provider, model: accountModel(account, model) });
+      for (const sample of samples) {
+        const expected = pricer.price({ provider, model }, sample, when);
+        assert.notEqual(expected, null, model);
+        assert.deepEqual(pricer.price(wrapped, sample, when), expected, `${provider}/${model}`);
+        assert.equal(wrapped.model, accountModel(account, model));
+      }
+    }
+  }
+});
+
+test("literal account-specific prices take precedence over underlying model prices", () => {
+  const model = accountModel("fixture-account", "shared");
+  const pricedBook = normalizePriceBook({ version: 2, models: [
+    { match: ["codex/shared"], rules: [rule({ name: "base-exact" })] },
+    { match: ["*/shared"], rules: [rule({ name: "base-wildcard" })] },
+    { match: [`*/${model}`], rules: [rule({ name: "account-wildcard" })] },
+    { match: [`codex/${model}`], rules: [rule({ name: "account-exact" })] }
+  ] });
+  const when = "2026-11-13T12:00:00+08:00";
+  assert.equal(price(pricedBook, { provider: "codex", model }, usage, when).rule, "account-exact");
+  assert.equal(price(pricedBook, { provider: "other", model }, usage, when).rule, "account-wildcard");
+  const otherAccount = accountModel("other-account", "shared");
+  assert.equal(price(pricedBook, { provider: "codex", model: otherAccount }, usage, when).rule, "base-exact");
+  assert.equal(price(pricedBook, { provider: "other", model: otherAccount }, usage, when).rule, "base-wildcard");
+});
+
+test("account routes retain provider matching and do not guess display aliases or malformed wrappers", () => {
+  const pricedBook = book([rule()], {}, ["codex/gpt-6.1-sol"]);
+  const when = "2026-11-13T12:00:00+08:00";
+  assert.equal(price(pricedBook, { provider: "other", model: accountModel("fixture", "gpt-6.1-sol") }, usage, when), null);
+  for (const model of ["youxia-GPT-6.1-Sol", "~account::gpt-6.1-sol", "~account:fixture:", "~account:%broken:gpt-6.1-sol", "~account:fixture:gpt-6.1-sol:extra"]) {
+    assert.equal(price(pricedBook, { provider: "codex", model }, usage, when), null, model);
+  }
+});
+
 test("long-context tiers switch every bucket once the prompt exceeds the threshold", () => {
   const pricedBook = book([rule({ input: 2, cacheRead: 0.2, cacheWrite: 0, output: 10, currency: "USD", tiers: [{ above: 272000, input: 4, cacheRead: 0.4, output: 15 }] })]);
   const small = { uncachedInputTokens: 72_000, cacheReadTokens: 200_000, cacheWriteTokens: 0, outputTokens: 10_000, reasoningTokens: 0 };
@@ -120,6 +171,20 @@ test("catalog fallback prices routes the book does not cover, and catalog aliase
   assert.deepEqual(pricer.price({ provider: "grok", model: "grok-4.7" }, sample, 0), { currency: "USD", amount: 2, rule: "pi-ai · xai/grok-4.7", source: "catalog" });
   assert.equal(pricer.price({ provider: "odd", model: "grok-latest" }, sample, 0).rule, "Alias → pi-ai · xai/grok-4.7");
   assert.equal(pricer.price({ provider: "nobody", model: "nothing" }, sample, 0), null);
+});
+
+test("independent account routes use catalog fallback and underlying price-book aliases", () => {
+  const catalogRule = { name: "pi-ai · xai/grok-fixture", currency: "USD", unit: 1_000_000, input: 2, output: 6, cacheRead: 0.5, cacheWrite: 0, tiers: [], when: null };
+  const catalog = {
+    find: (provider, model) => provider === "grok" && model === "grok-fixture" ? { provider: "xai", rule: catalogRule } : null,
+    lookup: (provider, model) => provider === "xai" && model === "grok-fixture" ? { provider: "xai", rule: catalogRule } : null
+  };
+  const pricedBook = normalizePriceBook({ version: 2, models: [{ name: "Alias", match: ["odd/grok-latest"], catalog: "xai/grok-fixture" }] });
+  const pricer = createPricer({ book: pricedBook, catalog });
+  const sample = { uncachedInputTokens: 1_000_000, cacheReadTokens: 0, cacheWriteTokens: 0, outputTokens: 0, reasoningTokens: 0 };
+  assert.equal(pricer.price({ provider: "grok", model: accountModel("fixture", "grok-fixture") }, sample, 0)?.amount, 2);
+  assert.equal(pricer.price({ provider: "odd", model: accountModel("fixture", "grok-latest") }, sample, 0)?.rule, "Alias → pi-ai · xai/grok-fixture");
+  assert.equal(pricer.price({ provider: "grok", model: accountModel("fixture", "unknown-model") }, sample, 0), null);
 });
 
 test("limited price uses inclusive from and exclusive to, with first match winning", () => {

@@ -6,6 +6,7 @@
 - 换模型分段相加：`¥0.3862 + $0.0418 + ¥0.0951`；各币种分开，不做汇率换算。
 - 子代理（含多层）计入总数：`¥137.04 (¥30.62)` 表示一共 ¥137.04，其中子代理 ¥30.62。换过模型时，子代理并进它被派出时所在的那一段（币种不同则并进最近的同币种段，没有就在末尾另加一项），括号外各段之和就是总数；括号里的 `+` 只分隔币种。
 - 价格随插件分发：[prices.json](prices.json) 收当前中美主流在线模型（国产用人民币价，含 DeepSeek 峰闲时与节假日、限时价、长上下文阶梯）。表里没有的模型按 DSH 自带的 pi-ai 模型目录兜底；再没有就显示 `--`，提示缺价格，不按零计。
+- 订阅插件的「账号名 · 模型」独立入口自动按底层模型查价，无需为每个账号复制价格；原始账号路由与分段保留，不改变请求路由。
 - 点击费用一项（和 DSH 自带的用时、用量两项一样）弹出明细：总数，以及主会话和每个子代理各自的费用与所用模型（提供商/模型 ID，括号里是价格表中的名称）。
 
 > 这是按 token 刊例价算的**等值费用**，不是实际扣款；订阅、免费额度、折扣与真实账单不在范围内。
@@ -29,7 +30,7 @@ dsh plugin --profile desktop add dsh-session-fee
 仅需固定 Git 版本时使用下面地址；Git 安装不显示原生 npm 更新入口：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-fee@0.4.6&path:/dsh-session-fee
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-fee@0.4.7&path:/dsh-session-fee
 ```
 
 ### 检查更新
@@ -88,6 +89,8 @@ DSH 0.2.2-rc.1 已支持 npm 插件原生更新：打开「插件」点「刷新
 ```
 
 `match` 里写 Session 事件中的实际路由 `provider/model`，不是界面显示名称；原生每轮 Token 用量详情或本插件的明细里可查看。比较时不分大小写；`provider` 可写 `*` 表示任意服务商，`model` 可用 `*` 通配（如 `*/claude-opus-5-5*`）。精确路由优先于通配路由；通配之间按文件顺序。同一路由不能被两条模型重复声明。
+
+订阅插件的独立账号 ID `~account:<编码账号>:<编码模型>` 先按原始路由匹配；未命中时，自动解出底层模型，在同一 provider 下按上述顺序查价，再用 pi-ai 目录兜底。显式配置的原始账号路由价格仍优先，不按显示别名猜模型。历史调用在更新后也按此规则重算，不改写会话记录或合并不同账号的分段。
 
 价格默认按 **100 万 Token** 计，也可在规则里设 `unit`。
 
@@ -205,11 +208,14 @@ client.js           统计条里的费用项与明细框
 lib/projection.js   逐次调用的账本（只存日志事实，金额在出视图时按当前价格算）
 lib/pricing.js      价格表校验、路由匹配、时段与阶梯计价
 lib/catalog.js      兜底：读取 pi-ai 模型目录
+lib/model-id.js     仅为查价解出订阅插件独立入口的底层模型
 lib/config.js       插件配置校验
 lib/reload.js       价格表监听与热更新
 ```
 
 Host 用 `sessionProjections` 注册 `sessionCost` 投影；Client 注册 `conversation.composer.dock` 的 `cost` 项，沿 DSH 自带的 `subagentCatalog` 投影遍历后代会话，经 `sessions.refreshProjections()` 读取未加载的子会话。
+
+0.4.7 的独立账号查价修复通过 54 项单元测试及 macOS／DSH 0.2.2-rc.2 的独立内存投影服务测试，验证旧检查点可直接重新计价，不触碰个人 profile 或请求供应商。宿主集成测试需在待验证 DSH 环境中设 `DSH_FEE_RUNTIME_TEST=1`，用其 Node 运行 `--test test/runtime.test.js`；本版 GUI 与 Windows／Linux 完整运行未实测。
 
 ## 许可
 

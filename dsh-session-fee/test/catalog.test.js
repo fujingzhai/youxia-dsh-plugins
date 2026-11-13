@@ -60,3 +60,15 @@ test("model id variants cover prefixes, thinking suffixes and Claude version pun
   assert.ok(modelIdVariants("claude-sonnet-4-5").includes("claude-sonnet-4.5"));
 });
 
+test("catalog fallback unwraps independent account entries before applying model variants", () => {
+  const account = encodeURIComponent(JSON.stringify(["workspace-fixture", "user", "user-fixture"]));
+  const wrap = (model) => `~account:${account}:${encodeURIComponent(model)}`;
+  const root = fakePiAi("1.5.0", { "openai-codex": [gpt(2)] });
+  const catalog = loadCatalog({ sources: [root], includeHost: false });
+  assert.deepEqual(catalog.find("codex", wrap("gpt-6.1-sol")), catalog.find("codex", "gpt-6.1-sol"));
+  assert.deepEqual(modelIdVariants(wrap("openai/GPT-6.1-Sol")), [
+    wrap("openai/GPT-6.1-Sol").toLowerCase(), "openai/gpt-6.1-sol", "gpt-6.1-sol"
+  ]);
+  assert.ok(modelIdVariants(wrap("claude-sonnet-4.5-thinking")).includes("claude-sonnet-4-5"));
+  assert.equal(catalog.find("codex", wrap("unknown-model")), null);
+});
