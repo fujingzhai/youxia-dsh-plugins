@@ -183,8 +183,19 @@ test("the shipped DeepSeek rules follow the official weekday peak hours and skip
   assert.equal(price(shipped, flash, sample, "2026-11-07T10:00:00+08:00").amount, 1);
   assert.equal(price(shipped, flash, sample, "2026-10-05T10:00:00+08:00").amount, 1);
   assert.equal(price(shipped, { provider: "some-relay", model: "deepseek-flash" }, sample, "2026-11-04T10:00:00+08:00").amount, 2);
-  assert.equal(price(shipped, { provider: "x", model: "gemini-4-argon" }, sample, "2026-11-30T23:59:00+08:00").amount, 2);
-  assert.equal(price(shipped, { provider: "x", model: "gemini-4-argon" }, sample, "2026-12-01T00:00:00+08:00").amount, 4);
+});
+
+test("the shipped Google rules price every global bucket across promotional boundaries", () => {
+  const shipped = normalizePriceBook(JSON.parse(readFileSync(new URL("../prices.json", import.meta.url), "utf8")));
+  const sample = { uncachedInputTokens: 1_000_000, cacheReadTokens: 1_000_000, cacheWriteTokens: 1_000_000, outputTokens: 1_000_000, reasoningTokens: 0 };
+  for (const model of ["gemini-4-carbon", "gemini-4-argon"]) {
+    assert.equal(price(shipped, { provider: "google-vertex", model }, sample, "2026-11-30T23:59:00+08:00").amount, 12.1);
+    assert.equal(price(shipped, { provider: "google-vertex", model }, sample, "2026-12-01T00:00:00+08:00").amount, 24.2);
+  }
+  assert.equal(price(shipped, { provider: "google-vertex", model: "gemini-4-hydrogen" }, sample, "2027-01-11T23:59:00+08:00").amount, 9.075);
+  assert.equal(price(shipped, { provider: "google-vertex", model: "gemini-4-hydrogen" }, sample, "2027-01-12T00:00:00+08:00").amount, 10.95);
+  assert.equal(price(shipped, { provider: "google-vertex", model: "gemini-3.8-flash" }, sample, "2026-12-31T23:59:00+08:00").amount, 4.575);
+  assert.equal(price(shipped, { provider: "google-vertex", model: "gemini-3.8-flash" }, sample, "2027-01-01T00:00:00+08:00").amount, 9.15);
 });
 
 test("rules inherit the price book's time zone", () => {

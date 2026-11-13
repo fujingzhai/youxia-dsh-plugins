@@ -186,6 +186,26 @@
       ]
     },
     {
+      "name": "Gemini 4 Hydrogen",
+      "match": ["*/gemini-4-hydrogen"],
+      "rules": [
+        {"name": "Gemini 4 Hydrogen（缓存写入计费）", "currency": "USD", "input": 1.5, "cacheRead": 0.075, "cacheWrite": 1.875, "output": 7.5, "when": {
+          "from": "2027-01-12T00:00:00+08:00"
+        }},
+        {"name": "Gemini 4 Hydrogen", "currency": "USD", "input": 1.5, "cacheRead": 0.075, "cacheWrite": 0, "output": 7.5}
+      ]
+    },
+    {
+      "name": "Gemini 4 Carbon",
+      "match": ["*/gemini-4-carbon"],
+      "rules": [
+        {"name": "Gemini 4 Carbon 标准价", "currency": "USD", "input": 4, "cacheRead": 0.2, "cacheWrite": 0, "output": 20, "when": {
+          "from": "2026-12-01T00:00:00+08:00"
+        }},
+        {"name": "Gemini 4 Carbon 首发价", "currency": "USD", "input": 2, "cacheRead": 0.1, "cacheWrite": 0, "output": 10}
+      ]
+    },
+    {
       "name": "Gemini 4 Argon",
       "match": ["*/gemini-4-argon"],
       "rules": [
@@ -199,7 +219,10 @@
       "name": "Gemini 3.8 Flash",
       "match": ["*/gemini-3.8-flash"],
       "rules": [
-        {"name": "Gemini 3.8 Flash", "currency": "USD", "input": 0.75, "cacheRead": 0.075, "cacheWrite": 0, "output": 3.75}
+        {"name": "Gemini 3.8 Flash 标准价", "currency": "USD", "input": 1.5, "cacheRead": 0.15, "cacheWrite": 0, "output": 7.5, "when": {
+          "from": "2027-01-01T00:00:00+08:00"
+        }},
+        {"name": "Gemini 3.8 Flash 首发价", "currency": "USD", "input": 0.75, "cacheRead": 0.075, "cacheWrite": 0, "output": 3.75}
       ]
     },
     {

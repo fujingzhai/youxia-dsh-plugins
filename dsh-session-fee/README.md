@@ -29,7 +29,7 @@ dsh plugin --profile desktop add dsh-session-fee
 仅需固定 Git 版本时使用下面地址；Git 安装不显示原生 npm 更新入口：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-fee@0.4.5&path:/dsh-session-fee
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-fee@0.4.6&path:/dsh-session-fee
 ```
 
 ### 检查更新
