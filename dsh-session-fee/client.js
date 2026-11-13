@@ -54,9 +54,27 @@ window.__ModuleLoader__.load({
       return `${CURRENCY_SYMBOLS[currency] ?? `${currency} `}${decimal(amount)}`;
     }
 
+    // Keep in sync with lib/model-id.js: the browser artifact has no Host imports.
+    function pricingModelId(model) {
+      const prefix = "~account:";
+      if (!model.startsWith(prefix)) return model;
+      const parts = model.slice(prefix.length).split(":");
+      if (parts.length !== 2) return model;
+      try {
+        const account = decodeURIComponent(parts[0]);
+        const underlying = decodeURIComponent(parts[1]);
+        if (!account || !underlying) return model;
+        if (`${prefix}${encodeURIComponent(account)}:${encodeURIComponent(underlying)}` !== model) return model;
+        return underlying;
+      } catch {
+        return model;
+      }
+    }
+
     function routeName(segment, t) {
       if (segment.provider === "" && segment.model === "") return t("cost.unknownRoute");
-      return `${segment.provider}/${segment.model}`;
+      const model = pricingModelId(segment.model);
+      return `${segment.provider}/${model.startsWith("~account:") ? t("cost.unknownRoute") : model}`;
     }
 
     /** Add one cost view's amounts into a currency → amount map (insertion order kept). */
@@ -72,6 +90,32 @@ window.__ModuleLoader__.load({
     /** Amounts of a cost view per currency, plus "--" when some calls are unpriced. */
     const viewText = (value) => [sumsText(addAmounts(new Map(), value)), hasUnknown(value) ? "--" : ""].filter((part) => part !== "").join(" + ");
 
+    /** Display-only consecutive model runs; never rewrite the projection's account facts. */
+    function displaySegments(value) {
+      const segments = [];
+      for (const source of value?.segments ?? []) {
+        const model = pricingModelId(source.model);
+        const previous = segments.at(-1);
+        const currencies = (segment) => segment.amounts.map((entry) => entry.currency).sort().join("\0");
+        const sameCurrency = previous !== void 0 && (previous.amounts.length === 0 || source.amounts.length === 0 || currencies(previous) === currencies(source));
+        if (previous !== void 0 && previous.provider === source.provider && previous.model === model && sameCurrency) {
+          previous.calls += source.calls;
+          previous.unknownCalls += source.unknownCalls;
+          previous.lastTime = source.lastTime;
+          for (const [key, tokens] of Object.entries(source.usage)) previous.usage[key] = (previous.usage[key] ?? 0) + tokens;
+          for (const amount of source.amounts) {
+            const existing = previous.amounts.find((entry) => entry.currency === amount.currency);
+            if (existing === void 0) previous.amounts.push({ ...amount });
+            else existing.amount += amount.amount;
+          }
+          for (const name of source.rules) if (!previous.rules.includes(name)) previous.rules.push(name);
+        } else {
+          segments.push({ ...source, model, usage: { ...source.usage }, amounts: source.amounts.map((entry) => ({ ...entry })), rules: [...source.rules] });
+        }
+      }
+      return segments;
+    }
+
     /** "provider/model（price names）" for one model run. */
     function routeLabel(segment, t) {
       const route = routeName(segment, t);
@@ -81,7 +125,7 @@ window.__ModuleLoader__.load({
     /** Own segments in call order: one amount per model run, "--" where a run has unpriced calls. */
     function ownLabel(value) {
       const parts = [];
-      for (const segment of value?.segments ?? []) {
+      for (const segment of displaySegments(value)) {
         for (const amount of segment.amounts) parts.push(money(amount.currency, amount.amount));
         if (segment.unknownCalls > 0) parts.push("--");
       }
@@ -159,7 +203,7 @@ window.__ModuleLoader__.load({
      */
     function pillText(own, tree, t) {
       if (tree.nodes.length === 0) return ownLabel(own);
-      const runs = (own?.segments ?? []).map((segment) => ({
+      const runs = displaySegments(own).map((segment) => ({
         firstTime: segment.firstTime,
         sums: addAmounts(new Map(), { segments: [segment] }),
         unknown: segment.unknownCalls > 0
@@ -194,7 +238,7 @@ window.__ModuleLoader__.load({
     function dialogRows(own, tree, t) {
       const rows = [];
       const entry = (label, value, indent, spaced) => {
-        const segments = value?.segments ?? [];
+        const segments = displaySegments(value);
         rows.push({ kind: "entry", label: indent + label, value: segments.length === 0 ? t("cost.none") : viewText(value), spaced });
         for (const segment of segments) {
           rows.push({ kind: "route", label: indent + routeLabel(segment, t), value: segments.length > 1 ? viewText({ segments: [segment] }) : "" });
@@ -347,7 +391,7 @@ window.__ModuleLoader__.load({
     });
 
     const testHook = globalThis.__DSH_SESSION_COST_TEST__;
-    if (testHook !== void 0) Object.assign(testHook, { subagentTree, pillText, dialogRows, grandTotal, ownLabel, zh, en });
+    if (testHook !== void 0) Object.assign(testHook, { subagentTree, pillText, dialogRows, grandTotal, ownLabel, displaySegments, pricingModelId, zh, en });
 
     return {
       inject: ["slots", "locale", "sessions"],
