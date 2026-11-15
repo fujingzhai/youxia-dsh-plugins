@@ -59,9 +59,9 @@ test("display groups ordinary and independent account entries for the same conse
   );
   const original = structuredClone(own);
   const tree = subagentTree("root", {});
-  assert.equal(pillText(own, tree, t), "$5.7557");
+  assert.equal(pillText(own, tree, t), "$5.76");
   assert.deepEqual(plain(dialogRows(own, tree, t)), [
-    { kind: "entry", label: "主会话", value: "$5.7557", spaced: false },
+    { kind: "entry", label: "主会话", value: "$5.76", spaced: false },
     { kind: "route", label: "codex/gpt-6.1-sol（GPT-6.1 Sol、GPT-6.1 Sol · >272K）", value: "" }
   ]);
   assert.deepEqual(own, original, "display normalization must not modify account facts");
@@ -71,8 +71,8 @@ test("the reported two Sol runs show one total instead of a split sum or interna
   const own = view(modelRun("gpt-6.1-sol", 2.7163, 100),
     modelRun(accountModel("fixture-account", "gpt-6.1-sol"), 2.0394, 200));
   const tree = subagentTree("root", {});
-  assert.equal(pillText(own, tree, t), "$4.7557");
-  assert.equal(grandTotal(own, tree), "$4.7557");
+  assert.equal(pillText(own, tree, t), "$4.76");
+  assert.equal(grandTotal(own, tree), "$4.76");
   assert.equal(dialogRows(own, tree, t).length, 2);
   assert.equal(JSON.stringify(dialogRows(own, tree, t)).includes("~account:"), false);
 });
@@ -134,8 +134,15 @@ test("browser and host account-id parsers agree on canonical and malformed ids",
 test("outside the parentheses is the whole spend, inside is the subagents' part", () => {
   const own = view(run("CNY", 106.4186, 100));
   const projections = parent(own, [{ id: "a", createdAt: 150 }], child("a", 150, [["CNY", 30.6228]]));
-  assert.equal(pillText(own, subagentTree("root", projections), t), "¥137.0414 (¥30.6228)");
-  assert.equal(pillText(own, subagentTree("root", { root: { state: "ready", values: { sessionCost: own } } }), t), "¥106.4186");
+  assert.equal(pillText(own, subagentTree("root", projections), t), "¥137.04 (¥30.62)");
+  assert.equal(pillText(own, subagentTree("root", { root: { state: "ready", values: { sessionCost: own } } }), t), "¥106.42");
+});
+
+test("amounts always show two decimals, sub-cent costs round instead of widening", () => {
+  const own = view(run("CNY", 0.004, 100), run("USD", 0.006, 200));
+  const tree = subagentTree("root", {});
+  assert.equal(pillText(own, tree, t), "¥0.00 + $0.01");
+  assert.equal(grandTotal(own, tree), "¥0.00 + $0.01");
 });
 
 test("with model switches each subagent joins the run it was spawned in, so the runs still add up to the total", () => {
