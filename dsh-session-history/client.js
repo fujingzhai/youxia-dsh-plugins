@@ -149,7 +149,13 @@ window.__ModuleLoader__.load({
 
         function Panel({ view }) {
           const s = useState();
-          React.useEffect(() => { load(); }, []);
+          // 打开期间定时重读：后台定时整理、别的 agent 检索前补整理都会改状态；整理进行中读得更勤。
+          const busy = !!(s.data?.running || s.pending === 'refresh');
+          React.useEffect(() => {
+            load();
+            const timer = setInterval(() => { if (!state.getSnapshot().pending) load(); }, busy ? 3000 : 15000);
+            return () => clearInterval(timer);
+          }, [busy]);
           if (view && view !== 'page') return null;
           if (s.loading && !s.data) return h('div', { className: 'yxsh yxsh-muted' }, h('style', null, css), '读取中…');
           if (!s.data) return h('div', { className: 'yxsh' }, h('style', null, css), h('p', { className: 'yxsh-error' }, s.error || '读取失败'),
