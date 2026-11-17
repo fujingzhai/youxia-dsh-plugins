@@ -74,6 +74,13 @@
       ]
     },
     {
+      "name": "Qwen4-Max",
+      "match": ["*/qwen4-max"],
+      "rules": [
+        {"name": "Qwen4-Max", "currency": "CNY", "input": 10, "cacheRead": 0.5, "cacheWrite": 0, "output": 30}
+      ]
+    },
+    {
       "name": "Qwen3.8-Max",
       "match": ["dsh-provider-qoder/qmodel_38max", "*/qwen3.8-max"],
       "rules": [

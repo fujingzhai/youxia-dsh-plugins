@@ -263,6 +263,16 @@ test("the shipped Google rules price every global bucket across promotional boun
   assert.equal(price(shipped, { provider: "google-vertex", model: "gemini-3.8-flash" }, sample, "2027-01-01T00:00:00+08:00").amount, 9.15);
 });
 
+test("the shipped Qwen4-Max rule prices the formal model without claiming preview pricing", () => {
+  const shipped = normalizePriceBook(JSON.parse(readFileSync(new URL("../prices.json", import.meta.url), "utf8")));
+  const sample = { uncachedInputTokens: 1_000_000, cacheReadTokens: 1_000_000, cacheWriteTokens: 1_000_000, outputTokens: 1_000_000, reasoningTokens: 0 };
+  const when = "2026-11-18T12:00:00+08:00";
+  assert.deepEqual(price(shipped, { provider: "bailian", model: "qwen4-max" }, sample, when), {
+    currency: "CNY", amount: 40.5, rule: "Qwen4-Max", source: "book"
+  });
+  assert.equal(price(shipped, { provider: "bailian", model: "qwen4-max-preview" }, sample, when), null);
+});
+
 test("rules inherit the price book's time zone", () => {
   const pricedBook = book([
     rule({ name: "working-hour", when: { intervals: [{ start: "09:00", end: "10:00" }] } }),

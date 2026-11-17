@@ -1,6 +1,6 @@
 # 价格维护记录
 
-核对日期：**2026-11-13**。口径：模型的**市面 token 刊例价**，不是订阅或额度的实际扣费。单位：每 100 万 token。
+核对日期：**2026-11-18**。口径：模型的**市面 token 刊例价**，不是订阅或额度的实际扣费。单位：每 100 万 token。
 
 ## 原则
 
@@ -21,6 +21,7 @@
 | Kimi-K2.8-Preview | Qoder `kmodel`、任意 `kimi-k2.8-preview` | 6.5 | 1.3 | 0 | 27 |
 | GLM-5.3 | Qoder `gmodel`、任意 `glm-5.3` | 8 | 2 | 0 | 28 |
 | GLM-5.3-Flash | Qoder `gfmodel`、任意 `glm-5.3-flash` | 0.8 | 0.23 | 0 | 2.8 |
+| Qwen4-Max | 任意 `qwen4-max` | 10 | 0.5 | 0 | 30 |
 | Qwen3.8-Max | Qoder `qmodel_38max`、任意 `qwen3.8-max` | 12 | 1.5 | 0 | 36 |
 | Qwen3.8-Flash | Qoder `qfmodel`、任意 `qwen3.8-flash` | 1 | 0.1 | 0 | 3 |
 | Qwen3.8-27B | 任意 `qwen3.8-27b` | 3 | 0.6 | 0 | 12 |
@@ -72,7 +73,8 @@ Qoder（经 [dsh-provider-qoder](https://www.npmjs.com/package/dsh-provider-qode
 ## 缓存口径
 
 - Kimi 的缓存写入采用 **5 分钟 TTL** 价格；若显式使用 1 小时缓存，K3.1 Pro／K3 应分别改为 26／40 CNY。
-- Qwen 的 `cacheWrite: 0` 沿用隐式缓存口径；显式缓存（创建 15、读取 1）未混入此表。
+- Qwen 的 `cacheWrite: 0` 沿用隐式缓存口径。Qwen3.8 的显式缓存（创建 15、读取 1）未混入此表；Qwen4-Max 的 5 分钟／1 小时显式缓存创建价分别为 12.5／20，缓存读取 0.5 与隐式缓存一致，显式创建价未混入普通会话计价。
+- Qwen4-Max 的 Batch File 输入／输出价为 5／15，Batch Chat 另有限时折扣；批量价格不用于普通会话计价。`qwen4-max-preview` 不自动沿用正式版价格。
 - 其他 `cacheWrite: 0` 表示该厂商隐式缓存不单独收写入费。
 
 ## 参考
@@ -80,6 +82,6 @@ Qoder（经 [dsh-provider-qoder](https://www.npmjs.com/package/dsh-provider-qode
 - [DeepSeek 价格与错峰](https://api-docs.deepseek.com/zh-cn/quick_start/pricing)
 - [xAI Grok 4.7](https://docs.x.ai/developers/models/grok-4.7)、[Grok Build 0.1](https://docs.x.ai/developers/models/grok-build-0.1)
 - [Gemini 4 Hydrogen / Carbon / Argon 与 Gemini 3.8 Flash on Google Cloud](https://cloud.google.com/model-garden/pricing?hl=en)
-- [Moonshot 模型推理价格](https://platform.kimi.com/docs/pricing/chat)、[阿里云 Qwen3.8-Max](https://help.aliyun.com/zh/model-studio/qwen3-8-max)
+- [Moonshot 模型推理价格](https://platform.kimi.com/docs/pricing/chat)、[阿里云 Qwen4-Max](https://help.aliyun.com/zh/model-studio/qwen4-max)、[阿里云 Qwen3.8-Max](https://help.aliyun.com/zh/model-studio/qwen3-8-max)
 
 修改 `prices.json` 并保存即可，立即生效；校验失败的文件不会替换上一份有效价格（错误写进 DSH 数据目录下的 `plugins/session-fee/status.json`）。
