@@ -127,7 +127,7 @@ window.__ModuleLoader__.load({
               a.experimental && !a.custom ? h('span', { className: 'yxsh-badge', title: '会话格式按其公开代码推断，尚未用真实会话验证' }, '实验性') : null),
             h('div', { className: 'yxsh-src' },
               !a.enabled ? h('div', null, '未收录') : !run_ ? h('div', null, '待整理')
-                : run_.ok ? h('div', null, `${num(run_.files)} 个会话文件 · ${num(run_.days)} 天日志`) : h('div', { className: 'yxsh-error' }, `整理出错：${run_.error}`),
+                : run_.ok ? h('div', { title: run_.days < a.logDays ? `其中 ${num(a.logDays - run_.days)} 天的原始会话已不在，日志照常保留` : '' }, `${num(run_.files)} 个会话文件 · 日志 ${num(a.logDays)} 天`) : h('div', { className: 'yxsh-error' }, `整理出错：${run_.error}`),
               h('div', { className: 'yxsh-muted', title: a.sessions }, a.sessions)),
             h('label', { className: 'yxsh-switch yxsh-muted', title: '关闭后不再整理它的新会话，已有日志照常检索' },
               h('input', { type: 'checkbox', checked: a.enabled, disabled: !!pending, onChange: e => run({ op: 'enable', agent: a.id, enabled: e.target.checked }, 'enable') }), '收录'),

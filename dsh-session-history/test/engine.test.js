@@ -384,3 +384,15 @@ test('各家不共用技能文件夹时分组显示；读多个目录的 agent �
     assert.deepEqual(groups, { '~/.claude/skills': ['Claude Code'], '~/.agents/skills': ['Codex', 'Pi'], '~/.gemini/config/skills': ['Antigravity'] });
   } finally { process.env.HOME = prev.HOME; process.env.USERPROFILE = prev.USERPROFILE; }
 });
+
+test('Codex 归档目录 archived_sessions 也收；与 sessions 里同名的只取一份', async () => {
+  const codex = (await import('../lib/sources/codex.js')).default;
+  const row = (id, text) => jsonl([{ type: 'session_meta', payload: { id, cwd: '/work' } },
+    { type: 'response_item', timestamp: '2026-11-08T04:00:00.000Z', payload: { type: 'message', role: 'user', content: [{ type: 'input_text', text }] } }]);
+  put(join(HOME, '.codex/archived_sessions/rollout-2026-11-08T12-00-00-aaaa9999-1.jsonl'), row('aaaa9999-1', '归档的会话'));
+  put(join(HOME, '.codex/archived_sessions/rollout-2026-11-10-cccccccc.jsonl'), row('cccccccc-3333', '与 sessions 同名'));
+  const list = codex.files(codex.locate());
+  assert.ok(list.some(p => p.includes('archived_sessions') && p.includes('aaaa9999')));
+  assert.equal(list.filter(p => p.endsWith('rollout-2026-11-10-cccccccc.jsonl')).length, 1, '同名只取 sessions 里的');
+  assert.ok(!list.some(p => p.includes('archived_sessions') && p.includes('cccccccc')));
+});

@@ -12,7 +12,7 @@ const MACHINERY = ['<recommended_plugins>', '# AGENTS.md instructions', '<enviro
 export function locate(env = process.env) {
   const base = env.CODEX_HOME ? expand(env.CODEX_HOME) : join(home(), '.codex');
   const agents = env.AGENTS_HOME ? expand(env.AGENTS_HOME) : join(home(), '.agents');
-  return { base, sessions: join(base, 'sessions'), roots: [join(base, 'sessions')], skills: [join(agents, 'skills'), join(base, 'skills')] };
+  return { base, sessions: join(base, 'sessions'), archived: join(base, 'archived_sessions'), roots: [join(base, 'sessions')], skills: [join(agents, 'skills'), join(base, 'skills')] };
 }
 
 function rollouts(root) {
@@ -33,9 +33,12 @@ function rollouts(root) {
   return out;
 }
 
-/** 同一会话若明文与 .zst 并存（续聊时解压回明文的间隙），取明文。 */
+/** 同一会话若明文与 .zst 并存（续聊时解压回明文的间隙），取明文；另收归档目录 archived_sessions（平铺）。 */
 export function files(paths) {
-  const all = rollouts(paths.sessions);
+  const archivedDir = paths.archived || join(paths.base, 'archived_sessions');
+  const live = rollouts(paths.sessions), names = new Set(live.map(p => basename(p).replace(/\.zst$/, '')));
+  const archived = entries(archivedDir).filter(d => d.name.startsWith('rollout-') && !names.has(d.name.replace(/\.zst$/, ''))).map(d => join(archivedDir, d.name));
+  const all = [...live, ...archived];
   const plain = new Set(all.filter(p => p.endsWith('.jsonl')));
   const zst = all.filter(p => p.endsWith('.jsonl.zst') && !plain.has(p.slice(0, -4)));
   return sortPaths([...plain, ...zst]);

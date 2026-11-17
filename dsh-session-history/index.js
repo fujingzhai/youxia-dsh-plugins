@@ -1,7 +1,7 @@
 // DSH 宿主半边：插件页的管理接口、DSH 运行期间的定时整理、启动时生成技能文件。
 // 数据目录（默认 ~/.session-history）与插件包分开：卸载、更新、重装插件都不动日志与设置。
 import { spawn } from 'node:child_process';
-import { existsSync, writeFileSync } from 'node:fs';
+import { existsSync, writeFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { resolveHome, loadConfig, saveConfig, layout, readJson } from './lib/config.js';
 import { SOURCES, FORMATS, enabled, byId, allSources, customSource, folderFor } from './lib/agents.js';
@@ -86,6 +86,7 @@ export function snapshot(home, runner) {
     const run = last?.agents?.[a.folder] || null;
     return { ...a, enabled: enabled(source, config), sessions: (roots => roots.filter(isDir).map(tilde).join('、') || tilde(roots[0]))(source.locate(process.env, config.agents?.[a.id] || {}).roots),
       run: run && { ok: run.ok, files: run.files, days: run.days, error: run.error || null },
+      logDays: logDays(home, a.folder),
       ...(a.custom ? { def: config.custom.find(c => c.id === a.id) } : {}) };
   });
   // 只剩旧日志：日志文件夹对应的 agent 不在列表里（已卸载，或来自不再支持的来源）。新用户一般没有。
@@ -99,6 +100,12 @@ export function snapshot(home, runner) {
     git: existsSync(join(home, '.git')),
     skill: skillMarkdown(home, { config }),
   };
+}
+
+/** 日志里实际有的天数（含来源已删、照常保留的旧日志）。 */
+function logDays(home, folder) {
+  const dir = join(layout(home).logs, folder);
+  try { return readdirSync(dir).filter(f => f.endsWith('-log.md')).length; } catch { return 0; }
 }
 
 /** 检查自定义 agent 的会话目录：存在与否、按所选格式能找到几个会话文件。 */

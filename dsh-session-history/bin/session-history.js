@@ -22,6 +22,8 @@ const { allSources, byId, byFolder, enabled } = await import('../lib/agents.js')
 const { installSkill, logFolders, VERSION } = await import('../lib/skill.js');
 const { skillStatus, link, linkAll, unlink } = await import('../lib/links.js');
 const { tilde } = await import('../lib/files.js');
+const { readdirSync } = await import('node:fs');
+const { join } = await import('node:path');
 
 const HELP = `Session History ${VERSION} — 各 agent 的历史对话检索（不调用模型）
 
@@ -92,6 +94,7 @@ function withIndex(home, config, fn) {
 }
 
 function statusText(home) {
+  const logDaysOf = folder => { try { return readdirSync(join(layout(home).logs, folder)).filter(f => f.endsWith('-log.md')).length; } catch { return 0; } };
   const config = loadConfig(home);
   const last = readJson(layout(home).status, null);
   const { agents, targets, links } = skillStatus(home, config);
@@ -99,7 +102,7 @@ function statusText(home) {
   lines.push(last ? `最近整理 ${last.run}（${(last.ms / 1000).toFixed(1)} 秒）｜索引 ${last.index?.sessions ?? '?'} 个会话、${last.index?.files ?? '?'} 份日志` : '尚未整理过：先跑 refresh');
   for (const a of agents.filter(x => x.installed || x.custom)) {
     const run = last?.agents?.[a.folder];
-    const src = !a.installed ? '未检测到' : enabled(byId(a.id), config) ? (run ? (run.ok ? `已整理 ${run.files} 个会话文件` : `整理出错：${run.error}`) : '已启用，待整理') : '已检测到，未启用整理';
+    const src = !a.installed ? '未检测到' : enabled(byId(a.id), config) ? (run ? (run.ok ? `${run.files} 个会话文件 · 日志 ${logDaysOf(a.folder)} 天` : `整理出错：${run.error}`) : '已启用，待整理') : '已检测到，未启用整理';
     const skill = { ready: `已接入（经 ${a.via}）`, missing: '待接入', conflict: `冲突：${a.conflict?.path}`, nodir: '不接入（未设技能目录）' }[a.state];
     lines.push(`  ${a.name.padEnd(12)} ${src}｜${skill}`);
   }

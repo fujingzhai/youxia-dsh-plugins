@@ -66,6 +66,8 @@ for (const name of plugins) {
     assert(readme.includes(marker), `${name}: 更新说明缺少 ${marker}`)
   }
   assert(rootReadme.includes(`\n${manifest.name}\n`), `${name}: 首页缺少 npm 安装清单`)
+  const row = rootReadme.match(new RegExp(`^\\| \\[${name}\\]\\(${name}\\) \\| ([^ |]+) \\|`, 'm'))
+  assert(row && row[1] === manifest.version, `${name}: 首页版本表写的是 ${row?.[1] ?? '（缺）'}，包版本是 ${manifest.version}`)
   if (manifest.name !== name) {
     assert(rootReadme.includes(manifest.name), `${name}: 首页未写明 npm 包名 ${manifest.name}`)
     assert(readme.includes(manifest.name), `${name}: 插件说明未写明 npm 包名 ${manifest.name}`)
