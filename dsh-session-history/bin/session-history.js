@@ -100,13 +100,15 @@ function statusText(home) {
   for (const a of agents.filter(x => x.installed || x.custom)) {
     const run = last?.agents?.[a.folder];
     const src = !a.installed ? '未检测到' : enabled(byId(a.id), config) ? (run ? (run.ok ? `已整理 ${run.files} 个会话文件` : `整理出错：${run.error}`) : '已启用，待整理') : '已检测到，未启用整理';
-    const skill = { ready: `技能已生效（经 ${a.via}）`, missing: '技能未生效', conflict: `技能冲突：${a.conflict?.path}`, nodir: '未设技能目录' }[a.state];
+    const skill = { ready: `已接入（经 ${a.via}）`, missing: '待接入', conflict: `冲突：${a.conflict?.path}`, nodir: '不接入（未设技能目录）' }[a.state];
     lines.push(`  ${a.name.padEnd(12)} ${src}｜${skill}`);
   }
-  for (const t of targets) lines.push(`  → 在 ${t.display} 建软链可让 ${t.agents.join('、')} 生效：session-history link all`);
+  for (const t of targets) lines.push(`  → 在 ${t.display} 建软链，${t.agents.join('、')} 即可接入：session-history link all`);
   for (const l of links) lines.push(`  软链 ${l.entry} → 数据目录（${l.agents.join('、')}）`);
-  const legacy = logFolders(home).filter(f => !byFolder(f, config));
-  if (legacy.length) lines.push(`  已停用来源的旧日志：${legacy.join('、')}`);
+  // 与插件页同一口径：日志文件夹对应的 agent 不在列表里（已卸载或不再支持）。
+  const listed = new Set(agents.filter(x => x.installed || x.custom).map(x => x.folder));
+  const legacy = logFolders(home).filter(f => !listed.has(f));
+  if (legacy.length) lines.push(`  另有旧日志：${legacy.join('、')}（对应的 agent 已不在，日志照常检索）`);
   return lines.join('\n');
 }
 
