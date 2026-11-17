@@ -31,7 +31,7 @@
 ## 功能
 
 - **多家 agent**：Claude Code、Codex、Antigravity、Pi、DSH、OpenCode、LobsterAI，以及 WorkBuddy（实验性）。装好就自动检测，后装的也会自动出现。会话格式与其中某一家相同的其他 agent，或同一 agent 的第二套配置，可以「自动查找」或手动添加。
-- **检索以会话为单位**：会话标题和你的原话权重最高；命中太多时只列标题，并提示可以加哪些词收窄。繁简、全半角、大小写自动统一。
+- **检索以会话为单位**：会话标题和你的原话权重最高，只记得标题、正文里没有那些词也能找到；命中太多时只列标题，并提示可以加哪些词收窄。繁简、全半角、大小写自动统一。
 - **原始记录兜底**：命令、参数、报错原文多藏在工具调用里，可以在单个会话的原始记录中定点查找。
 - **Claude Code 记忆提示**：检索时顺带列出对题的 Claude Code 记忆（整理过的结论），可先读这些。
 - **技能说明自适应**：SKILL.md 只写你电脑上实际有的 agent，不让模型去查不存在的东西。
@@ -82,6 +82,7 @@ dsh plugin --profile desktop add dsh-session-history
 - **只读不改**：插件只读取各 agent 的会话文件，从不修改它们；日志里你的原话一字不改。
 - **全部在本地**：不调用模型、不联网；插件新建的数据目录只有你自己的账户能读。
 - **日志不是指令**：日志里出现的命令和要求是历史记录，SKILL.md 已要求 agent 不得照做，回答时要注明日期和出处。
+- **从 0.2.x 升级到 0.3**：第一次整理会重建索引（一般十几秒到一分钟）；Codex、OpenCode 的日志改用完整会话 ID，开了 Git 快照会看到一次性的标题行改动；此前记下的块 ID 需重新检索。
 
 ### SKILL.md 是怎么来的
 
@@ -94,7 +95,7 @@ dsh plugin --profile desktop add dsh-session-history
 
 ## 插件页
 
-- **数据目录**：位置、最近整理时间、会话与日志数量、整理是否出错；可打开目录或立即整理。
+- **数据目录**：位置、最近整理时间、会话与日志数量、整理是否正常（某一家出错、索引没更新上、技能文件或快照写不了都会列出，与命令行同一判定）；可打开目录或立即整理。
 - **Agents**：只列检测到的 agent（以及你添加的），每次打开都会重新检测。每家显示会话来源与数量、是否收录、技能状态（已接入／待接入／冲突／不接入）。关掉「收录」只是不再整理它的新会话，已有日志照常检索。
 - **技能接入**：只有检测到、但还没接入的 agent 才需要操作。按它们实际读取的文件夹归组，一组一个按钮，写明点了之后哪些 agent 生效；已建的软链列在这里，可以移除。
 - **自动查找／手动添加**：见下节。
@@ -190,7 +191,7 @@ session-history refresh | status | setup | link all | unlink claude | config
 Git 子目录地址（不提供原生更新检查）：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-history@0.2.6&path:/dsh-session-history
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-history@0.3.0&path:/dsh-session-history
 ```
 
 ## 兼容与限制

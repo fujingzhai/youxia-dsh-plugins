@@ -9,9 +9,20 @@ const META = /<!--[\s\S]*?-->/g;
 const mask = body => body.replace(META, m => ' '.repeat(m.length));
 const PLACEHOLDER = /^\s*(\[(?:🖼|📎)[^\]]*\]|#{1,6} Files mentioned by the user:?|#{1,6} .+\.(?:png|jpe?g|gif|webp|heic|pdf)\s*:.*|#{1,6} My request for Codex:?)\s*$/i;
 
+// 扩展区汉字（如𠮷）与 emoji 在 JS 字符串里占两个单位；按位置截取时不能从中间切开。
+const LOW = c => c >= 0xdc00 && c <= 0xdfff;
+/** 截断位置若落在一个字的两半之间，退回到这个字之前。 */
+export const safeAt = (s, i) => (i > 0 && i < s.length && LOW(s.charCodeAt(i)) ? i - 1 : i);
+/** 去掉开头 n 个字（按字数，不按 JS 长度）；分块重叠是按字数算的，拼回时要用它。 */
+export function skipChars(s, n) {
+  let i = 0;
+  for (let k = 0; k < n && i < s.length; k++) i += s.codePointAt(i) > 0xffff ? 2 : 1;
+  return s.slice(i);
+}
+
 export function clip(text, width) {
   const t = String(text).replace(/\s+/g, ' ').trim();
-  return t.length <= width ? t : t.slice(0, Math.max(1, width - 1)) + '…';
+  return t.length <= width ? t : t.slice(0, safeAt(t, Math.max(1, width - 1))) + '…';
 }
 
 export function plain(text) {
@@ -31,11 +42,32 @@ export function roleTools(userLabel = '用户') {
 
 export const speaker = role => String(role).replace(/^[^\p{L}\p{N}_]+/u, '').trim();
 
+const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g;
+
+/**
+ * 会话的短 ID，给 outline／search --session 用，前缀或片段都能找回。
+ * UUID 取前 13 位（UUIDv7 的前 8 位只是时间，一分钟内开的会话会相同）；
+ * 微信等 IM 会话形如 weixin-<用户>-im-wechat-<UUID>，前缀全都一样，取末尾的 UUID；
+ * OpenCode 取 ses_ 后 12 位，旧日志「标题（ses_xxxx）」照旧取括号里的。
+ */
 export function shortSid(session) {
   const m = /（(ses_[0-9A-Za-z]+)）$/.exec(session);
   if (m) return m[1];
   const s = session.startsWith('session-') ? session.slice(8) : session;
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-/.test(s) ? s.slice(0, 13) : s.slice(0, 8);
+  if (s.startsWith('ses_')) return s.slice(0, 16);
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-/.test(s)) return s.slice(0, 13);
+  const ids = s.match(UUID);
+  return ids ? ids[ids.length - 1].slice(0, 13) : s.slice(0, 8);
+}
+
+/** 展示用的会话 ID：短 ID 在同一 agent 里撞了（旧日志只存了几位）就给完整 ID，保证照着抄能找回这一场。 */
+export function sessionLabeler(db) {
+  const seen = new Map();
+  for (const r of db.prepare('SELECT agent, session FROM sessions').all()) {
+    const k = `${r.agent}\u0000${shortSid(r.session)}`;
+    seen.set(k, (seen.get(k) || 0) + 1);
+  }
+  return (agent, session) => { const short = shortSid(session); return seen.get(`${agent}\u0000${short}`) > 1 ? session : short; };
 }
 
 export const span = (first, last) => first === last ? first : `${first}—${last.slice(5)}`;

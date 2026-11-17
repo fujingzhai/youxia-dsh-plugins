@@ -1,11 +1,12 @@
 // OpenCode：会话存在 SQLite 库 ~/.local/share/opencode/opencode.db（session／message／part 三表），只读打开。
-// 标题行沿用 OpenCode 自带的会话标题：「# 标题（ses_xxxx）」。
+// 标题行「# ses_ID · 标题」，标题取 OpenCode 自带的。0.2.x 写成「# 标题（ses_ 加 4 位）」：标题一改就成了另一场，
+// 前 4 位又只是时间，同题的会话会并到一起；旧日志照常检索，整理时认作同一会话（markdown.js stillPresent）。
 import { join } from 'node:path';
 import { statSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import { home, expand, isFile } from '../files.js';
 import { parseJson, strip, isObject } from '../py.js';
-import { demote } from '../markdown.js';
+import { demote, tidy } from '../markdown.js';
 import { excluded, str } from './common.js';
 
 const dataHome = env => env.XDG_DATA_HOME ? expand(env.XDG_DATA_HOME) : join(home(), '.local/share');
@@ -71,13 +72,15 @@ export function parse(path) {
 }
 
 export function build(entries, options = {}) {
-  const all = [];
+  const all = [], titles = {};
   for (const { data } of entries) for (const s of data.sessions) {
     if (TEMP.some(p => s.directory.includes(p)) || excluded(s.directory, options.excludeCwds)) continue;
-    const key = `${strip(s.title) || s.sid.slice(0, 8)}（${s.sid.slice(0, 8)}）`;
-    for (const [ms, role, text] of s.turns) all.push([ms, role, text, key]);
+    // 「New session - 时间」是生成标题前的占位，不当标题。
+    const title = /^New session\b/.test(strip(s.title)) ? '' : tidy(s.title);
+    if (title) titles[s.sid] = title;
+    for (const [ms, role, text] of s.turns) all.push([ms, role, text, s.sid]);
   }
-  return { turns: all, titles: {}, count: all.length };
+  return { turns: all, titles, count: all.length };
 }
 
 const core = text => text.split('\n').map(l => strip(l)).filter(s => s && !s.startsWith('MEDIA:') && !s.startsWith('[🖼️') && !s.startsWith('[📎')).join('\n');

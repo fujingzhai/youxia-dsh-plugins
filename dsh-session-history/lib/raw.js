@@ -6,7 +6,7 @@ import { readText } from './files.js';
 import { parseJson, isObject } from './py.js';
 import { norm, trad } from './normalize.js';
 import { createClock } from './clock.js';
-import { shortSid } from './text.js';
+import { sessionLabeler } from './text.js';
 import { parseQuery, pickSession, excerpt, budgeted, occurrences, UsageError } from './recall.js';
 
 const SKIP = new Set(['signature', 'data', 'encrypted_content']); // 签名、图片、加密思考：大段无字内容
@@ -82,7 +82,7 @@ export function raw(db, args, ctx) {
   const clock = createClock(config);
   const [about, message] = pickSession(db, args.target, args.agent);
   if (!about) return message;
-  const tag = `${about.agent} ${shortSid(about.session)}「${about.title}」`;
+  const tag = `${about.agent} ${sessionLabeler(db)(about.agent, about.session)}「${about.title}」`;
   const source = byFolder(about.agent, config);
   const key = about.session.startsWith('session-') ? about.session.slice(8) : about.session;
   const files = source ? source.rawFiles(pathsOf(source, config), key) : [];

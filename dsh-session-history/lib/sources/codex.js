@@ -81,7 +81,9 @@ export function parse(path) {
     turns.push([ev.timestamp, payload.role, text]);
   }
   meta ??= {};
-  return { cwd: meta.cwd ?? null, sid: String(meta.id || basename(path).split('.')[0]).slice(0, 8), turns };
+  // 会话 ID 存全：Codex 用 UUIDv7，前 8 位只是时间，一分钟内开的两场会被并成一场（0.2.x 只存前 8 位）。
+  const named = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/.exec(basename(path));
+  return { cwd: meta.cwd ?? null, sid: String(meta.id || (named ? named[0] : basename(path).split('.')[0])), turns };
 }
 
 /**
@@ -101,7 +103,7 @@ export function build(entries, options = {}, paths) {
   if (index && exists(index)) {
     for (const line of jsonLines(readFileSync(index, 'utf8'))) {
       const e = parseJson(line);
-      if (isObject(e) && typeof e.id === 'string' && tidy(e.thread_name)) titles[e.id.slice(0, 8)] = tidy(e.thread_name);
+      if (isObject(e) && typeof e.id === 'string' && tidy(e.thread_name)) titles[e.id] = tidy(e.thread_name);
     }
   }
   return { turns: all, titles, count: all.length };
@@ -115,4 +117,4 @@ export function rawFiles(paths, key) {
   return files(paths).filter(p => basename(p).includes(key));
 }
 
-export default { id: 'codex', folder: 'Codex', name: 'Codex', version: 1, locate, files, parse, build, render, rawFiles };
+export default { id: 'codex', folder: 'Codex', name: 'Codex', version: 2, locate, files, parse, build, render, rawFiles };

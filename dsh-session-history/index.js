@@ -9,6 +9,7 @@ import { installSkill, skillMarkdown, logFolders, findNode, ENGINE, VERSION } fr
 import { skillStatus, linkTarget, linkAll, unlinkTarget } from './lib/links.js';
 import { tilde, expand, isDir } from './lib/files.js';
 import { scan } from './lib/scan.js';
+import { problems } from './lib/refresh.js';
 
 export const name = 'session-history';
 export const ROUTE = '/youxia-session-history/api';
@@ -66,7 +67,8 @@ export function createRunner(home, { node = findNode(), engine = ENGINE } = {}) 
         child.on('close', code => {
           let status = null;
           try { status = JSON.parse(out); } catch { /* 非 JSON 输出 */ }
-          resolve(status ? { ok: code === 0 || !!status.skipped, status } : { ok: false, error: (err || out || `退出码 ${code}`).trim().slice(-800) });
+          // 拿到状态就算跑完了：某一家或索引出错时引擎以 1 退出，问题写在状态里，由插件页显示。
+          resolve(status ? { ok: true, status } : { ok: false, error: (err || out || `退出码 ${code}`).trim().slice(-800) });
         });
       }).finally(() => { running = null; });
       return running;
@@ -92,7 +94,7 @@ export function snapshot(home, runner) {
   // 只剩旧日志：日志文件夹对应的 agent 不在列表里（已卸载，或来自不再支持的来源）。新用户一般没有。
   const listed = new Set(shown.map(a => a.folder));
   return {
-    version: VERSION, home: tilde(home), homeAbs: home, config, last, running: runner?.running ?? false,
+    version: VERSION, home: tilde(home), homeAbs: home, config, last, problems: problems(last), running: runner?.running ?? false,
     agents: shown,
     targets: status.targets, links: status.links, conflicts: status.conflicts,
     legacy: logFolders(home).filter(f => !listed.has(f)),

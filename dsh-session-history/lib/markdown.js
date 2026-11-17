@@ -6,21 +6,36 @@ import { splitlines, strip, rstrip, words, cut } from './py.js';
 
 export const SEP = ' · '; // 会话标题行「# ID · 原生标题」
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)+$/; // clear-conversation-state 之类的机器名
-const FENCE_TOGGLE = /^\s*(```|~~~)/;
-const FENCE = /^\s*(`{3,}|~{3,})/;
+// 代码围栏：行首至多缩进 3 格（同 CommonMark），缩进更深的不算，比如 Python 报错回溯里标出错位置的 ~~~~^^。
+// 收尾＝同种符号、不短于开头；带信息串的也算收尾（与 0.2.x 相同）。模型常把代码块嵌在 ```md 里，
+// 按 CommonMark 严格认收尾，旧日志里这类发言反而会一路开到底；本机全部旧日志对比过，这样认出错最少。
+const FENCE = /^ {0,3}(`{3,}|~{3,})/;
 const HEADING = /^(#{1,6})(\s+\S)/;
 
-/** 正文标题整体降 levels 级（# → ###），嵌在「## 时刻 角色」之下；代码围栏内不动。 */
+/** 读入一行后的围栏状态：null＝不在围栏里，否则是开头的围栏符。写日志、分段、建索引共用这一条规则。 */
+export function fenceStep(fence, line) {
+  const m = FENCE.exec(line);
+  if (!m) return fence;
+  const token = m[1];
+  if (fence === null) return token;
+  return token[0] === fence[0] && token.length >= fence.length ? null : fence;
+}
+
+/**
+ * 一条发言的正文：标题整体降 levels 级（# → ###），嵌在「## 时刻 角色」之下；代码围栏内不动。
+ * 发言停在代码块中间（回复被打断、截断）时补上收尾，否则后面的发言头和会话标题都会被当成代码。
+ */
 export function demote(text, levels = 2) {
-  let inFence = false;
-  return text.split('\n').map(line => {
-    if (FENCE_TOGGLE.test(line)) { inFence = !inFence; return line; }
-    if (!inFence) {
-      const m = HEADING.exec(line);
-      if (m) return '#'.repeat(Math.min(m[1].length + levels, 6)) + line.slice(m[1].length);
-    }
-    return line;
-  }).join('\n');
+  let fence = null;
+  const lines = text.split('\n').map(line => {
+    const inside = fence !== null;
+    fence = fenceStep(fence, line);
+    if (inside) return line;
+    const m = HEADING.exec(line);
+    return m ? '#'.repeat(Math.min(m[1].length + levels, 6)) + line.slice(m[1].length) : line;
+  });
+  if (fence !== null) lines.splice(lines[lines.length - 1] === '' ? -1 : lines.length, 0, fence);
+  return lines.join('\n');
 }
 
 /** 原生标题整理：空白归并、去引号、截 60 字；连字符机器名不用。 */
@@ -36,17 +51,10 @@ export function headId(line) {
   return at >= 0 ? key.slice(0, at) : key;
 }
 
+/** 逐行喂入，返回读完这一行后是否在围栏外（围栏的开头、收尾行本身不会是标题行）。 */
 function fenceTracker() {
   let fence = null;
-  return line => {
-    const m = FENCE.exec(line);
-    if (m) {
-      const token = m[1];
-      if (fence === null) fence = token;
-      else if (token[0] === fence[0] && token.length >= fence.length) fence = null;
-    }
-    return fence === null;
-  };
+  return line => (fence = fenceStep(fence, line)) === null;
 }
 
 /** 给会话标题行补上原生标题；判定标题行的规则与 sections 相同。 */
@@ -79,10 +87,24 @@ export function sections(text) {
 }
 
 
+// 旧版写的短会话 ID：Codex 只取前 8 位；OpenCode 写成「标题（ses_ 加 4 位）」。新 ID 以它开头即视为同一会话。
+const LEGACY_CODEX = /^[0-9a-f]{8}$/;
+const LEGACY_OPENCODE = /（(ses_[0-9A-Za-z]{4})）$/;
+
+/** 旧日志里的会话 ID 在新渲染中是否还在（含上述两种旧写法）。 */
+export function stillPresent(key, current) {
+  if (current.has(key)) return true;
+  const m = LEGACY_OPENCODE.exec(key);
+  const prefix = m ? m[1] : LEGACY_CODEX.test(key) ? key + '-' : null;
+  if (!prefix) return false;
+  for (const k of current.keys()) if (k.startsWith(prefix) && k.length > prefix.length) return true;
+  return false;
+}
+
 /** 来源里已没有的旧会话段原样保留（应用清理了历史也不丢日志）；返回 [正文, 保留段数]。 */
 export function preserveMissing(old, next) {
   const current = sections(next);
-  const missing = [...sections(old)].filter(([key]) => !current.has(key)).map(([, body]) => body);
+  const missing = [...sections(old)].filter(([key]) => !stillPresent(key, current)).map(([, body]) => body);
   if (!missing.length) return [next, 0];
   // 段间只留一个空行。
   return [rstrip(next) + '\n\n' + missing.map(m => rstrip(m, '\n')).join('\n\n') + '\n', missing.length];

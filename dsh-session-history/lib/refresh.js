@@ -149,18 +149,33 @@ export function refresh({ home, only = null, log = () => {}, engine = null } = {
         log(`${source.folder}: ${agents[source.folder].ok ? 'OK' : 'ERROR ' + agents[source.folder].error}`);
       }
     } finally { cache.close(); }
+    const previous = readJson(dirs.status, {});
     let index;
     try { index = { ok: true, ...updateIndex(home, config) }; }
-    catch (error) { index = { ok: false, error: error.message }; }
+    // 写入失败会整体回滚，检索仍用上次的索引；计数也沿用上次的，面板不至于显示成空。
+    catch (error) { index = { ok: false, error: error.message, sessions: previous.index?.sessions, files: previous.index?.files }; }
     const git = config.gitSnapshots ? snapshot(home, clock) : null;
     let skill = null;
     try { skill = installSkill(home, { engine }); } catch (error) { skill = { ok: false, error: error.message }; }
     const status = { run: clock.iso(), ms: Date.now() - started, agents, index, ...(git ? { git } : {}), skill };
-    const previous = readJson(dirs.status, {});
     if (only) status.agents = { ...(previous.agents || {}), ...agents };
     atomicWrite(dirs.status, JSON.stringify(status, null, 2) + '\n');
     return status;
   } finally { release(); }
+}
+
+/**
+ * 一次整理留下的问题：CLI 的输出与退出码、status、插件页都按这一份判断是否正常。
+ * scope：agent（某一家整理出错）、index（日志已写好、索引没更新上）、skill、git。
+ */
+export function problems(status) {
+  if (!status || status.skipped) return [];
+  const out = [];
+  for (const [name, r] of Object.entries(status.agents || {})) if (r && r.ok === false) out.push({ scope: 'agent', agent: name, text: `${name} 整理出错：${r.error}` });
+  if (status.index && status.index.ok === false) out.push({ scope: 'index', text: `日志已保存，检索索引更新失败（检索仍用上次的索引）：${status.index.error}` });
+  if (status.skill && status.skill.ok === false) out.push({ scope: 'skill', text: `技能文件写入失败：${status.skill.error}` });
+  if (status.git && status.git.ok === false) out.push({ scope: 'git', text: `日志快照失败：${status.git.reason || status.git.error || 'git 出错'}` });
+  return out;
 }
 
 /** 距上次整理超过 staleMinutes 才补整理；拿不到锁（别处正在整理）就直接用现有索引。 */

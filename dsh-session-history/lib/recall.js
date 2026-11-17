@@ -5,7 +5,7 @@ import { norm, normChar } from './normalize.js';
 import { mask, OVERLAP } from './store.js';
 import { createClock } from './clock.js';
 import { tilde, home } from './files.js';
-import { roleTools, clip, plain, machine, speaker, shortSid, span, mark, phrases } from './text.js';
+import { roleTools, clip, plain, machine, speaker, sessionLabeler, span, mark, phrases, safeAt, skipChars } from './text.js';
 
 export class UsageError extends Error {}
 
@@ -36,10 +36,15 @@ export function parseQuery(words) {
 
 export function resolveSessions(db, token, agent = null) {
   const t = String(token).trim();
-  const sql = "SELECT * FROM sessions WHERE (session=? OR substr(session,1,length(?))=? OR substr(session,1,length(?)+8)='session-'||? OR instr(session,'（'||?||'）')>0)";
-  const rows = db.prepare(sql + (agent ? ' AND agent=?' : '')).all(...Array(6).fill(t), ...(agent ? [agent] : []));
+  if (!t) return [];
+  const scope = agent ? ' AND agent=?' : '', extra = agent ? [agent] : [];
+  const sql = "SELECT * FROM sessions WHERE (session=? OR substr(session,1,length(?))=? OR substr(session,1,length(?)+8)='session-'||? OR instr(session,'（'||?)>0)";
+  const rows = db.prepare(sql + scope).all(...Array(6).fill(t), ...extra);
   const exact = rows.filter(r => r.session === t);
-  return exact.length ? exact : rows;
+  if (exact.length) return exact;
+  if (rows.length || t.length < 8) return rows;
+  // 短 ID 也可能是会话 ID 中间的一段，比如 IM 会话末尾的 UUID。
+  return db.prepare('SELECT * FROM sessions WHERE instr(session, ?)>0' + scope).all(t, ...extra);
 }
 
 export function findChunk(db, token, strict = true) {
@@ -54,6 +59,8 @@ export function findChunk(db, token, strict = true) {
 const escapeRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const isShortWord = alt => /^[a-z0-9]{1,3}$/.test(alt);
 const bounded = alt => new RegExp(`(?<![a-z0-9])${escapeRe(alt)}(?![a-z0-9])`, 'g');
+/** 题目里有没有这个词；短英文词同样按词边界。 */
+const inTitle = (title, alt) => isShortWord(alt) ? bounded(alt).test(title) : title.includes(alt);
 
 function countOf(text, alt) {
   if (isShortWord(alt)) return (text.match(bounded(alt)) || []).length;
@@ -142,7 +149,7 @@ export function excerpt(row, groups, width) {
   const radius = Math.max(24, Math.floor((Math.floor(width / spots.length) - Math.max(...spots.map(s => s[1]))) / 2));
   const windows = [];
   for (const [pos, n] of spots) {
-    const a = Math.max(0, pos - radius), b = Math.min(body.length, pos + n + radius);
+    const a = safeAt(body, Math.max(0, pos - radius)), b = safeAt(body, Math.min(body.length, pos + n + radius));
     if (windows.length && a <= windows[windows.length - 1][1]) windows[windows.length - 1][1] = Math.max(windows[windows.length - 1][1], b);
     else windows.push([a, b]);
   }
@@ -205,10 +212,13 @@ export function search(db, args, ctx) {
   const clock = createClock(config), tools = roleTools(config.userLabel);
   const groups = parseQuery(args.query);
   if (!groups.length) throw new UsageError('请提供至少一个关键词。');
+  const label = sessionLabeler(db);
   let keys = null;
   if (args.session) {
-    keys = resolveSessions(db, args.session, args.agent);
-    if (!keys.length) return `没有匹配 ${args.session} 的会话。`;
+    // 与 outline、raw 同一套：匹配到多场就列出来请对方选，不把几场的命中混在一起。
+    const [about, message] = pickSession(db, args.session, args.agent);
+    if (!about) return message;
+    keys = [about];
   }
   const [where, params] = chunkFilters(args, keys, clock, tools);
   const total = db.prepare('SELECT count(*) n FROM chunks').get().n || 1;
@@ -226,11 +236,29 @@ export function search(db, args, ctx) {
     }
     df.push(matched.size);
   });
+  // 只有题目对上的会话也算候选：题目常是概括，用词未必出现在正文里。限定了会话或发言人时不看题目。
+  const titleHits = new Map();
+  if (!keys && !args.role) {
+    const cond = [], p = [];
+    const since = parseDay(args.since, clock), until = parseDay(args.until, clock);
+    if (args.agent) { cond.push('agent=?'); p.push(args.agent); }
+    if (since) { cond.push('last_day>=?'); p.push(since); }
+    if (until) { cond.push('first_day<=?'); p.push(until); }
+    const titled = db.prepare(['SELECT agent, session, title_norm FROM sessions WHERE instr(title_norm, ?)>0', ...cond].join(' AND '));
+    groups.forEach(([, alts], g) => {
+      for (const alt of alts) for (const r of titled.all(alt, ...p)) {
+        if (!inTitle(r.title_norm, alt)) continue;
+        const key = `${r.agent}\u0000${r.session}`;
+        if (!titleHits.has(key)) titleHits.set(key, new Set());
+        titleHits.get(key).add(g);
+      }
+    });
+  }
   const idf = df.map(n => Math.log(1 + total / (n + 0.5)));
   const head = '词频 ' + groups.map(([label], i) => `${label} ${df[i]}块`).join(' · ');
   // 记忆是跨会话的结论，限定了会话、agent 或发言人时不列。
   const notes = keys || args.agent || args.role || !config.memoryHints ? '' : memoryNotes(db, groups);
-  if (!hits.size) {
+  if (!hits.size && !titleHits.size) {
     return [head, notes, (notes ? '日志' : '') + '未查到记录。可换同义词（词内用 | 连接任选）、减少词或放宽日期；不能据此断言从未发生。'
       + `接口名、参数、报错原文等多只在工具里：对相关会话用 ${cmd} raw <会话ID> 词 查原始记录。`].filter(Boolean).join('\n');
   }
@@ -246,7 +274,7 @@ export function search(db, args, ctx) {
   if (keys) {
     const best = [...hits.keys()].sort(desc(weight)).slice(0, args.limit);
     const info = keys[0];
-    const out = [head + `｜会话 ${info.agent} ${shortSid(info.session)}「${info.title}」内按时间列 ${best.length}/${hits.size} 块`];
+    const out = [head + `｜会话 ${info.agent} ${label(info.agent, info.session)}「${info.title}」内按时间列 ${best.length}/${hits.size} 块`];
     for (const r of fetch(best)) out.push(lineOf(r, excerpt(r, groups, args.snippet)));
     return budgeted(out, args.budget);
   }
@@ -254,21 +282,23 @@ export function search(db, args, ctx) {
   const count = groups.length;
   const info = new Map(db.prepare('SELECT * FROM sessions').all().map(r => [`${r.agent}\u0000${r.session}`, r]));
   const stats = new Map();
+  const blank = () => ({ tf: Array(count).fill(0), n: Array(count).fill(0), asked: Array.from({ length: count }, () => new Set()), turns: new Map(), cooc: 0, rids: [] });
   for (const [rid, found] of hits) {
     const r = meta.get(rid), key = `${r.agent}\u0000${r.session}`;
-    if (!stats.has(key)) stats.set(key, { tf: Array(count).fill(0), n: Array(count).fill(0), asked: Array.from({ length: count }, () => new Set()), turns: new Map(), cooc: 0, rids: [] });
+    if (!stats.has(key)) stats.set(key, blank());
     const s = stats.get(key), spot = `${r.day}|${r.turn}`, user = tools.said(r);
     for (const [g, tf] of found) { s.tf[g] += tf; s.n[g] += 1; if (user) s.asked[g].add(spot); }
     if (user) { if (!s.turns.has(spot)) s.turns.set(spot, new Set()); for (const g of found.keys()) s.turns.get(spot).add(g); }
     s.cooc += found.size === count ? 1 : 0;
     s.rids.push(rid);
   }
+  for (const key of titleHits.keys()) if (!stats.has(key) && info.has(key)) stats.set(key, blank());
   const todayMs = Date.parse(clock.today() + 'T00:00:00Z');
   for (const [key, s] of stats) {
     const about = info.get(key);
     // 题目（各家自起的标题或用户开场的请求）和用户原话最能说明"这场会话是关于什么的"，助手顺口提到的词权重低。
-    const titled = new Set([...Array(count).keys()].filter(g => groups[g][1].some(a => about.title_norm.includes(a))));
-    const covered = [...Array(count).keys()].filter(g => s.n[g]);
+    const titled = new Set([...Array(count).keys()].filter(g => groups[g][1].some(a => inTitle(about.title_norm, a))));
+    const covered = [...Array(count).keys()].filter(g => s.n[g] || titled.has(g));
     let rel = 0;
     for (const g of covered) rel += idf[g] * (1 + 0.5 * Math.log1p(s.tf[g]) + Math.min(1, s.n[g] / Math.max(about.chunks, 1)) + Math.log1p(s.asked[g].size) + 2 * titled.has(g));
     if (count > 1) {
@@ -314,10 +344,11 @@ export function search(db, args, ctx) {
   }
   shown.forEach((key, i) => {
     const s = stats.get(key), about = info.get(key);
-    const missing = full.length ? '' : ' 缺：' + [...Array(count).keys()].filter(g => !s.n[g]).map(g => groups[g][0]).join('、');
+    const missing = full.length ? '' : ' 缺：' + [...Array(count).keys()].filter(g => !s.n[g] && !s.titled.has(g)).map(g => groups[g][0]).join('、');
     const same = twins.get(key) ? `（另有 ${twins.get(key)} 个同题会话）` : '';
-    const lines = [`${mark(i)} ${span(about.first_day, about.last_day)} ${about.agent} ${shortSid(about.session)} `
-      + `${about.turns}轮 命中${s.rids.length}块「${about.title}」${same}${missing}`];
+    const id = label(about.agent, about.session);
+    const lines = [`${mark(i)} ${span(about.first_day, about.last_day)} ${about.agent} ${id} `
+      + `${about.turns}轮 ${s.rids.length ? `命中${s.rids.length}块` : '仅题目命中'}「${about.title}」${same}${missing}`];
     if (broad) {
       if (!s.titled.size) {
         let best = null, bestKey = null;
@@ -332,7 +363,8 @@ export function search(db, args, ctx) {
         if (!turnsSeen.has(spot)) { picked.push(rid); turnsSeen.add(spot); }
         if (picked.length >= (i < 3 ? 2 : 1)) break;
       }
-      for (const r of fetch(picked)) lines.push('   ' + lineOf(r, excerpt(r, groups, args.snippet)));
+      if (picked.length) for (const r of fetch(picked)) lines.push('   ' + lineOf(r, excerpt(r, groups, args.snippet)));
+      else lines.push(`   ↳ 正文里没有这些词；看这一场用 outline ${id}`);
     }
     out.push(lines.join('\n'));
   });
@@ -346,7 +378,7 @@ export function get(db, args, ctx) {
   const rows = db.prepare('SELECT * FROM chunks WHERE path=? AND session=? AND turn BETWEEN ? AND ? ORDER BY turn, part')
     .all(hit.path, hit.session, hit.turn - span_, hit.turn + span_);
   const about = resolveSessions(db, hit.session, hit.agent);
-  const head = `${hit.path}｜${hit.agent} ${shortSid(hit.session)}「${about.length ? about[0].title : ''}」`;
+  const head = `${hit.path}｜${hit.agent} ${sessionLabeler(db)(hit.agent, hit.session)}「${about.length ? about[0].title : ''}」`;
   // 预算先给命中块，再按距离向外扩；同距离时用户发言看后文，助手发言看前文。
   const laterFirst = tools.isUser(hit.role);
   const priority = r => {
@@ -368,10 +400,11 @@ export function get(db, args, ctx) {
   for (const r of rows) {
     if (!chosen.has(r.rid)) { gap = prev !== null; continue; }
     let body = r.body;
-    if (r.rid === hit.rid && body.length > args.budget - head.length - 80) body = body.slice(0, Math.max(0, args.budget - head.length - 100)) + '…';
+    if (r.rid === hit.rid && body.length > args.budget - head.length - 80) body = body.slice(0, safeAt(body, Math.max(0, args.budget - head.length - 100))) + '…';
     const last = out[out.length - 1];
     if (prev !== null && !gap && prev.turn === r.turn && prev.part === r.part - 1 && typeof last === 'object') {
-      last.end = r.end; last.text += body.slice(OVERLAP); last.hit ||= r.rid === hit.rid;
+      // 分块重叠按字数算，扩展区汉字与 emoji 在 JS 里占两个单位，不能按长度截。
+      last.end = r.end; last.text += skipChars(body, OVERLAP); last.hit ||= r.rid === hit.rid;
     } else {
       if (gap) out.push('……');
       out.push({ row: r, end: r.end, text: body, hit: r.rid === hit.rid });
@@ -409,7 +442,7 @@ export function outline(db, args, ctx) {
   const first = rows.filter(r => r.part === 0);
   const notices = first.filter(r => tools.isUser(r.role) && machine(r.body)).length;
   const paths = [...new Set(rows.map(r => r.path))].join('、');
-  const head = `${about.agent} ${shortSid(about.session)}「${about.title}」｜${span(about.first_day, about.last_day)} `
+  const head = `${about.agent} ${sessionLabeler(db)(about.agent, about.session)}「${about.title}」｜${span(about.first_day, about.last_day)} `
     + `${about.first_clock} 起｜${about.turns}轮（${ctx.config.userLabel} ${about.user_turns}）｜${paths}`
     + (notices ? `｜略去 ${notices} 条后台任务通知` : '');
   const shown = first.filter(r => (args.all || tools.isUser(r.role)) && !(tools.isUser(r.role) && machine(r.body)));
@@ -434,11 +467,11 @@ export function timeline(db, args, ctx) {
   const sql = 'SELECT * FROM sessions WHERE last_day>=? AND first_day<=?' + (args.agent ? ' AND agent=?' : '') + ' ORDER BY first_day DESC, first_clock, agent, session';
   const rows = db.prepare(sql).all(since, until, ...(args.agent ? [args.agent] : []));
   const shown = rows.filter(r => args.all || r.chars >= 300);
-  const out = [];
+  const out = [], label = sessionLabeler(db);
   let day = null;
   for (const r of shown) {
     if (r.first_day !== day) { day = r.first_day; out.push(day); }
-    out.push(`  ${r.first_clock} ${r.agent} ${shortSid(r.session)} ${r.turns}轮「${r.title}」`);
+    out.push(`  ${r.first_clock} ${r.agent} ${label(r.agent, r.session)} ${r.turns}轮「${r.title}」`);
   }
   const hidden = rows.length - shown.length;
   const note = `（${since} 起共 ${rows.length} 个会话` + (hidden ? `，隐藏 ${hidden} 个不足 300 字的，加 --all 显示）` : '）');

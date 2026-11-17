@@ -34,14 +34,14 @@ function fixtures() {
   put(join(HOME, '.claude/projects/-Users-x-memory-dir/memory/lobster-update.md'),
     '---\nname: lobster-update\ndescription: LobsterAI 更新失败的根因与修法\nmodified: 2026-11-10T00:00:00Z\n---\n签名校验失败时重装。\n');
   // Codex：一个明文、一个 .zst。
-  put(join(HOME, '.codex/sessions/2026/11/10/rollout-2026-11-10-cccccccc.jsonl'), jsonl([
+  put(join(HOME, '.codex/sessions/2026/11/10/rollout-2026-11-10-cccccccc-3333.jsonl'), jsonl([
     { type: 'session_meta', payload: { id: 'cccccccc-3333', cwd: '/work' } },
     { type: 'response_item', timestamp: '2026-11-10T05:00:00.000Z', payload: { type: 'message', role: 'user', content: [{ type: 'input_text', text: '<environment_context>x' }] } },
     { type: 'response_item', timestamp: '2026-11-10T05:00:01.000Z', payload: { type: 'message', role: 'user', content: [{ type: 'input_text', text: '把 openconnect 断线的问题查一下' }] } },
     { type: 'response_item', timestamp: '2026-11-10T05:01:00.000Z', payload: { type: 'function_call', name: 'shell', arguments: '{"cmd":"base_url=https://api.example"}' } },
     { type: 'response_item', timestamp: '2026-11-10T05:02:00.000Z', payload: { type: 'message', role: 'assistant', content: [{ type: 'output_text', text: '是 DPD 超时。' }] } },
   ]));
-  put(join(HOME, '.codex/sessions/2026/11/09/rollout-2026-11-09-dddddddd.jsonl.zst'), zstdCompressSync(Buffer.from(jsonl([
+  put(join(HOME, '.codex/sessions/2026/11/09/rollout-2026-11-09-dddddddd-4444.jsonl.zst'), zstdCompressSync(Buffer.from(jsonl([
     { type: 'session_meta', payload: { id: 'dddddddd-4444', cwd: '/work' } },
     { type: 'response_item', timestamp: '2026-11-09T05:00:00.000Z', payload: { type: 'message', role: 'user', content: [{ type: 'input_text', text: '压缩过的旧会话：集韵版本对比' }] } },
     { type: 'response_item', timestamp: '2026-11-09T05:01:00.000Z', payload: { type: 'message', role: 'assistant', content: [{ type: 'output_text', text: '好的。' }] } },
@@ -120,7 +120,7 @@ test('整理：五家来源 → 每天一份日志', () => {
   assert.match(claude, /## 10:01  🤖 Claude\n\n### 原因\n签名校验失败\n\n已修复。\n/, '连续助手发言合并、正文标题降两级');
   assert.doesNotMatch(claude, /临时目录/);
   const codex = readFileSync(join(DATA, 'logs/Codex/2026-11-10-codex-log.md'), 'utf8');
-  assert.match(codex, /^# cccccccc · VPN 断线排查\n/);
+  assert.match(codex, /^# cccccccc-3333 · VPN 断线排查\n/, 'Codex 会话 ID 存全');
   assert.doesNotMatch(codex, /environment_context/);
   assert.ok(existsSync(join(DATA, 'logs/Codex/2026-11-09-codex-log.md')), '读到 .zst 压缩会话');
   const pi = readFileSync(join(DATA, 'logs/Pi/2026-11-10-pi-log.md'), 'utf8');
@@ -360,8 +360,8 @@ test('OpenCode：从 SQLite 库读会话，标题行用自带标题，剥掉 <th
   const data = oc.parse(file);
   const built = oc.build([{ path: file, data }]);
   const { createClock } = await import('../lib/clock.js');
-  const body = oc.render(built.turns, createClock({ timezone: '+08:00' }), '用户').get('2026-11-10');
-  assert.match(body, /^# 修 VPN（ses_abcd）\n\n## 11:00  🧑 用户\n\n断线了\n\n## 11:01  🤖 OpenCode\n\n是 DPD\n/);
+  const body = lib.markdown.retitle(oc.render(built.turns, createClock({ timezone: '+08:00' }), '用户').get('2026-11-10'), built.titles);
+  assert.match(body, /^# ses_abcdef123 · 修 VPN\n\n## 11:00  🧑 用户\n\n断线了\n\n## 11:01  🤖 OpenCode\n\n是 DPD\n/, '会话 ID 存全，标题另记');
   assert.doesNotMatch(body, /不该收|想想/);
   assert.match(oc.signature(file), /\|/, '签名含 -wal');
 });
@@ -413,9 +413,9 @@ test('Codex 归档目录 archived_sessions 也收；与 sessions 里同名的只
   const row = (id, text) => jsonl([{ type: 'session_meta', payload: { id, cwd: '/work' } },
     { type: 'response_item', timestamp: '2026-11-08T04:00:00.000Z', payload: { type: 'message', role: 'user', content: [{ type: 'input_text', text }] } }]);
   put(join(HOME, '.codex/archived_sessions/rollout-2026-11-08T12-00-00-aaaa9999-1.jsonl'), row('aaaa9999-1', '归档的会话'));
-  put(join(HOME, '.codex/archived_sessions/rollout-2026-11-10-cccccccc.jsonl'), row('cccccccc-3333', '与 sessions 同名'));
+  put(join(HOME, '.codex/archived_sessions/rollout-2026-11-10-cccccccc-3333.jsonl'), row('cccccccc-3333', '与 sessions 同名'));
   const list = codex.files(codex.locate());
   assert.ok(list.some(p => p.includes('archived_sessions') && p.includes('aaaa9999')));
-  assert.equal(list.filter(p => p.endsWith('rollout-2026-11-10-cccccccc.jsonl')).length, 1, '同名只取 sessions 里的');
+  assert.equal(list.filter(p => p.endsWith('rollout-2026-11-10-cccccccc-3333.jsonl')).length, 1, '同名只取 sessions 里的');
   assert.ok(!list.some(p => p.includes('archived_sessions') && p.includes('cccccccc')));
 });

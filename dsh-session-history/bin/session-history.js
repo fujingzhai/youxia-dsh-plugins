@@ -17,7 +17,7 @@ const { resolveHome, loadConfig, saveConfig, layout, readJson, DEFAULTS } = awai
 const { connect, updateIndex } = await import('../lib/store.js');
 const { search, get, outline, timeline, UsageError } = await import('../lib/recall.js');
 const { raw } = await import('../lib/raw.js');
-const { refresh, refreshIfStale } = await import('../lib/refresh.js');
+const { refresh, refreshIfStale, problems } = await import('../lib/refresh.js');
 const { allSources, byId, byFolder, enabled } = await import('../lib/agents.js');
 const { installSkill, logFolders, VERSION } = await import('../lib/skill.js');
 const { skillStatus, link, linkAll, unlink } = await import('../lib/links.js');
@@ -100,6 +100,10 @@ function statusText(home) {
   const { agents, targets, links } = skillStatus(home, config);
   const lines = [`Session History ${VERSION}｜数据目录 ${tilde(home)}`];
   lines.push(last ? `最近整理 ${last.run}（${(last.ms / 1000).toFixed(1)} 秒）｜索引 ${last.index?.sessions ?? '?'} 个会话、${last.index?.files ?? '?'} 份日志` : '尚未整理过：先跑 refresh');
+  // 与插件页同一份判定；各家的整理错误在下面各自那行显示，这里列其余的。
+  const issues = problems(last);
+  if (last) lines.push(issues.length ? `状态：${issues.length} 处问题` : '状态：正常');
+  for (const p of issues.filter(x => x.scope !== 'agent')) lines.push(`  ${p.text}`);
   for (const a of agents.filter(x => x.installed || x.custom)) {
     const run = last?.agents?.[a.folder];
     const src = !a.installed ? '未检测到' : enabled(byId(a.id), config) ? (run ? (run.ok ? `${run.files} 个会话文件 · 日志 ${logDaysOf(a.folder)} 天` : `整理出错：${run.error}`) : '已启用，待整理') : '已检测到，未启用整理';
@@ -155,13 +159,16 @@ async function main() {
     case 'refresh': {
       const only = agent ? [byFolder(agent, config)?.id].filter(Boolean) : null;
       const status = refresh({ home, only, log });
-      if (args.json) return console.log(JSON.stringify(status, null, 2));
+      const issues = problems(status);
+      // 与插件页、status 同一份判定：有任何一处问题就以 1 退出（--json 也一样，宿主据输出内容显示问题）。
+      if (issues.length) process.exitCode = 1;
+      if (args.json) return console.log(JSON.stringify({ ...status, problems: issues }, null, 2));
       if (status.skipped) return console.log(status.reason);
       for (const [name, r] of Object.entries(status.agents)) console.log(`${name}: ${r.ok ? `OK 会话文件 ${r.files}（重读 ${r.parsed}）· 日志 ${r.days} 天 · 变更 ${r.changed} 天` : 'ERROR ' + r.error}`);
-      console.log(`索引: ${status.index.ok ? `${status.index.sessions} 个会话 · 更新 ${status.index.updated} 份` : 'ERROR ' + status.index.error}｜${(status.ms / 1000).toFixed(1)} 秒`);
+      console.log(`索引: ${status.index.ok ? `${status.index.sessions} 个会话 · 更新 ${status.index.updated} 份` : 'ERROR 日志已保存，索引没更新上：' + status.index.error}｜${(status.ms / 1000).toFixed(1)} 秒`);
+      for (const p of issues.filter(x => x.scope === 'skill' || x.scope === 'git')) console.log(p.text);
       const warnings = Object.values(status.agents).flatMap(r => r.warnings || []);
       if (warnings.length) console.error(warnings.slice(0, 20).join('\n') + (warnings.length > 20 ? `\n……另有 ${warnings.length - 20} 条` : ''));
-      if (Object.values(status.agents).some(r => !r.ok) || !status.index.ok) process.exitCode = 1;
       return;
     }
     case 'status':

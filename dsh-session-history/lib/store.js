@@ -7,15 +7,15 @@ import { DatabaseSync } from 'node:sqlite';
 import { layout } from './config.js';
 import { entries, isDir } from './files.js';
 import { sortPaths } from './py.js';
-import { SEP } from './markdown.js';
+import { SEP, fenceStep } from './markdown.js';
 import { norm } from './normalize.js';
 import claude from './sources/claude.js';
-import { roleTools, clip, sessionTitle, toDay } from './text.js';
+import { roleTools, clip, sessionTitle, toDay, skipChars } from './text.js';
 
-export const SCHEMA = 1;
+// 2：代码围栏不再认缩进超过 3 格的行（0.3.0），旧索引须按新规则重新切分。
+export const SCHEMA = 2;
 export const CHUNK = 1200, OVERLAP = 160;
 const HEADER = /^## (\d\d:\d\d)\s+(.+)$/;
-const FENCE = /^\s*(`{3,}|~{3,})/;
 const META = /<!--[\s\S]*?-->/g;
 const FRONT = /^---\n([\s\S]*?)\n---\n/;
 
@@ -54,14 +54,8 @@ export function* turns(text, heads = null) {
   let session = '', turn = 0, role = '', clock = '', start = null, fence = null;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    const fm = FENCE.exec(line);
-    if (fm) {
-      const token = fm[1];
-      if (fence === null) fence = token;
-      else if (token[0] === fence[0] && token.length >= fence.length) fence = null;
-      continue;
-    }
-    if (fence !== null) continue;
+    const next = fenceStep(fence, line);
+    if (fence !== null || next !== null) { fence = next; continue; }
     const header = HEADER.exec(line);
     if (line.startsWith('# ') || header) {
       if (start !== null) yield [session, turn, role, clock, start + 1, lines.slice(start, i)];
@@ -109,65 +103,79 @@ function logFiles(home) {
 
 const sig = path => { const s = statSync(path, { bigint: true }); return `${s.mtimeNs}:${s.size}`; };
 
-/** 增量更新：日志文件 mtime／大小变了才重新分块，并刷新涉及的会话目录。 */
+/**
+ * 增量更新：日志文件 mtime／大小变了才重新分块，并刷新涉及的会话目录。
+ * 先只读地核对一遍，什么都没变就不开写事务：search → outline → get 连着查时不必次次抢写锁。
+ */
 export function updateIndex(home, config, db = null) {
   const own = !db;
   db ??= connect(home);
   const tools = roleTools(config.userLabel);
   try {
     const paths = logFiles(home);
-    const old = new Map(db.prepare('SELECT path, signature FROM files').all().map(r => [r.path, r.signature]));
-    const touched = new Map();
-    let changed = 0;
-    const touch = (agent, session) => touched.set(`${agent}\u0000${session}`, [agent, session]);
-    const q = {
-      sessionsOf: db.prepare('SELECT DISTINCT agent, session FROM chunks WHERE path=?'),
-      ftsDelete: db.prepare("INSERT INTO terms(terms, rowid, normalized) SELECT 'delete', rid, normalized FROM chunks WHERE path=?"),
-      chunksDelete: db.prepare('DELETE FROM chunks WHERE path=?'),
-      headsDelete: db.prepare('DELETE FROM heads WHERE path=?'),
-      filesDelete: db.prepare('DELETE FROM files WHERE path=?'),
-      chunkInsert: db.prepare('INSERT INTO chunks(id,path,agent,day,session,turn,part,role,clock,start,end,body,normalized) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)'),
-      ftsInsert: db.prepare('INSERT INTO terms(rowid, normalized) VALUES(?,?)'),
-      headInsert: db.prepare('INSERT OR REPLACE INTO heads VALUES(?,?,?,?)'),
-      fileInsert: db.prepare('INSERT OR REPLACE INTO files VALUES(?,?)'),
+    const plan = () => {
+      const old = new Map(db.prepare('SELECT path, signature FROM files').all().map(r => [r.path, r.signature]));
+      const removed = [...old.keys()].filter(rel => !paths.has(rel));
+      const changed = [];
+      for (const [rel, path] of paths) { const signature = sig(path); if (old.get(rel) !== signature) changed.push([rel, path, signature]); }
+      return { removed, changed, memories: memoryPlan(db, config) };
     };
-    const drop = rel => {
-      for (const r of q.sessionsOf.all(rel)) touch(r.agent, r.session);
-      q.ftsDelete.run(rel); q.chunksDelete.run(rel); q.headsDelete.run(rel);
-    };
-    db.exec('BEGIN IMMEDIATE');
-    try {
-      for (const rel of old.keys()) if (!paths.has(rel)) { drop(rel); q.filesDelete.run(rel); changed++; }
-      for (const [rel, path] of paths) {
-        const signature = sig(path);
-        if (old.get(rel) === signature) continue;
-        drop(rel);
-        const agent = basename(dirname(path)), day = basename(path).slice(0, 10);
-        const heads = new Map();
-        for (const [session, turn, role, clock, base, lines] of turns(readFileSync(path, 'utf8'), heads)) {
-          touch(agent, session);
-          for (const [part, start, end, body] of pieces(lines, base)) {
-            const key = createHash('sha256').update(`${rel}:${session}:${turn}:${part}:${body}`).digest('hex').slice(0, 20);
-            const normalized = norm(mask(body));
-            const { lastInsertRowid } = q.chunkInsert.run(key, rel, agent, day, session, turn, part, role, clock, start, end, body, normalized);
-            q.ftsInsert.run(lastInsertRowid, normalized);
-          }
-        }
-        for (const [k, v] of heads) q.headInsert.run(rel, agent, k, v);
-        q.fileInsert.run(rel, signature);
-        changed++;
+    let work = plan(), updated = 0;
+    if (work.removed.length || work.changed.length || work.memories.stale) {
+      db.exec('BEGIN IMMEDIATE');
+      try {
+        work = plan(); // 拿到写锁后重新核对：等锁期间别的进程可能已经更新过
+        updated = applyPlan(db, work, tools);
+        db.exec('COMMIT');
+      } catch (error) {
+        db.exec('ROLLBACK');
+        throw error;
       }
-      refreshSessions(db, [...touched.values()], tools);
-      updateMemories(db, config);
-      db.exec('COMMIT');
-    } catch (error) {
-      db.exec('ROLLBACK');
-      throw error;
     }
     const count = sql => db.prepare(sql).get().n;
-    return { files: paths.size, updated: changed, chunks: count('SELECT count(*) n FROM chunks'),
+    return { files: paths.size, updated, chunks: count('SELECT count(*) n FROM chunks'),
       sessions: count('SELECT count(*) n FROM sessions'), memories: count('SELECT count(*) n FROM memories') };
   } finally { if (own) db.close(); }
+}
+
+function applyPlan(db, { removed, changed, memories }, tools) {
+  const touched = new Map();
+  const touch = (agent, session) => touched.set(`${agent}\u0000${session}`, [agent, session]);
+  const q = {
+    sessionsOf: db.prepare('SELECT DISTINCT agent, session FROM chunks WHERE path=?'),
+    ftsDelete: db.prepare("INSERT INTO terms(terms, rowid, normalized) SELECT 'delete', rid, normalized FROM chunks WHERE path=?"),
+    chunksDelete: db.prepare('DELETE FROM chunks WHERE path=?'),
+    headsDelete: db.prepare('DELETE FROM heads WHERE path=?'),
+    filesDelete: db.prepare('DELETE FROM files WHERE path=?'),
+    chunkInsert: db.prepare('INSERT INTO chunks(id,path,agent,day,session,turn,part,role,clock,start,end,body,normalized) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)'),
+    ftsInsert: db.prepare('INSERT INTO terms(rowid, normalized) VALUES(?,?)'),
+    headInsert: db.prepare('INSERT OR REPLACE INTO heads VALUES(?,?,?,?)'),
+    fileInsert: db.prepare('INSERT OR REPLACE INTO files VALUES(?,?)'),
+  };
+  const drop = rel => {
+    for (const r of q.sessionsOf.all(rel)) touch(r.agent, r.session);
+    q.ftsDelete.run(rel); q.chunksDelete.run(rel); q.headsDelete.run(rel);
+  };
+  for (const rel of removed) { drop(rel); q.filesDelete.run(rel); }
+  for (const [rel, path, signature] of changed) {
+    drop(rel);
+    const agent = basename(dirname(path)), day = basename(path).slice(0, 10);
+    const heads = new Map();
+    for (const [session, turn, role, clock, base, lines] of turns(readFileSync(path, 'utf8'), heads)) {
+      touch(agent, session);
+      for (const [part, start, end, body] of pieces(lines, base)) {
+        const key = createHash('sha256').update(`${rel}:${session}:${turn}:${part}:${body}`).digest('hex').slice(0, 20);
+        const normalized = norm(mask(body));
+        const { lastInsertRowid } = q.chunkInsert.run(key, rel, agent, day, session, turn, part, role, clock, start, end, body, normalized);
+        q.ftsInsert.run(lastInsertRowid, normalized);
+      }
+    }
+    for (const [k, v] of heads) q.headInsert.run(rel, agent, k, v);
+    q.fileInsert.run(rel, signature);
+  }
+  refreshSessions(db, [...touched.values()], tools);
+  applyMemories(db, memories);
+  return removed.length + changed.length;
 }
 
 function refreshSessions(db, keys, tools) {
@@ -181,7 +189,7 @@ function refreshSessions(db, keys, tools) {
     if (!rows.length) continue;
     const spoken = new Set(rows.map(r => `${r.day}|${r.turn}`));
     const asked = new Set(rows.filter(r => tools.isUser(r.role)).map(r => `${r.day}|${r.turn}`));
-    const chars = rows.reduce((sum, r) => sum + r.body.length - (r.part ? OVERLAP : 0), 0);
+    const chars = rows.reduce((sum, r) => sum + (r.part ? skipChars(r.body, OVERLAP) : r.body).length, 0);
     const native = nativeOf.get(agent, session);
     const title = native ? clip(native.title, 50) : sessionTitle(session, rows.filter(r => tools.isUser(r.role) && r.part === 0).map(r => r.body));
     insert.run(agent, session, rows[0].day, rows[rows.length - 1].day, rows[0].clock, rows[rows.length - 1].clock,
@@ -189,28 +197,37 @@ function refreshSessions(db, keys, tools) {
   }
 }
 
-/** Claude Code 记忆文件不切块：题目＝名称＋描述，正文另存归一化文本，只用于判断是否列出。 */
-function updateMemories(db, config) {
-  const files = new Map();
+/** Claude Code 记忆文件不切块：题目＝名称＋描述，正文另存归一化文本，只用于判断是否列出。这里只核对哪些变了。 */
+function memoryPlan(db, config) {
+  const files = [];
   if (config.memoryHints) {
     const root = claude.locate().memory;
     for (const d of entries(root)) {
       const dir = join(root, d.name, 'memory');
       if (!isDir(dir)) continue;
-      for (const f of entries(dir)) if (f.name.endsWith('.md') && f.name !== 'MEMORY.md') files.set(join(dir, f.name), null);
+      for (const f of entries(dir)) if (f.name.endsWith('.md') && f.name !== 'MEMORY.md') files.push(join(dir, f.name));
     }
   }
-  const sorted = sortPaths([...files.keys()]);
+  const sorted = sortPaths(files), keep = new Set(sorted);
   const old = new Map(db.prepare('SELECT path, signature FROM memories').all().map(r => [r.path, r.signature]));
-  const del = db.prepare('DELETE FROM memories WHERE path=?');
-  for (const gone of old.keys()) if (!files.has(gone)) del.run(gone);
-  const insert = db.prepare('INSERT OR REPLACE INTO memories VALUES(?,?,?,?,?,?)');
+  const gone = [...old.keys()].filter(path => !keep.has(path));
+  const fresh = [];
   for (const path of sorted) {
     let stat;
     try { stat = statSync(path, { bigint: true }); } catch { continue; }
     const signature = `${stat.mtimeNs}:${stat.size}`;
-    if (old.get(path) === signature) continue;
-    const text = readFileSync(path, 'utf8');
+    if (old.get(path) !== signature) fresh.push([path, signature, stat]);
+  }
+  return { gone, fresh, stale: gone.length + fresh.length > 0 };
+}
+
+function applyMemories(db, { gone, fresh }) {
+  const del = db.prepare('DELETE FROM memories WHERE path=?');
+  for (const path of gone) del.run(path);
+  const insert = db.prepare('INSERT OR REPLACE INTO memories VALUES(?,?,?,?,?,?)');
+  for (const [path, signature, stat] of fresh) {
+    let text;
+    try { text = readFileSync(path, 'utf8'); } catch { continue; }
     const m = FRONT.exec(text);
     const front = m ? m[1] : '', body = m ? text.slice(m[0].length) : text;
     const field = name => {

@@ -100,7 +100,8 @@ window.__ModuleLoader__.load({
         }
 
         function Home({ data, pending }) {
-          const last = data.last, bad = Object.entries(last?.agents || {}).filter(([, r]) => !r.ok).map(([k]) => k);
+          // 是否正常由宿主按整理状态统一判定（与命令行同一份）：某一家出错、索引没更新上、技能文件或快照写不了，都算。
+          const last = data.last, issues = data.problems || [];
           const busy = pending === 'refresh' || data.running;
           return h('section', null,
             h('div', { className: 'yxsh-head' }, h('h3', { className: 'yxsh-grow' }, '数据目录'),
@@ -115,8 +116,9 @@ window.__ModuleLoader__.load({
                 h('div', { className: 'yxsh-stat' }, h('span', { className: 'yxsh-muted' }, '会话'), h('b', null, last?.index ? num(last.index.sessions) : '—'),
                   h('span', { className: 'yxsh-muted' }, last?.index ? `${num(last.index.files)} 份日志` : '整理后生成')),
                 h('div', { className: 'yxsh-stat' }, h('span', { className: 'yxsh-muted' }, '状态'),
-                  bad.length ? h('b', { className: 'yxsh-error' }, `${bad.join('、')} 出错`) : h('b', null, last ? '正常' : '等待首次整理'),
-                  h('span', { className: 'yxsh-muted' }, data.config.refreshMinutes ? `定时：${({ 30: '每 30 分钟', 60: '每小时整点', 120: '每 2 小时', 360: '每 6 小时' })[data.config.refreshMinutes] || `每 ${data.config.refreshMinutes} 分钟`}` : '定时整理已关闭')))));
+                  issues.length ? h('b', { className: 'yxsh-error' }, `${issues.length} 处问题`) : h('b', null, last ? '正常' : '等待首次整理'),
+                  h('span', { className: 'yxsh-muted' }, data.config.refreshMinutes ? `定时：${({ 30: '每 30 分钟', 60: '每小时整点', 120: '每 2 小时', 360: '每 6 小时' })[data.config.refreshMinutes] || `每 ${data.config.refreshMinutes} 分钟`}` : '定时整理已关闭'))),
+              issues.length ? h('div', { className: 'yxsh-error' }, issues.map(p => p.text).join('\n')) : null));
         }
 
         function AgentRow({ a, pending }) {
