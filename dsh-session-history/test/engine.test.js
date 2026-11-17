@@ -219,7 +219,7 @@ test('自定义 agent：同格式的另一套目录，独立日志与名称；�
     { type: 'assistant', timestamp: '2026-11-10T09:01:00.000Z', message: { content: [{ type: 'text', text: '好的。' }] } },
   ]));
   const { probe, command } = await import('../index.js');
-  assert.deepEqual({ ...probe('claude', '~/.qoder/projects'), sample: undefined }, { exists: true, files: 1, turns: 2, path: '~/.qoder/projects', sample: undefined });
+  assert.deepEqual({ ...probe('claude', '~/.qoder/projects'), sample: undefined }, { exists: true, files: 1, turns: 2, path: join('~', '.qoder', 'projects'), sample: undefined });
   assert.equal(probe('pi', '~/.qoder/projects').turns, 0, '目录结构相近但格式不对：解析不出对话');
   assert.ok(probe('claude', '~/.qoder/projects').turns > 0);
   assert.equal(probe('claude', '~/.nope').exists, false);
