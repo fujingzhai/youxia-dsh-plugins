@@ -179,6 +179,29 @@ test('SKILL.md 按检测到的 agent 自适应', () => {
   assert.match(launcher, /--home "\$HERE"/);
 });
 
+test('索引故障：生成的兜底命令可搜不同来源与日期，兼容路径空格和引号', t => {
+  if (spawnSync('rg', ['--version']).error?.code === 'ENOENT') return t.skip('未安装 rg');
+  const dataHome = join(HOME, "会话 历史's");
+  const logs = [
+    ['Claude/2026-08-01-claude-log.md', '关键词：八月记录'],
+    ['Codex/2026-11-18-codex-log.md', '關鍵詞：十一月记录'],
+    ['旧来源/2025-01-01-old-log.md', '关键词：停用来源'],
+    ['自定义来源/2026-12-01-custom-log.md', '关键词：自定义来源'],
+  ];
+  for (const [path, body] of logs) put(join(dataHome, 'logs', path), body);
+  put(join(dataHome, 'logs/README.md'), '关键词：不应搜索说明文件');
+  const md = lib.skill.skillMarkdown(dataHome);
+  const command = /`(rg [^`]+)`/.exec(md)?.[1];
+  assert.ok(command, '技能应提供可执行的日志兜底命令');
+  const win = process.platform === 'win32';
+  const result = spawnSync(win ? (process.env.ComSpec || 'cmd.exe') : '/bin/sh',
+    win ? ['/d', '/s', '/c', 'chcp 65001>nul & ' + command] : ['-c', command],
+    { encoding: 'utf8', ...(win ? { windowsVerbatimArguments: true } : {}) });
+  assert.equal(result.status, 0, result.stderr || result.error?.message);
+  for (const [path] of logs) assert.ok(result.stdout.includes(path.split('/').at(-1)), path);
+  assert.ok(!result.stdout.includes('README.md'), '只搜索日志文件');
+});
+
 test('技能接入：按真实路径归组，只对未生效的 agent 给操作，一条软链覆盖共用者', () => {
   const { skillStatus, linkTarget, linkAll, unlinkTarget, link } = lib.links;
   let st = skillStatus(DATA);

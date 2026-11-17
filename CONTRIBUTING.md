@@ -11,7 +11,7 @@
 
 ## 修改与验证
 
-1. 只修改本次涉及的插件；首次检查先在 `dsh-settings-customizer` 目录运行 `npm install --ignore-scripts --package-lock=false`，再在根目录运行 `npm run check`。清单来自 Git 已跟踪的 `dsh-*/package.json`，避免把未提交原型或兼容软链接当作已发布插件；新插件需先明确加入 Git，再完整检查。
+1. 只修改本次涉及的插件；首次检查先分别在 `dsh-settings-customizer`、`dsh-session-history` 目录运行 `npm install --ignore-scripts --package-lock=false`，再在根目录运行 `npm run check`。清单来自 Git 已跟踪的 `dsh-*/package.json`，避免把未提交原型或兼容软链接当作已发布插件；新插件需先明确加入 Git，再完整检查。
 2. 影响输入、菜单或预设加载时，额外用对应版本的 DSH 在隔离 profile 做安装／GUI 验证。不得覆盖正在使用的 profile。
 3. 新增依赖、提高最低 DSH 版本或改变提示词时，在插件 README 和 CHANGELOG 写明影响。
 4. 安装文档首先推荐 npm 包名与 `dsh plugin --profile desktop add <包名>`，使 DSH 原生版本检查可用；固定 Git 子目录地址（`&path:/<插件名>`）只作备选，禁止作者本机路径。每款必须包含「检查更新」：插件页刷新／详情重新检查 → 更新到目标版本 → 用户确认，无需手动卸载；说明不是全局推送、不自动升级、Git／压缩包／`link:` 不适用，以及数据位置与重启／活进程风险。不再重复实现宿主更新器。

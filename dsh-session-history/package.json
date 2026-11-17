@@ -1,6 +1,6 @@
 {
   "name": "dsh-session-history",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "把各个 agent（Claude Code、Codex 等）的对话整理成可检索的原文日志，以一个共用技能提供给所有 agent；保留原话，不做摘要，不用向量，不调用模型。",
   "author": "youxia",
   "repository": {

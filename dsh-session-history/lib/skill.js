@@ -53,6 +53,8 @@ export function skillMarkdown(home, { config = loadConfig(home), platform = proc
   const names = active.map(s => s.name);
   const has = id => active.some(s => s.id === id);
   const first = active[0]?.folder || folders[0] || 'Claude';
+  const logs = layout(home).logs;
+  const fallbackRoot = platform === 'win32' ? `"${logs.replaceAll('\\', '/')}"` : shq(logs);
   const scope = names.length
     ? `${list(names)}${legacy.length ? `，以及已停用的 ${list(legacy)}（旧日志照常检索）` : ''}`
     : legacy.length ? `已停用的 ${list(legacy)}（只剩旧日志）` : '各 agent（尚未检测到会话来源）';
@@ -60,7 +62,7 @@ export function skillMarkdown(home, { config = loadConfig(home), platform = proc
   const lines = [
     '---',
     `name: ${SKILL_NAME}`,
-    `description: 查各 agent（${list(names.length ? names : legacy) || '各家'}）的历史对话。用户提起过往，或提到你不清楚来由的事时使用；上下文和记忆里能找到就不查，同一件事每个会话最多查一次。`,
+    `description: 查各 agent（${list(names.length ? names : legacy) || '各家'}）的历史对话。用户提起过往，或提到你不清楚来由的事时使用；上下文和记忆里能找到就不查，同一件事每个会话一般只回忆一轮。`,
     '---',
     '',
     '# Session History',
@@ -69,7 +71,7 @@ export function skillMarkdown(home, { config = loadConfig(home), platform = proc
     '',
     '## 先定位会话，再有限度地读',
     '',
-    '一次回忆一般 **2–3 次调用、合计 ≤3000 字符**。不要一上来加 `--budget`／`--snippets`，不要逐个 get 碰运气，不要 rg 扫日志或整读日志文件（索引报错除外）。',
+    '一次回忆一般 **2–3 次调用、合计 ≤3000 字符**。不要一上来调大 `--budget` 或加 `--snippets`，不要逐个 get 碰运气，不要 rg 扫日志或整读日志文件（索引报错除外）。',
     '',
     `**1. search 找会话**：查询词＝**主体词＋事件词**，如 \`${cmd} search 插件 更新失败\`、\`${cmd} search "VPN|openconnect" 断线 --agent ${first} --since 08-01\`；只给主体词必然过宽。`,
     '',
@@ -80,7 +82,7 @@ export function skillMarkdown(home, { config = loadConfig(home), platform = proc
     '',
     `**2. 会话内定位**：\`${cmd} search 更新失败 --session 01a06cc6\` 按时间列该会话命中块；或 \`${cmd} outline 01a06cc6\` 看用户每条发言＋末轮回复（\`--all\` 含助手发言）。会话 ID 给前缀即可，outline 也收块 ID。`,
     '',
-    `**3. 读原文**：\`${cmd} get 2ddbae3eed --context 1\`，块 ID 至少 6 位，默认 4000 字符。仍不够就按首行路径和行号局部读日志文件。`,
+    `**3. 读原文**：\`${cmd} get 2ddbae3eed --context 1 --budget 2000\`，块 ID 至少 6 位；按剩余预算调整 \`--budget\`（命令默认 4000 字符）。仍不够就按首行路径和行号局部读日志文件。`,
     '',
     `**4. 查原始记录**：接口名、参数、命令、报错原文多只在工具调用与返回里，日志搜不到。在日志里搜两次仍无，就对候选会话 \`${cmd} raw 5f3c92de "base_url|api.example"\`（含思考与工具往来，默认 2000 字符），别再换词连搜。只有${names.length ? `在用的 ${list(names)} ` : '在用的来源'}有原始记录${legacy.length ? '，已停用的没有' : ''}。`,
     '',
@@ -97,7 +99,7 @@ export function skillMarkdown(home, { config = loadConfig(home), platform = proc
     '',
     '## 索引与兜底',
     '',
-    `每次命令自动增量更新索引${config.staleMinutes ? `；距上次整理超过 ${config.staleMinutes} 分钟会先补整理（只重读变过的会话，通常几秒）` : ''}。要查刚刚的对话可先跑一次 \`${cmd} refresh\`，别反复跑。依赖或索引报错时别当无命中：先报告，再按日志路径兜底（兼顾繁简）：\`rg -n -m 5 '关键词|關鍵詞' ${platform === 'win32' ? layout(home).logs.replaceAll('\\', '/') : tilde(layout(home).logs)}/${first}/2026-08-*-log.md\``,
+    `每次命令自动增量更新索引${config.staleMinutes ? `；距上次整理超过 ${config.staleMinutes} 分钟会先补整理（只重读变过的会话，通常几秒）` : ''}。要查刚刚的对话可先跑一次 \`${cmd} refresh\`，别反复跑。依赖或索引报错时别当无命中：先报告，再按日志路径兜底（兼顾繁简，覆盖各 agent、全部日期的日志）：\`rg -n -m 5 -g "*-log.md" "关键词|關鍵詞" ${fallbackRoot}\``,
     '',
     '除非用户要求维护本技能，不改日志正文。本文件由 Session History 按检测到的 agent 自动生成，手改会被覆盖。',
     '',

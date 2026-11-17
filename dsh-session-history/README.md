@@ -88,6 +88,7 @@ dsh plugin --profile desktop add dsh-session-history
 所有 agent 读的是同一份 `~/.session-history/SKILL.md`，由插件自动生成，手改会被覆盖。
 
 - **通用部分**（每个人都一样）：怎么检索（先找会话，再有限度地读原文，必要时查原始记录）、查询怎么写、一次回忆读多少、证据纪律。
+- **一次回忆是一轮检索**：可以包含搜索、收窄与读取原文，通常合计控制在 3000 字符内；原文示例使用 `--budget 2000`，按剩余预算调整。索引故障时，兜底命令搜索日志目录内各来源、全部日期的 `*-log.md`。
 - **按你的电脑生成的部分**：列出的 agent 名单（检测到的，以及只剩旧日志的）、入口的实际路径（Windows 上同时给出 PowerShell／cmd 与 Git Bash 两种写法）、`--agent` 可选的名字、是否提 Claude Code 记忆提示、Pi 的分支说明、检索前补整理的时长，以及兜底搜索用的日志路径。
 - **什么时候更新**：插件启动时、每次整理之后（定时、检索前补整理、立即整理都算）、打开插件页时、改设置或增删 agent 时。内容没变就不写盘。建软链不会改它——软链只决定哪些 agent 能读到这份文件。
 
@@ -189,7 +190,7 @@ session-history refresh | status | setup | link all | unlink claude | config
 Git 子目录地址（不提供原生更新检查）：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-history@0.2.5&path:/dsh-session-history
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-history@0.2.6&path:/dsh-session-history
 ```
 
 ## 兼容与限制
