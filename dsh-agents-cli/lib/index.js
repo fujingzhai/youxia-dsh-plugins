@@ -812,7 +812,8 @@ export function detectionScript(agents, kind, nonce) {
     if (kind === 'cmd') {
       if (!/^[a-zA-Z0-9_.@:/\\\\ -]+$/.test(target)) continue
       // where 把引号当成模式的一部分，裸名必须不加引号；带路径的目标改用 if exist 判断文件在不在。
-      if (/[\\/]/.test(target)) lines.push(`if exist "${target}" (echo ${yes}) else (echo ${no})`)
+      // 外层括号不能省：cmd 会把 else 之后用 & 连上的命令算进 else 分支，前一个文件存在时后面整条被跳过。
+      if (/[\\/]/.test(target)) lines.push(`(if exist "${target}" (echo ${yes}) else (echo ${no}))`)
       else if (!/\s/.test(target)) lines.push(`where ${target} >nul 2>nul && echo ${yes} || echo ${no}`)
     } else if (kind === 'pwsh' || kind === 'powershell') {
       const quoted = target.replaceAll("'", "''")

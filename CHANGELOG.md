@@ -6,7 +6,7 @@
 
 ### dsh-agents-cli 0.1.6
 
-- 修复 Windows 上默认 shell 为 cmd 时所有入口都显示「未检测到 CLI」（[#1](https://github.com/fujingzhai/youxia-dsh-plugins/issues/1)，感谢 @bluesky8318 的定位）：`execFile` 未开 `windowsVerbatimArguments`，Node 把脚本里的引号转义成 cmd 不认的 `\"`，`where "codex"` 永远匹配不到。现在 cmd 脚本原样传给 cmd；裸命令名用不加引号的 `where`，带路径的入口改用 `if exist "路径"`。
+- 修复 Windows 上默认 shell 为 cmd 时所有入口都显示「未检测到 CLI」（[#1](https://github.com/fujingzhai/youxia-dsh-plugins/issues/1)，感谢 @bluesky8318 的定位）：`execFile` 未开 `windowsVerbatimArguments`，Node 把脚本里的引号转义成 cmd 不认的 `\"`，`where "codex"` 永远匹配不到。现在 cmd 脚本原样传给 cmd；裸命令名用不加引号的 `where`，带路径的入口改用 `if exist "路径"`，并整条加括号（否则 cmd 会把 else 之后用 `&` 连上的下一条检测算进 else 分支而跳过）。
 - 原单测替换了执行函数、并断言了错误写法，Windows CI 因此未能发现；改正断言，并新增只在 Windows 运行的测试，真实调用 cmd 检测 PATH 上的命令、绝对路径与不存在的命令。PowerShell 与 macOS／Linux 的检测不变。
 
 
