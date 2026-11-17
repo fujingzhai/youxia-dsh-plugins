@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Session History",
+    "description": "本机各 agent（Claude Code、Codex、Antigravity、Pi、DSH）的对话记忆：确定性清洗成日志、离线检索，以技能（软链共用）提供给所有 agent；不调用模型。"
+  }
+}

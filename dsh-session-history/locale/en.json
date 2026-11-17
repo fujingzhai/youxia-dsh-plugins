@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Session History",
+    "description": "Conversation memory across local agents (Claude Code, Codex, Antigravity, Pi, DSH): deterministic log cleaning and offline search, shared with every agent as one symlinked skill. No model calls."
+  }
+}

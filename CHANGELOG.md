@@ -2,6 +2,16 @@
 
 各插件独立版本，Git 标签采用 `<插件名>@<版本>`。未说明的插件不随其他插件升级。
 
+## 2026-11-17
+
+### dsh-session-history 0.1.0
+
+- 新插件：把本机 Claude Code、Codex、Antigravity、Pi、DSH 的会话确定性清洗成每天一份的 Markdown 日志，SQLite FTS5 trigram 离线检索（search／outline／get／raw／timeline），不调用模型、不联网。由作者自用的 Python 版 amem 改写为纯 JS（Node ≥ 22.15 内置 SQLite 与 zstd，唯一依赖 opencc-js）；在作者本机 2400 多个会话文件上与原版逐日对照，只有 Pi 源行号一处不同（原版把消息里的 U+2028 当换行，新版按真实行号），检索回归 36 题前 6 名顺序全部一致。
+- 数据目录 `~/.session-history` 即技能文件夹（SKILL.md、入口、日志、索引、设置），与插件包分开：卸载、更新、重装不动数据；来源里已没有的旧会话段原样保留。
+- 技能不拷副本：在各 agent 的技能目录放指向数据目录的软链，按真实路径识别共用目录，几家共用一个目录只建一条；同名独立副本视为冲突不覆盖。SKILL.md 按本机检测到的 agent 自动生成。
+- 插件页面板：最近整理与「立即整理」、各 agent 的会话检测／整理开关／技能状态与一键接入、设置、SKILL.md 预览。DSH 运行时在子进程定时整理（只重读变过的会话文件，作者本机增量约 1.3 秒）；DSH 没开时，检索前距上次超过 30 分钟自动补整理。
+- Windows：PowerShell／cmd 用纯 ASCII 的 `.cmd` 入口（路径换成环境变量，避开中文代码页），Git Bash 用 sh 入口；软链用目录联接，无需管理员。CI 在 Windows 实际调用两种入口；GUI 未在 Windows 实测。macOS 上在 DSH 0.2.2-rc.3 隔离 profile 实测宿主加载、管理接口与子进程整理；插件页 GUI 待实测。
+
 ## 2026-11-15
 
 ### dsh-session-fee 0.4.9

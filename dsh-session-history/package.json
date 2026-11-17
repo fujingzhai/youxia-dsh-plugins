@@ -1,0 +1,70 @@
+{
+  "name": "dsh-session-history",
+  "version": "0.1.0",
+  "description": "本机各 agent 的对话记忆：确定性清洗日志、离线检索，以一个软链共用的技能提供给 Claude Code、Codex、Antigravity、Pi、DSH；数据目录与插件分开，卸载更新不丢。",
+  "author": "youxia",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fujingzhai/youxia-dsh-plugins.git",
+    "directory": "dsh-session-history"
+  },
+  "homepage": "https://github.com/fujingzhai/youxia-dsh-plugins/tree/main/dsh-session-history#readme",
+  "bugs": {
+    "url": "https://github.com/fujingzhai/youxia-dsh-plugins/issues"
+  },
+  "type": "module",
+  "main": "./index.js",
+  "bin": {
+    "session-history": "bin/session-history.js"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "bin/*.js",
+    "lib/*.js",
+    "lib/sources/*.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "opencc-js": "1.4.2"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-plugin-manager"
+      ]
+    }
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22.15",
+    "dsh": ">=0.2.2-rc.1"
+  },
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "agent-skills",
+    "memory",
+    "session",
+    "claude-code",
+    "codex"
+  ],
+  "license": "MIT"
+}
