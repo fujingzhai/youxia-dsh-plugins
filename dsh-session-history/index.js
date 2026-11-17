@@ -75,6 +75,8 @@ export function createRunner(home, { node = findNode(), engine = ENGINE } = {}) 
 }
 
 export function snapshot(home, runner) {
+  // 打开插件页时也同步一次技能文件：新装的 agent 立刻反映到 SKILL.md（内容没变不写盘）。
+  try { installSkill(home); } catch { /* 写不了也不影响读状态 */ }
   const config = loadConfig(home);
   const last = readJson(layout(home).status, null);
   const status = skillStatus(home, config);
