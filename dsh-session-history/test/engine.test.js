@@ -370,3 +370,17 @@ test('已接入要读得到 SKILL.md：软链指向数据目录但读不到时�
   writeFileSync(join(fake, 'SKILL.md'), '---\nname: session-history\ndescription: x\n---\n');
   assert.equal(lib.links.entryState(dir, fake).state, 'link');
 });
+
+test('各家不共用技能文件夹时分组显示；读多个目录的 agent 只归入覆盖最多的那组', async () => {
+  const { skillStatus } = lib.links;
+  const H2 = join(HOME, 'sep-home');
+  const prev = { HOME: process.env.HOME, USERPROFILE: process.env.USERPROFILE };
+  process.env.HOME = H2; process.env.USERPROFILE = H2;
+  try {
+    for (const p of ['.claude/projects', '.claude/skills', '.codex/sessions', '.agents/skills', '.gemini/antigravity-cli/brain', '.gemini/config/skills',
+      '.pi/agent/sessions', '.pi/agent/skills']) mkdirSync(join(H2, p), { recursive: true });
+    const st = skillStatus(join(H2, '.session-history'), {});
+    const groups = Object.fromEntries(st.targets.map(g => [g.display.replaceAll('\\', '/'), [...g.agents].sort()]));
+    assert.deepEqual(groups, { '~/.claude/skills': ['Claude Code'], '~/.agents/skills': ['Codex', 'Pi'], '~/.gemini/config/skills': ['Antigravity'] });
+  } finally { process.env.HOME = prev.HOME; process.env.USERPROFILE = prev.USERPROFILE; }
+});

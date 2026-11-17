@@ -4,6 +4,12 @@
 
 ## 2026-11-17
 
+### dsh-session-history 0.2.2
+
+- 技能接入分组去重：一个 agent 同时读几个技能目录时（如 Pi 既读 `~/.pi/agent/skills` 也读 `~/.agents/skills`），只归入覆盖 agent 最多的那一组，不再同时出现在两组；被完全覆盖的组不列出。各家不共用文件夹时仍按文件夹分开显示。
+- 新增「各家不共用技能文件夹」的分组测试；17 项单元测试（含 1 项仅 Windows）与仓库完整检查通过。
+
+
 ### dsh-session-history 0.2.1
 
 - 新增 OpenCode：从它的 SQLite 库只读整理，标题沿用自带会话标题；技能目录按官方文档（`~/.config/opencode/skills`、`~/.claude/skills`、`~/.agents/skills`）。原始记录在库里，暂不支持 `raw`。

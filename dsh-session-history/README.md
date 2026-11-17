@@ -113,6 +113,8 @@ dsh plugin --profile desktop add dsh-session-history
 
 很多人只维护一个技能文件夹，其余目录用软链指向它（例如 `~/.claude/skills`、`~/.agents/skills` 都指向 `~/my-skills`）。这时各 agent 读的其实是同一个文件夹，但本技能的文件夹（数据目录）不在里面，所以显示「待接入」是准确的：只需在那个共用文件夹里建一条 `session-history` 软链，它们就一起接入。
 
+各家读的不是同一个文件夹时，会按文件夹分组、各给一个按钮；一个 agent 同时读几个目录的（如 Pi 既读自己的目录也读 `~/.agents/skills`），只归入能覆盖它的那一组，不会让你点两次。
+
 判断是否已接入，是从每个 agent 自己的技能目录出发、顺着软链去读 `session-history/SKILL.md`，读得到、名字对才算，与 agent 加载技能走同一条路。已有同名的独立文件夹（多半是旧版拷贝）时不会覆盖，会提示冲突。Windows 用目录联接，不需要管理员权限。
 
 ## 数据与卸载
@@ -156,7 +158,7 @@ session-history refresh | status | setup | link all | unlink claude | config
 Git 子目录地址（不提供原生更新检查）：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-history@0.2.1&path:/dsh-session-history
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-history@0.2.2&path:/dsh-session-history
 ```
 
 ## 兼容与限制

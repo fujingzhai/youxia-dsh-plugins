@@ -73,9 +73,19 @@ export function skillStatus(home, config = {}) {
     g.agents.push(a.name);
     groups.set(a.target.key, g);
   }
-  // 同一目录还被别的未生效 agent 读到的，一并算进受益者。
+  // 同一目录还被别的未接入 agent 读到的，一并算进受益者。
   for (const g of groups.values()) {
     for (const a of live.filter(x => x.state === 'missing' && !g.agents.includes(x.name))) if (a.dirs.some(d => d.real === g.key)) g.agents.push(a.name);
+  }
+  // 一个 agent 读多个目录时（如 Pi 既读自己的目录也读 ~/.agents/skills），只归入覆盖 agent 最多的那一组，
+  // 免得同一家出现在两组、让人以为要点两次；被完全覆盖的组不再列出。
+  const assigned = new Set();
+  for (const g of [...groups.values()].sort((a, b) => b.agents.length - a.agents.length)) {
+    g.agents = g.agents.filter(n => !assigned.has(n));
+    for (const n of g.agents) assigned.add(n);
+  }
+  for (const [k, g] of groups) if (!g.agents.length) groups.delete(k);
+  for (const g of groups.values()) {
     const realPath = g.create ? null : realpathSafe(g.path);
     g.realDisplay = realPath && key(realPath) !== key(g.path) ? tilde(realPath) : null;
     g.paths = [...new Set(live.filter(a => g.agents.includes(a.name)).flatMap(a => a.dirs.filter(d => d.real === g.key).map(d => d.display)))];
