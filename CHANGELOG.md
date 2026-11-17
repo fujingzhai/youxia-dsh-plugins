@@ -4,6 +4,12 @@
 
 ## 2026-11-17
 
+### dsh-agents-cli 0.1.6
+
+- 修复 Windows 上默认 shell 为 cmd 时所有入口都显示「未检测到 CLI」（[#1](https://github.com/fujingzhai/youxia-dsh-plugins/issues/1)，感谢 @bluesky8318 的定位）：`execFile` 未开 `windowsVerbatimArguments`，Node 把脚本里的引号转义成 cmd 不认的 `\"`，`where "codex"` 永远匹配不到。现在 cmd 脚本原样传给 cmd；裸命令名用不加引号的 `where`，带路径的入口改用 `if exist "路径"`。
+- 原单测替换了执行函数、并断言了错误写法，Windows CI 因此未能发现；改正断言，并新增只在 Windows 运行的测试，真实调用 cmd 检测 PATH 上的命令、绝对路径与不存在的命令。PowerShell 与 macOS／Linux 的检测不变。
+
+
 ### dsh-session-history 0.1.0
 
 - 新插件：把本机 Claude Code、Codex、Antigravity、Pi、DSH 的会话确定性清洗成每天一份的 Markdown 日志，SQLite FTS5 trigram 离线检索（search／outline／get／raw／timeline），不调用模型、不联网。由作者自用的 Python 版 amem 改写为纯 JS（Node ≥ 22.15 内置 SQLite 与 zstd，唯一依赖 opencc-js）；在作者本机 2400 多个会话文件上与原版逐日对照，只有 Pi 源行号一处不同（原版把消息里的 U+2028 当换行，新版按真实行号），检索回归 36 题前 6 名顺序全部一致。

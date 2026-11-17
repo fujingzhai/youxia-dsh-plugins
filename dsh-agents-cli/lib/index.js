@@ -811,7 +811,9 @@ export function detectionScript(agents, kind, nonce) {
     const yes = `${prefix}:${index}:yes`, no = `${prefix}:${index}:no`
     if (kind === 'cmd') {
       if (!/^[a-zA-Z0-9_.@:/\\\\ -]+$/.test(target)) continue
-      lines.push(`where "${target}" >nul 2>nul && echo ${yes} || echo ${no}`)
+      // where 把引号当成模式的一部分，裸名必须不加引号；带路径的目标改用 if exist 判断文件在不在。
+      if (/[\\/]/.test(target)) lines.push(`if exist "${target}" (echo ${yes}) else (echo ${no})`)
+      else if (!/\s/.test(target)) lines.push(`where ${target} >nul 2>nul && echo ${yes} || echo ${no}`)
     } else if (kind === 'pwsh' || kind === 'powershell') {
       const quoted = target.replaceAll("'", "''")
       lines.push(`if (Get-Command -Name '${quoted}' -ErrorAction SilentlyContinue) { [Console]::WriteLine('${yes}') } else { [Console]::WriteLine('${no}') }`)
@@ -839,7 +841,9 @@ export function createAvailabilityDetector(subprocess, { run = execFileAsync, pl
         const argv = kind === 'cmd' ? ['/d', '/q', '/c', script.replaceAll('\n', ' & ')]
           : kind === 'pwsh' || kind === 'powershell' ? ['-NoLogo', '-NonInteractive', '-Command', script]
             : ['-ilc', script]
-        const { stdout } = await run(shell, argv, { encoding: 'utf8', timeout: 6000, maxBuffer: 128 * 1024, windowsHide: true, env: buildTerminalEnv(shell, process.env, platform) })
+        // cmd 不认 Node 默认的 \" 转义：脚本须原样交给 cmd，否则其中的引号全部失效。
+        const { stdout } = await run(shell, argv, { encoding: 'utf8', timeout: 6000, maxBuffer: 128 * 1024, windowsHide: true,
+          windowsVerbatimArguments: kind === 'cmd', env: buildTerminalEnv(shell, process.env, platform) })
         for (const match of stdout.matchAll(new RegExp(`DSH_AGENTS_${nonce}:(\\d+):(yes|no)`, 'g'))) {
           const agent = agents[Number(match[1])]
           if (agent) value[agent.id] = { installed: match[2] === 'yes' }

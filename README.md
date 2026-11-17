@@ -14,7 +14,7 @@
 | [dsh-speed-pair](dsh-speed-pair) | 0.1.0 | 输出速度改双口径 `X(Y) tok/s`：括号外是首字后的解码速度，括号内是含首字延迟的整段速度 |
 | [dsh-zh-slash](dsh-zh-slash) | 0.1.1 | 用「、」唤出原生 `/` 命令菜单 |
 | [dsh-quick-chat](dsh-quick-chat) | 0.1.4 | DSH 主面板里的 DeepSeek 官方网页：复用原生浏览器，登录跨重启恢复 |
-| [dsh-agents-cli](dsh-agents-cli) | 0.1.5 | 在主面板使用本机 CLI Agents：持久终端、后台工作／完成提醒、可编辑入口 |
+| [dsh-agents-cli](dsh-agents-cli) | 0.1.6 | 在主面板使用本机 CLI Agents：持久终端、后台工作／完成提醒、可编辑入口 |
 
 兼容要求与使用说明见各插件目录。
 
@@ -86,7 +86,7 @@ git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-settings-customizer
 git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-speed-pair@0.1.0&path:/dsh-speed-pair
 git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-zh-slash@0.1.1&path:/dsh-zh-slash
 git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.4&path:/dsh-quick-chat
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-agents-cli@0.1.5&path:/dsh-agents-cli
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-agents-cli@0.1.6&path:/dsh-agents-cli
 ```
 
 固定标签不会跟随 `main`；新版见 [Releases](https://github.com/fujingzhai/youxia-dsh-plugins/releases)。将标签换成 `#main` 只是滚动开发来源，不保证 DSH 自动刷新分支。

@@ -532,8 +532,22 @@ test('CLI detector is non-executing, shared, cached and refreshes command edits'
   assert.equal(runs, 2)
   assert.equal(detectionTarget('echo; touch unsafe'), null)
   assert.equal(detectionTarget('"C:\\Program Files\\agent.exe" --flag'), 'C:\\Program Files\\agent.exe')
-  assert.match(detectionScript([{ command: 'codex' }], 'cmd', 'probe'), /where "codex"/)
+  assert.match(detectionScript([{ command: 'codex' }], 'cmd', 'probe'), /where codex >nul/)
+  assert.doesNotMatch(detectionScript([{ command: 'codex' }], 'cmd', 'probe'), /where "/)
+  assert.match(detectionScript([{ command: '"C:\\Program Files\\agent.exe" --flag' }], 'cmd', 'probe'), /if exist "C:\\Program Files\\agent\.exe"/)
   assert.match(detectionScript([{ command: 'codex' }], 'powershell', 'probe'), /Get-Command/)
+})
+
+test('Windows cmd detection really runs where and if exist (no stubbed run)', { skip: process.platform !== 'win32' }, async () => {
+  const subprocess = { terminalEnvironment: async () => ({ defaultShell: process.env.ComSpec || 'cmd.exe' }) }
+  const detect = createAvailabilityDetector(subprocess)
+  const value = await detect([
+    { id: 'node', command: 'node' },
+    { id: 'missing', command: 'missing_cli_xyz_123' },
+    { id: 'path', command: `"${process.execPath}" --version` },
+    { id: 'nopath', command: '"C:\\Program Files\\no-such-agent\\agent.exe"' },
+  ])
+  assert.deepEqual(value, { node: { installed: true }, missing: { installed: false }, path: { installed: true }, nopath: { installed: false } })
 })
 
 test('detector finds aliases/functions without executing them', { skip: process.platform === 'win32' }, async () => {
