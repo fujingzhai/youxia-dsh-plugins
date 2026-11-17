@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { zstdCompressSync } from 'node:zlib';
 import { spawnSync } from 'node:child_process';
+import { DatabaseSync } from 'node:sqlite';
 
 // 一切都在临时 HOME 里，不碰本机真实会话。
 const HOME = realpathSync(mkdtempSync(join(tmpdir(), 'shist-test-')));
@@ -313,4 +314,59 @@ test('Windows 实机：cmd 与 Git Bash 两种入口都能跑（目录名含中�
     assert.equal(b.status, 0, `bash: ${b.stdout}\n${b.stderr}`);
     assert.match(b.stdout, /Session History .*数据目录/);
   }
+});
+
+test('OpenCode：从 SQLite 库读会话，标题行用自带标题，剥掉 <think>', async () => {
+  const oc = (await import('../lib/sources/opencode.js')).default;
+  const dir = join(HOME, '.local/share/opencode');
+  mkdirSync(dir, { recursive: true });
+  const db = new DatabaseSync(join(dir, 'opencode.db'));
+  db.exec(`CREATE TABLE session(id TEXT, title TEXT, directory TEXT); CREATE TABLE message(id TEXT, session_id TEXT, time_created INTEGER, data TEXT);
+    CREATE TABLE part(id TEXT, message_id TEXT, time_created INTEGER, data TEXT);`);
+  db.prepare('INSERT INTO session VALUES(?,?,?)').run('ses_abcdef123', '修 VPN', '/work');
+  db.prepare('INSERT INTO session VALUES(?,?,?)').run('ses_tmp000000', '临时', '/tmp/x');
+  const t0 = Date.parse('2026-11-10T03:00:00Z');
+  for (const [mid, sid, ms, role, text] of [['m1', 'ses_abcdef123', t0, 'user', '断线了'], ['m2', 'ses_abcdef123', t0 + 60000, 'assistant', '<think>想想</think>是 DPD'],
+    ['m3', 'ses_tmp000000', t0, 'user', '不该收']]) {
+    db.prepare('INSERT INTO message VALUES(?,?,?,?)').run(mid, sid, ms, JSON.stringify({ role }));
+    db.prepare('INSERT INTO part VALUES(?,?,?,?)').run('p' + mid, mid, ms, JSON.stringify({ type: 'text', text }));
+  }
+  db.close();
+  const paths = oc.locate();
+  const [file] = oc.files(paths);
+  const data = oc.parse(file);
+  const built = oc.build([{ path: file, data }]);
+  const { createClock } = await import('../lib/clock.js');
+  const body = oc.render(built.turns, createClock({ timezone: '+08:00' }), '用户').get('2026-11-10');
+  assert.match(body, /^# 修 VPN（ses_abcd）\n\n## 11:00  🧑 用户\n\n断线了\n\n## 11:01  🤖 OpenCode\n\n是 DPD\n/);
+  assert.doesNotMatch(body, /不该收|想想/);
+  assert.match(oc.signature(file), /\|/, '签名含 -wal');
+});
+
+test('自动查找：已知的同格式 agent 与同一 agent 的其他配置目录；已内置或已添加的不列', async () => {
+  put(join(HOME, '.qoder-cn/projects/-w/aaaa1111-1.jsonl'), jsonl([
+    { type: 'user', cwd: '/w', timestamp: '2026-11-10T01:00:00Z', message: { content: '用 Qoder 问一句' } }]));
+  put(join(HOME, '.claude-work/projects/-w/bbbb2222-1.jsonl'), jsonl([
+    { type: 'user', cwd: '/w', timestamp: '2026-11-10T01:00:00Z', message: { content: '第二个账号' } }]));
+  mkdirSync(join(HOME, '.claude-work/skills'), { recursive: true });
+  mkdirSync(join(HOME, '.codex-empty/sessions'), { recursive: true }); // 没有会话的不列
+  const { scan } = await import('../lib/scan.js');
+  const found = scan(lib.config.loadConfig(DATA));
+  const names = found.map(f => f.name);
+  assert.ok(names.includes('Qoder CLI（国内版）'), names.join(','));
+  const work = found.find(f => f.name === 'Claude Code（work）');
+  assert.ok(work && work.format === 'claude' && /skills$/.test(work.skills));
+  assert.ok(!names.some(n => n.includes('.codex-empty')));
+  assert.ok(!found.some(f => /\.claude[\\/]projects$/.test(f.sessions)), '内置的 ~/.claude 不重复列');
+});
+
+test('已接入要读得到 SKILL.md：软链指向数据目录但读不到时算失效', () => {
+  const dir = join(HOME, 'check-skills');
+  mkdirSync(dir, { recursive: true });
+  const fake = join(HOME, 'fake-home');
+  mkdirSync(fake, { recursive: true });
+  symlinkSync(fake, join(dir, 'session-history'), LINK);
+  assert.equal(lib.links.entryState(dir, fake).state, 'broken', '数据目录里没有 SKILL.md');
+  writeFileSync(join(fake, 'SKILL.md'), '---\nname: session-history\ndescription: x\n---\n');
+  assert.equal(lib.links.entryState(dir, fake).state, 'link');
 });

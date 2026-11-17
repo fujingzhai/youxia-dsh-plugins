@@ -45,7 +45,7 @@ test('宿主接口：快照含各 agent 的检测与技能状态', async () => {
   const runner = { running: false, run: async () => ({ ok: true }) };
   const s = snapshot(home, runner);
   assert.deepEqual(s.agents.map(a => a.id), ['pi'], '只列检测到的');
-  assert.ok(s.undetected.includes('Claude Code'));
+  assert.equal(s.undetected, undefined, '不再列未检测到的');
   assert.equal(s.agents[0].state, 'missing');
   assert.equal(s.targets.length, 1);
   assert.deepEqual(s.targets[0].agents, ['Pi']);

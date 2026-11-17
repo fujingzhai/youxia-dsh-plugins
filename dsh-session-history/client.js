@@ -67,10 +67,10 @@ window.__ModuleLoader__.load({
     const num = n => Number(n || 0).toLocaleString('zh-CN');
 
     const STATE = {
-      ready: ['技能已生效', a => `经 ${a.via}`],
-      missing: ['技能未生效', () => '见下方「技能接入」'],
-      conflict: ['技能冲突', a => `${a.conflict?.path} 已有同名的其他内容`],
-      nodir: ['不接入技能', () => '没有设置技能目录，只收录会话'],
+      ready: ['已接入', a => `经 ${a.via} 读到本技能`],
+      missing: ['待接入', () => '它的技能目录里还没有 session-history，见下方「技能接入」'],
+      conflict: ['冲突', a => `${a.conflict?.path} 已有同名的其他内容`],
+      nodir: ['不接入', () => '没有设置技能目录，只收录会话'],
     };
 
     return {
@@ -142,12 +142,15 @@ window.__ModuleLoader__.load({
           const items = [];
           for (const t of targets) {
             const note = data.agents.find(a => t.agents.includes(a.name) && a.note)?.note;
+            const shared = t.agents.length > 1;
+            const where = t.create ? ['将新建技能目录 ', h('code', { key: 'p' }, t.display), '，']
+              : t.realDisplay ? [shared ? '它们读取的 ' : '它读取的 ', (t.paths || [t.display]).map((p, i) => [i ? '、' : '', h('code', { key: p }, p)]), ' 实际都是 ', h('code', { key: 'r' }, t.realDisplay), '，']
+              : ['技能目录 ', h('code', { key: 'p' }, t.display), ' '];
             items.push(h('div', { className: 'yxsh-item', key: 't' + t.key },
               h('div', null,
-                h('div', null, h('b', null, t.agents.join('、')), ' 的技能尚未生效'),
-                h('div', { className: 'yxsh-muted' }, t.create ? '将新建技能目录 ' : '在它们读取的技能目录 ', h('code', null, t.display),
-                  t.realDisplay ? ['（实际位置 ', h('code', { key: 'r' }, t.realDisplay), '）'] : null, t.realDisplay ? '里建一条指向数据目录的软链即可。' : ' 里建一条指向数据目录的软链即可。',
-                  note ? ` 注意：${note}。` : '')),
+                h('div', null, h('b', null, t.agents.join('、')), '：待接入'),
+                h('div', { className: 'yxsh-muted' }, ...where, '其中还没有 session-history。在这里建一条指向数据目录的软链，',
+                  shared ? `这 ${t.agents.length} 家同时生效。` : '即可生效。', note ? ` 注意：${note}。` : '')),
               h('button', { className: 'yxsh-btn primary', disabled: !!pending, onClick: () => run({ op: 'linkTarget', key: t.key }, 'link') }, '建软链')));
           }
           for (const l of links) items.push(h('div', { className: 'yxsh-item', key: 'l' + l.key },
@@ -161,8 +164,9 @@ window.__ModuleLoader__.load({
           return h('div', { className: 'yxsh-card yxsh-access' },
             h('div', { className: 'yxsh-row' }, h('h4', { className: 'yxsh-grow' }, '技能接入'),
               targets.length > 1 ? h('button', { className: 'yxsh-btn primary', disabled: !!pending, onClick: () => run({ op: 'linkAll' }, 'link') }, '全部接入') : null),
-            items.length ? items : h('div', { className: 'yxsh-muted' }, '检测到的 agent 都已能使用本技能。'),
-            h('div', { className: 'yxsh-muted' }, '技能不拷副本：数据目录本身就是技能文件夹，在各 agent 读取的技能目录里放一条指向它的软链即可。几家共用同一个技能目录时只需一条；按钮只在有 agent 尚未生效时出现。'));
+            items.length ? items : h('div', { className: 'yxsh-muted' }, '检测到的 agent 都已接入本技能。'),
+            h('div', { className: 'yxsh-muted' }, '数据目录本身就是技能文件夹，不拷副本：在 agent 读取的技能目录里放一条指向它的软链即可。几家实际读同一个文件夹（比如都软链到你统一管理的技能目录）时，只需一条。'),
+            h('div', { className: 'yxsh-muted' }, '是否已接入，是从每个 agent 自己的技能目录出发、顺着软链去读 session-history/SKILL.md 来判断的，与 agent 加载技能走同一条路。'));
         }
 
         function AddAgent({ data, pending }) {
@@ -176,7 +180,26 @@ window.__ModuleLoader__.load({
             catch (error) { setCheck({ error: error.message }); }
           };
           const add = async () => { if (await run({ op: 'addCustom', ...form }, 'add')) { setOpen(false); setForm({ name: '', format: 'claude', sessions: '', skills: '' }); setCheck(null); } };
-          if (!open) return h('div', { style: { marginTop: '10px' } }, h('button', { className: 'yxsh-btn', onClick: () => setOpen(true) }, '＋ 添加其他 agent'));
+          const [found, setFound] = React.useState(null);
+          const find = async () => {
+            setFound({ busy: true });
+            try { const r = await api({ op: 'scan' }); if (alive) state.set({ data: r }); setFound({ list: r.found }); }
+            catch (error) { setFound({ error: error.message }); }
+          };
+          const quick = c => run({ op: 'addCustom', name: c.name, format: c.format, sessions: c.sessions, skills: c.skills || '' }, 'add')
+            .then(ok => { if (ok) setFound(f => ({ list: (f?.list || []).filter(x => x.sessions !== c.sessions) })); });
+          const results = !found ? null : found.busy ? h('div', { className: 'yxsh-muted' }, '查找中…')
+            : found.error ? h('div', { className: 'yxsh-error' }, found.error)
+            : !found.list.length ? h('div', { className: 'yxsh-muted' }, '没有找到其他可收录的 agent。内置支持的 agent 装好并产生对话后，会自动出现在上面。')
+            : h('div', { className: 'yxsh-card', style: { padding: '4px 14px', marginTop: '8px' } }, ...found.list.map(c => h('div', { className: 'yxsh-item', key: c.sessions, style: { padding: '8px 0' } },
+              h('div', null, h('div', null, h('b', null, c.name), h('span', { className: 'yxsh-muted' }, ` · ${data.formats.find(f => f.id === c.format)?.label || c.format} · ${num(c.files)} 个会话文件`)),
+                h('div', { className: 'yxsh-muted' }, h('code', null, c.sessions), c.skills ? ['　技能目录 ', h('code', { key: 's' }, c.skills)] : '　未发现技能目录，只收录会话')),
+              h('button', { className: 'yxsh-btn', disabled: !!pending, onClick: () => quick(c) }, '添加'))));
+          if (!open) return h('div', { style: { marginTop: '10px' } },
+            h('div', { className: 'yxsh-row' },
+              h('button', { className: 'yxsh-btn', disabled: found?.busy, onClick: find, title: '重新检测内置 agent，并查找格式相同的其他 agent 或同一 agent 的其他配置目录' }, '自动查找'),
+              h('button', { className: 'yxsh-btn', onClick: () => setOpen(true) }, '手动添加')),
+            results);
           const verdict = !check ? null : check.error ? h('span', { className: 'yxsh-error' }, check.error)
             : !check.exists ? h('span', { className: 'yxsh-error' }, `目录不存在：${check.path}`)
             : check.files && check.turns ? h('span', null, `找到 ${num(check.files)} 个会话文件，格式对得上。如 `, h('code', null, check.sample))
@@ -205,13 +228,12 @@ window.__ModuleLoader__.load({
           const live = data.agents, ready = live.filter(a => a.state === 'ready').length, linkable = live.filter(a => a.state !== 'nodir').length;
           return h('section', null,
             h('div', { className: 'yxsh-head' }, h('h3', { className: 'yxsh-grow' }, 'Agents'),
-              linkable ? h('span', { className: 'yxsh-muted' }, `技能已生效 ${ready}/${linkable}`) : null),
+              linkable ? h('span', { className: 'yxsh-muted' }, `已接入 ${ready}/${linkable}`) : null),
             live.length ? h('div', { className: 'yxsh-card' }, ...live.map(a => h(AgentRow, { a, pending, key: a.id })))
               : h('div', { className: 'yxsh-card', style: { padding: '14px' } }, h('span', { className: 'yxsh-muted' }, '还没有检测到支持的 agent。装好后产生过对话就会出现在这里；也可以在下面手动添加。')),
             live.length ? h(Access, { data, pending }) : null,
             h('div', { className: 'yxsh-notes' },
-              data.undetected.length ? h('div', { className: 'yxsh-muted' }, `未检测到：${data.undetected.join('、')}（装好后自动出现）`) : null,
-              data.legacy.length ? h('div', { className: 'yxsh-muted' }, `仅有旧日志：${data.legacy.join('、')}（照常检索）`) : null),
+              data.legacy.length ? h('div', { className: 'yxsh-muted' }, `另有旧日志：${data.legacy.join('、')}（对应的 agent 已不在，日志照常检索）`) : null),
             h(AddAgent, { data, pending }));
         }
 

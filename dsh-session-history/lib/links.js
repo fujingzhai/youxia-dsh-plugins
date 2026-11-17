@@ -31,11 +31,14 @@ export function entryState(dir, home) {
   let st;
   try { st = lstatSync(entry); } catch { return { state: 'none', entry }; }
   const target = real(entry), homeReal = real(home);
+  // 只认 realpath 还不够：要像 agent 加载技能那样，从这个技能目录出发顺着软链读到 SKILL.md、名字对得上。
+  const readable = () => skillName(entry) === SKILL_NAME;
   if (st.isSymbolicLink()) {
     if (!target) return { state: 'broken', entry, target: readlinkSync(entry) };
-    return { state: target === homeReal ? 'link' : (skillName(target) === SKILL_NAME ? 'copy' : 'other'), entry, target };
+    if (target === homeReal) return readable() ? { state: 'link', entry, target } : { state: 'broken', entry, target };
+    return { state: skillName(target) === SKILL_NAME ? 'copy' : 'other', entry, target };
   }
-  if (target && target === homeReal) return { state: 'shared', entry, target };
+  if (target && target === homeReal) return readable() ? { state: 'shared', entry, target } : { state: 'broken', entry, target };
   return { state: st.isDirectory() && skillName(entry) === SKILL_NAME ? 'copy' : 'other', entry, target };
 }
 
@@ -75,6 +78,7 @@ export function skillStatus(home, config = {}) {
     for (const a of live.filter(x => x.state === 'missing' && !g.agents.includes(x.name))) if (a.dirs.some(d => d.real === g.key)) g.agents.push(a.name);
     const realPath = g.create ? null : realpathSafe(g.path);
     g.realDisplay = realPath && key(realPath) !== key(g.path) ? tilde(realPath) : null;
+    g.paths = [...new Set(live.filter(a => g.agents.includes(a.name)).flatMap(a => a.dirs.filter(d => d.real === g.key).map(d => d.display)))];
   }
   const links = new Map();
   for (const a of live) for (const d of a.dirs) if (d.state === 'link' && d.real && !links.has(d.real)) {

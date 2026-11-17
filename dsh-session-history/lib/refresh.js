@@ -67,7 +67,7 @@ export function cleanSource(source, { home, config, cache, clock, log = () => {}
   try {
     for (const path of list) {
       let sig;
-      try { sig = signature(path); } catch { continue; }
+      try { sig = (source.signature || signature)(path); } catch { continue; }
       const row = cached.get(path);
       let data;
       if (row && row.sig === sig && row.version === source.version) data = JSON.parse(row.data);

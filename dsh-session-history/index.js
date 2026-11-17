@@ -8,6 +8,7 @@ import { SOURCES, FORMATS, enabled, byId, allSources, customSource, folderFor } 
 import { installSkill, skillMarkdown, logFolders, findNode, ENGINE, VERSION } from './lib/skill.js';
 import { skillStatus, linkTarget, linkAll, unlinkTarget } from './lib/links.js';
 import { tilde, expand, isDir } from './lib/files.js';
+import { scan } from './lib/scan.js';
 
 export const name = 'session-history';
 export const ROUTE = '/youxia-session-history/api';
@@ -85,13 +86,13 @@ export function snapshot(home, runner) {
       run: run && { ok: run.ok, files: run.files, days: run.days, error: run.error || null },
       ...(a.custom ? { def: config.custom.find(c => c.id === a.id) } : {}) };
   });
-  const known = new Set(allSources(config).map(s => s.folder));
+  // 只剩旧日志：日志文件夹对应的 agent 不在列表里（已卸载，或来自不再支持的来源）。新用户一般没有。
+  const listed = new Set(shown.map(a => a.folder));
   return {
     version: VERSION, home: tilde(home), homeAbs: home, config, last, running: runner?.running ?? false,
     agents: shown,
-    undetected: status.agents.filter(a => !a.installed && !a.custom).map(a => a.name),
     targets: status.targets, links: status.links, conflicts: status.conflicts,
-    legacy: logFolders(home).filter(f => !known.has(f)),
+    legacy: logFolders(home).filter(f => !listed.has(f)),
     formats: Object.entries(FORMATS).map(([id, f]) => ({ id, label: f.label, dir: f.dir, layout: f.layout, example: f.example })),
     git: existsSync(join(home, '.git')),
     skill: skillMarkdown(home, { config }),
@@ -148,6 +149,7 @@ export async function command(home, runner, input) {
     case 'linkAll': linkAll(home, config); break;
     case 'unlinkTarget': unlinkTarget(home, String(input.key), config); break;
     case 'probe': return { probe: probe(input.format, input.sessions) };
+    case 'scan': return { ...snapshot(home, runner), found: scan(config) };
     case 'addCustom': {
       const name = String(input.name || '').trim();
       if (!name || name.length > 24 || /[\n#]/.test(name)) throw invalid('名称须为 1–24 个字，不含 # 与换行');

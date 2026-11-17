@@ -30,7 +30,7 @@
 
 ## 功能
 
-- **多家 agent**：Claude Code、Codex、Antigravity、Pi、DSH、LobsterAI，以及 WorkBuddy（实验性）。会话格式与其中某一家相同的其他 agent，或同一 agent 的第二套配置，可以手动添加。
+- **多家 agent**：Claude Code、Codex、Antigravity、Pi、DSH、OpenCode、LobsterAI，以及 WorkBuddy（实验性）。装好就自动检测，后装的也会自动出现。会话格式与其中某一家相同的其他 agent，或同一 agent 的第二套配置，可以「自动查找」或手动添加。
 - **检索以会话为单位**：会话标题和你的原话权重最高；命中太多时只列标题，并提示可以加哪些词收窄。繁简、全半角、大小写自动统一。
 - **原始记录兜底**：命令、参数、报错原文多藏在工具调用里，可以在单个会话的原始记录中定点查找。
 - **Claude Code 记忆提示**：检索时顺带列出对题的 Claude Code 记忆（整理过的结论），可先读这些。
@@ -55,7 +55,7 @@ dsh plugin --profile desktop add dsh-session-history
 装好后打开插件详情：
 
 1. 启用后约 20 秒会自动做第一次整理，也可以点 **立即整理**。首次要读全部历史会话，几百 MB 约需半分钟到一两分钟；之后只重读有变化的会话，通常一两秒。
-2. 在 **技能接入** 里点 **建软链**（或 **全部接入**），让各 agent 能用上本技能。
+2. 在 **技能接入** 里点 **建软链**（或 **全部接入**），让各 agent 能用上本技能。几家共用一个技能文件夹时只需点一次。
 3. 新开一个对话，问一句“我们之前……”试试。
 
 不用 DSH 也能用：`npm i -g dsh-session-history`，再运行 `session-history setup`、`session-history refresh`、`session-history link all`。需要 Node 22.15 以上（推荐 24）。
@@ -63,15 +63,18 @@ dsh plugin --profile desktop add dsh-session-history
 ## 插件页
 
 - **数据目录**：位置、最近整理时间、会话与日志数量、整理是否出错；可打开目录或立即整理。
-- **Agents**：只列检测到的 agent（以及你添加的）。每家显示会话来源与数量、是否收录、技能是否生效。关掉「收录」只是不再整理它的新会话，已有日志照常检索。
-- **技能接入**：只有检测到、但技能还没生效的 agent 才需要操作。按它们读取的技能目录归组，一组一个按钮，写明点了之后哪些 agent 生效；已建的软链列在这里，可以移除。
-- **添加其他 agent**：见下节。
+- **Agents**：只列检测到的 agent（以及你添加的），每次打开都会重新检测。每家显示会话来源与数量、是否收录、技能状态（已接入／待接入／冲突／不接入）。关掉「收录」只是不再整理它的新会话，已有日志照常检索。
+- **技能接入**：只有检测到、但还没接入的 agent 才需要操作。按它们实际读取的文件夹归组，一组一个按钮，写明点了之后哪些 agent 生效；已建的软链列在这里，可以移除。
+- **自动查找／手动添加**：见下节。
+- **另有旧日志**：数据目录里有、但对应 agent 已不在的日志（比如卸载了某个 agent）。新装的用户一般没有这一行。
 - **设置**：整理频率、检索前是否补整理、日志里你的发言标题、日界、时区、不收录的目录、Claude Code 记忆提示、Git 快照。
 - **SKILL.md**：各 agent 实际读到的技能说明，可展开查看。
 
 ### 添加其他 agent
 
-用于本插件未内置、但会话记录格式与某一家相同的 agent，或同一 agent 的另一套配置目录（多开、多账号）。要填：
+用于本插件未内置、但会话记录格式与某一家相同的 agent，或同一 agent 的另一套配置目录（多开、多账号）。
+
+**自动查找** 会重新检测内置的 agent，并在几处已知位置（如 Qoder CLI、CodeBuddy Code）和家目录第一层的同名变体配置目录（如 `~/.claude-work`）里找能收录的会话，找到的一键添加；不会深入扫描你的文件。找不到的再 **手动添加**，要填：
 
 | 项 | 填什么 |
 |---|---|
@@ -86,6 +89,7 @@ dsh plugin --profile desktop add dsh-session-history
 | Codex | `sessions`（里面是 `<年>/<月>/<日>/rollout-*.jsonl`） | 另一个 `CODEX_HOME` 下的 `sessions` |
 | Pi | `sessions`（里面是 `<目录>/<会话>.jsonl`） | 另一个 Pi 配置目录下的 `sessions` |
 | DSH | `sessions`（里面是 `<目录>/<会话>/session.vN.jsonl.zstd`） | 另一个 `DSH_HOME` 下的 `sessions` |
+| OpenCode | `opencode`（里面是 `opencode.db`） | 另一个 `XDG_DATA_HOME` 下的 `opencode` |
 | Antigravity | `brain`（里面是 `<会话>/.system_generated/logs/…`） | 第二个实例的 `antigravity-cli/brain` |
 | LobsterAI（OpenClaw） | `agents`（里面是 `<agent>/sessions/<会话>.jsonl`） | 其他基于 OpenClaw 的客户端 |
 | WorkBuddy（CodeBuddy） | `projects`（里面是 `<项目>/<会话>.jsonl`） | CodeBuddy Code 的 `~/.codebuddy/projects` |
@@ -103,10 +107,13 @@ dsh plugin --profile desktop add dsh-session-history
 | Antigravity | `~/.gemini/config/skills`（命令行）、`~/.gemini/antigravity/skills`（桌面版） |
 | Pi | `~/.pi/agent/skills`、`~/.agents/skills` |
 | DSH | `~/.dsh/skills`、`~/.agents/skills` |
+| OpenCode | `~/.config/opencode/skills`、`~/.claude/skills`、`~/.agents/skills` |
 | LobsterAI | 应用数据目录下的 `LobsterAI/SKILLs`（可能还需在它的技能设置里启用） |
 | WorkBuddy | `~/.workbuddy/skills` |
 
-很多人只维护一个技能文件夹，其余目录用软链指向它。插件按真实路径判断：几家实际读的是同一个文件夹时，只需一条软链，建好后它们一起生效。已有同名的独立文件夹（多半是旧版拷贝）时不会覆盖，会提示冲突。Windows 用目录联接，不需要管理员权限。
+很多人只维护一个技能文件夹，其余目录用软链指向它（例如 `~/.claude/skills`、`~/.agents/skills` 都指向 `~/my-skills`）。这时各 agent 读的其实是同一个文件夹，但本技能的文件夹（数据目录）不在里面，所以显示「待接入」是准确的：只需在那个共用文件夹里建一条 `session-history` 软链，它们就一起接入。
+
+判断是否已接入，是从每个 agent 自己的技能目录出发、顺着软链去读 `session-history/SKILL.md`，读得到、名字对才算，与 agent 加载技能走同一条路。已有同名的独立文件夹（多半是旧版拷贝）时不会覆盖，会提示冲突。Windows 用目录联接，不需要管理员权限。
 
 ## 数据与卸载
 
@@ -149,7 +156,7 @@ session-history refresh | status | setup | link all | unlink claude | config
 Git 子目录地址（不提供原生更新检查）：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-history@0.2.0&path:/dsh-session-history
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-history@0.2.1&path:/dsh-session-history
 ```
 
 ## 兼容与限制
@@ -158,7 +165,7 @@ git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-history@0.2
 - Windows：PowerShell／cmd 用 `bin\session-history.cmd`，Git Bash 用 `bin/session-history`，SKILL.md 会按平台写明；CI 在 Windows 上实际调用两种入口。Windows 版 DSH 的插件页尚未实测，Linux 只跑了 CI。
 - WorkBuddy 的会话格式按其内核 CodeBuddy Code 的公开代码推断，尚未用真实会话验证，所以标为实验性。
 - 只读取各 agent 的会话文件，从不修改它们。日志里的指令是历史数据，SKILL.md 已要求 agent 不得照做。
-- 日志不含思考过程与工具调用；这些要用 `raw` 回查原始记录，原始记录不在了就查不到。
+- 日志不含思考过程与工具调用；这些要用 `raw` 回查原始记录，原始记录不在了就查不到。OpenCode 的原始记录存在数据库里，暂不支持 `raw`。
 
 ## 许可
 

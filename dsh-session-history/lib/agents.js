@@ -1,5 +1,5 @@
 // agent 注册表：内置各家的会话来源（清洗用）与技能目录（接入技能用），外加用户手动添加的同格式 agent。
-import { dirname } from 'node:path';
+import { dirname, join } from 'node:path';
 import claude from './sources/claude.js';
 import codex from './sources/codex.js';
 import antigravity from './sources/antigravity.js';
@@ -7,9 +7,10 @@ import pi from './sources/pi.js';
 import dsh from './sources/dsh.js';
 import lobsterai from './sources/lobsterai.js';
 import workbuddy from './sources/workbuddy.js';
+import opencode from './sources/opencode.js';
 import { isDir, expand } from './files.js';
 
-export const SOURCES = [claude, codex, antigravity, pi, dsh, lobsterai, workbuddy];
+export const SOURCES = [claude, codex, antigravity, pi, dsh, opencode, lobsterai, workbuddy];
 
 /**
  * 自定义 agent 可选的会话格式：与哪一家相同，会话目录选哪一层。
@@ -24,6 +25,8 @@ export const FORMATS = {
   dsh: { source: dsh, label: 'DSH 格式', dir: 'sessions', layout: '<目录>/<会话>/session.vN.jsonl.zstd', example: '另一个 DSH_HOME：~/.dsh-work/sessions' },
   antigravity: { source: antigravity, label: 'Antigravity 格式', dir: 'brain', layout: '<会话>/.system_generated/logs/transcript_full.jsonl',
     example: '第二个实例：~/.gemini-work/antigravity-cli/brain' },
+  opencode: { source: opencode, label: 'OpenCode 格式', dir: 'opencode', layout: 'opencode.db',
+    example: '另一个 XDG_DATA_HOME 下的 opencode 目录' },
   lobsterai: { source: lobsterai, label: 'LobsterAI（OpenClaw）格式', dir: 'agents', layout: '<agent>/sessions/<会话>.jsonl',
     example: '其他基于 OpenClaw 的客户端的 agents 目录' },
   workbuddy: { source: workbuddy, label: 'WorkBuddy（CodeBuddy）格式', dir: 'projects', layout: '<项目>/<会话>.jsonl',
@@ -49,7 +52,7 @@ export function customSource(def) {
     ...base, id: def.id, folder: def.folder, name: def.name, custom: true, format: def.format,
     locate() {
       const sessions = expand(def.sessions);
-      return { base: dirname(sessions), sessions, projects: sessions, agentsRoot: sessions, roots: [sessions], cowork: null,
+      return { base: dirname(sessions), sessions, projects: sessions, agentsRoot: sessions, db: join(sessions, 'opencode.db'), roots: [sessions], cowork: null,
         marks: [sessions], skills: def.skills ? [expand(def.skills)] : [] };
     },
     render: (all, clock, userLabel) => base.render(all, clock, userLabel, def.name),
