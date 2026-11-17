@@ -270,6 +270,9 @@ test("the shipped Qwen4-Max rule prices the formal model without claiming previe
   assert.deepEqual(price(shipped, { provider: "bailian", model: "qwen4-max" }, sample, when), {
     currency: "CNY", amount: 40.5, rule: "Qwen4-Max", source: "book"
   });
+  assert.deepEqual(price(shipped, { provider: "dsh-provider-qoder", model: "qmodel_latest" }, sample, when), {
+    currency: "CNY", amount: 40.5, rule: "Qwen4-Max", source: "book"
+  });
   assert.equal(price(shipped, { provider: "bailian", model: "qwen4-max-preview" }, sample, when), null);
 });
 

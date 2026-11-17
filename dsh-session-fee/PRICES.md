@@ -21,7 +21,7 @@
 | Kimi-K2.8-Preview | Qoder `kmodel`、任意 `kimi-k2.8-preview` | 6.5 | 1.3 | 0 | 27 |
 | GLM-5.3 | Qoder `gmodel`、任意 `glm-5.3` | 8 | 2 | 0 | 28 |
 | GLM-5.3-Flash | Qoder `gfmodel`、任意 `glm-5.3-flash` | 0.8 | 0.23 | 0 | 2.8 |
-| Qwen4-Max | 任意 `qwen4-max` | 10 | 0.5 | 0 | 30 |
+| Qwen4-Max | Qoder `qmodel_latest`、任意 `qwen4-max` | 10 | 0.5 | 0 | 30 |
 | Qwen3.8-Max | Qoder `qmodel_38max`、任意 `qwen3.8-max` | 12 | 1.5 | 0 | 36 |
 | Qwen3.8-Flash | Qoder `qfmodel`、任意 `qwen3.8-flash` | 1 | 0.1 | 0 | 3 |
 | Qwen3.8-27B | 任意 `qwen3.8-27b` | 3 | 0.6 | 0 | 12 |

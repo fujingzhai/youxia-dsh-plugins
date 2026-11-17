@@ -75,7 +75,7 @@
     },
     {
       "name": "Qwen4-Max",
-      "match": ["*/qwen4-max"],
+      "match": ["dsh-provider-qoder/qmodel_latest", "*/qwen4-max"],
       "rules": [
         {"name": "Qwen4-Max", "currency": "CNY", "input": 10, "cacheRead": 0.5, "cacheWrite": 0, "output": 30}
       ]

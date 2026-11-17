@@ -4,6 +4,11 @@
 
 ## 2026-11-18
 
+### dsh-session-fee 0.4.11
+
+- 补充 Qoder 当前模型目录中的 Qwen4-Max 内部路由 `dsh-provider-qoder/qmodel_latest`，与公开模型 ID `qwen4-max` 共用 0.4.10 新增的正式版价格；新增该路由的计价回归断言。
+
+
 ### dsh-session-fee 0.4.10
 
 - 随包价格表新增 **Qwen4-Max** 正式版：中国内地普通实时调用每 100 万 Token 输入 10 元、显式／隐式缓存读取 0.5 元、输出（思维链与回答）30 元；思考与非思考同价，不按输入长度分档。
