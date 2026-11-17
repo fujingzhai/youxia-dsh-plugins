@@ -9,7 +9,7 @@ import { renderDays, tmpPrefix, excluded } from './common.js';
 export function locate(env = process.env, options = {}) {
   const base = join(home(), '.gemini');
   const roots = [join(base, 'antigravity/brain'), join(base, 'antigravity-cli/brain'), ...(options.extraRoots || []).map(expand)];
-  return { base, roots, marks: [join(base, 'antigravity'), join(base, 'antigravity-cli')], skills: [join(base, 'config/skills')] };
+  return { base, roots, marks: [join(base, 'antigravity'), join(base, 'antigravity-cli')], skills: [join(base, 'config/skills'), join(base, 'antigravity/skills')] };
 }
 
 const size = path => { try { return statSync(path).size; } catch { return 0; } };
@@ -119,8 +119,8 @@ export function build(entriesList, options = {}, paths) {
   return { turns: all, titles: paths ? annotationTitles(paths) : {}, count: all.length };
 }
 
-export function render(all, clock, userLabel) {
-  return renderDays(all, clock, { user: `🧑 ${userLabel}`, assistant: '🤖 Antigravity' });
+export function render(all, clock, userLabel, name = 'Antigravity') {
+  return renderDays(all, clock, { user: `🧑 ${userLabel}`, assistant: `🤖 ${name}` });
 }
 
 export function rawFiles(paths, key) {

@@ -110,8 +110,8 @@ export function build(entries, options = {}) {
   return { turns: all, titles, count: all.length };
 }
 
-export function render(all, clock, userLabel) {
-  return renderDays(all, clock, { user: `🧑 ${userLabel}`, assistant: '🤖 Claude' });
+export function render(all, clock, userLabel, name = 'Claude') {
+  return renderDays(all, clock, { user: `🧑 ${userLabel}`, assistant: `🤖 ${name}` });
 }
 
 export function rawFiles(paths, key) {

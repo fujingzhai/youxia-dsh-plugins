@@ -4,7 +4,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { isAbsolute, join, resolve } from 'node:path';
 import { expand } from './files.js';
 import { atomicWrite } from './markdown.js';
-import { SOURCES } from './agents.js';
+import { SOURCES, FORMATS, folderFor } from './agents.js';
 
 export const SKILL_NAME = 'session-history';
 export const DEFAULT_HOME = '~/.session-history';
@@ -46,6 +46,7 @@ export const DEFAULTS = Object.freeze({
   gitSnapshots: false,    // 整理后把 logs/ 提交成 Git 快照（数据目录须是 Git 仓库）
   excludeCwds: [],        // 这些工作目录下的会话不收
   agents: {},             // { claude: { enabled, onlyCwds, since, extraRoots } … }
+  custom: [],             // 手动添加的 agent：[{ name, format, sessions, skills? }]
 });
 
 const strings = (value, fallback = []) => Array.isArray(value) ? value.filter(v => typeof v === 'string' && v.trim()).map(v => v.trim()) : fallback;
@@ -54,8 +55,20 @@ const int = (value, fallback, min, max) => Number.isInteger(value) && value >= m
 /** 校验并补默认值；非法值回落默认，不抛错（设置文件可能被手改）。 */
 export function normalizeConfig(raw = {}) {
   const r = raw && typeof raw === 'object' ? raw : {};
+  // 自定义 agent：名称、格式、会话目录必填；技能目录可选。id 与日志文件夹由名称导出。
+  const taken = new Set(), custom = [];
+  for (const c of Array.isArray(r.custom) ? r.custom : []) {
+    if (!c || typeof c !== 'object' || !FORMATS[c.format]) continue;
+    const name = typeof c.name === 'string' ? c.name.trim().slice(0, 24) : '';
+    const sessions = typeof c.sessions === 'string' ? c.sessions.trim() : '';
+    if (!name || !sessions || /[\n#]/.test(name)) continue;
+    const folder = folderFor(name, taken);
+    const item = { name, format: c.format, sessions, id: `custom-${folder.toLowerCase()}`, folder };
+    if (typeof c.skills === 'string' && c.skills.trim()) item.skills = c.skills.trim();
+    custom.push(item);
+  }
   const agents = {};
-  for (const { id } of SOURCES) {
+  for (const id of [...SOURCES.map(s => s.id), ...custom.map(c => c.id)]) {
     const a = r.agents?.[id];
     if (!a || typeof a !== 'object') continue;
     const item = {};
@@ -76,6 +89,7 @@ export function normalizeConfig(raw = {}) {
     gitSnapshots: typeof r.gitSnapshots === 'boolean' ? r.gitSnapshots : DEFAULTS.gitSnapshots,
     excludeCwds: strings(r.excludeCwds),
     agents,
+    custom,
   };
 }
 
@@ -92,7 +106,8 @@ export function saveConfig(home, patch = {}) {
   const agents = { ...current.agents };
   for (const [id, value] of Object.entries(patch.agents || {})) agents[id] = { ...(agents[id] || {}), ...(value || {}) };
   const next = normalizeConfig({ ...current, ...patch, agents });
-  atomicWrite(layout(home).config, JSON.stringify(next, null, 2) + '\n');
+  const stored = { ...next, custom: next.custom.map(({ name, format, sessions, skills }) => ({ name, format, sessions, ...(skills ? { skills } : {}) })) };
+  atomicWrite(layout(home).config, JSON.stringify(stored, null, 2) + '\n');
   return next;
 }
 

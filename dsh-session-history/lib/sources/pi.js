@@ -64,7 +64,7 @@ export function build(entries, options = {}) {
 }
 
 /** 每天一份；会话按首次出现的顺序，不重排、不合并不同消息。 */
-export function render(turns, clock, userLabel) {
+export function render(turns, clock, userLabel, name = 'Pi') {
   const days = new Map();
   for (const [ts, role, text, eid, parent, n, stop, sid, source] of turns) {
     const day = clock.day(ts);
@@ -80,7 +80,7 @@ export function render(turns, clock, userLabel) {
     for (const { sid, source, turns: list } of sessions.values()) {
       out.push(`# ${sid}\n\n<!-- source: ${source} -->\n`);
       for (const [ts, role, text, eid, parent, n, stop] of list) {
-        const label = role === 'user' ? userLabel : 'Pi';
+        const label = role === 'user' ? userLabel : name;
         out.push(`## ${clock.hm(ts)}  ${label}\n\n<!-- id: ${show(eid)}; parent: ${show(parent)}; source-line: ${n}; stop: ${stop} -->\n\n${demote(text)}\n`);
       }
     }

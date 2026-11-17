@@ -5,7 +5,7 @@ import { mkdirSync, openSync, closeSync, writeSync, readFileSync, unlinkSync, ex
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { DatabaseSync } from 'node:sqlite';
-import { SOURCES, pathsOf, enabled } from './agents.js';
+import { allSources, pathsOf, enabled } from './agents.js';
 import { layout, loadConfig, readJson } from './config.js';
 import { createClock } from './clock.js';
 import { retitle, preserveMissing, atomicWrite } from './markdown.js';
@@ -140,7 +140,7 @@ export function refresh({ home, only = null, log = () => {}, engine = null } = {
     const cache = openCache(dirs.cache);
     const agents = {};
     try {
-      for (const source of SOURCES) {
+      for (const source of allSources(config)) {
         if (only && !only.includes(source.id)) continue;
         if (!enabled(source, config)) continue;
         const t = Date.now();

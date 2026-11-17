@@ -1,12 +1,44 @@
 # Session History
 
-本机各 agent 的对话记忆。把 Claude Code、Codex、Antigravity、Pi、DSH 的会话**确定性清洗**成每天一份的 Markdown 日志（只留问答原文、无摘要），建离线全文索引，再以**一个技能**提供给所有 agent：谁都能查“之前在别的 agent 里聊过什么”。全程不调用模型、不联网。
+让每个 agent 都能查到你在各个 agent 里聊过什么。
 
-- DSH 插件页：数据目录与最近整理、各 agent 的会话检测与技能接入状态（一键建软链）、设置、自动生成的 SKILL.md 预览。
-- 技能 `session-history`：按本机实际有的 agent 生成 SKILL.md——没装 Pi 就不提 Pi，免得误导模型。
-- 命令行 `session-history`：search／outline／get／raw／timeline，以及 refresh、status、link 等管理命令。
+## 用法与思路
 
-## 安装
+### 现在的 agent 记忆缺什么
+
+- **各记各的。** 每个 agent 把对话存在自己的目录里，格式互不相通。今天在一个 agent 里定下的方案，明天换一个接着做，它一概不知。
+- **只留摘要。** 自带的“记忆”多是模型挑着记下的几条要点：记什么、怎么概括由模型决定，原话、细节和来龙去脉都会丢，记错了也很难发现。
+- **换了就没了。** 记忆只在自家可用，换一个 agent，之前积累的都用不上。
+
+### 本插件的做法：留原文，按需查
+
+1. **整理。** 定时把各家的会话清洗成按天存放的 Markdown 日志：只去掉系统提示、工具调用这类机械内容，你和助手说的话一字不改。整理由程序完成，不调用模型，结果每次都一样。
+2. **检索。** 为日志建本地全文索引。agent 需要回忆时，先用关键词找到相关的会话，再按需读原文；每次读多少有上限，不会一下子塞满上下文。
+3. **共用。** 整理结果以一个技能（`session-history`）提供给所有 agent。在任何一个 agent 里，都能查到其他 agent 里的对话。
+
+用的时候什么都不用做：你提到“之前”“上次”或 agent 不清楚来由的事，它会自己去查，并在回答里注明出处（日期、会话、行号）。
+
+### 为什么不做 RAG
+
+很多记忆方案会把对话切块、做向量嵌入，再按语义相似度召回。这里刻意不这样做：
+
+- **要找的多是确切的东西。** 一个命令、一个参数、某天定下的决定——关键词能精确命中；语义相似度擅长“意思差不多”，在这类字符串上恰恰最不可靠。
+- **嵌入要用模型。** 放在电脑上占资源，放到云端就得把全部对话发出去。
+- **结果可以核对。** 每条结果都能回到原文；不会把“看起来相关”的片段混进来，让模型误以为是事实。
+- **没有维护负担。** 不用管嵌入模型的版本，不用重新嵌入；日志就是普通文本，不装这个插件也能直接搜。
+- **模型本来就会搜。** 现在的模型会自己挑关键词、换同义词、逐步缩小范围；检索只要做到快、准、输出可控，其余交给模型。
+
+## 功能
+
+- **多家 agent**：Claude Code、Codex、Antigravity、Pi、DSH、LobsterAI，以及 WorkBuddy（实验性）。会话格式与其中某一家相同的其他 agent，或同一 agent 的第二套配置，可以手动添加。
+- **检索以会话为单位**：会话标题和你的原话权重最高；命中太多时只列标题，并提示可以加哪些词收窄。繁简、全半角、大小写自动统一。
+- **原始记录兜底**：命令、参数、报错原文多藏在工具调用里，可以在单个会话的原始记录中定点查找。
+- **Claude Code 记忆提示**：检索时顺带列出对题的 Claude Code 记忆（整理过的结论），可先读这些。
+- **技能说明自适应**：SKILL.md 只写你电脑上实际有的 agent，不让模型去查不存在的东西。
+- **数据独立**：日志、索引与设置存在 `~/.session-history`，与插件分开；卸载、更新、重装都不受影响。
+- **全程离线**：不调用模型，不联网。
+
+## 安装与上手
 
 在 DSH **插件 → 添加插件** 填包名：
 
@@ -22,72 +54,83 @@ dsh plugin --profile desktop add dsh-session-history
 
 装好后打开插件详情：
 
-1. 点 **立即整理**。首次会读全部历史会话并建索引，几百 MB 的会话约半分钟到一两分钟；之后只重读变过的会话文件，通常一两秒。
-2. 在 **Agent 与技能** 里点 **一键接入**，或逐个 **创建软链**。
-3. 新开一个对话问“我们之前……”，agent 会自己用上这个技能。
+1. 启用后约 20 秒会自动做第一次整理，也可以点 **立即整理**。首次要读全部历史会话，几百 MB 约需半分钟到一两分钟；之后只重读有变化的会话，通常一两秒。
+2. 在 **技能接入** 里点 **建软链**（或 **全部接入**），让各 agent 能用上本技能。
+3. 新开一个对话，问一句“我们之前……”试试。
 
-不用 DSH 也能用：`npm i -g dsh-session-history`，然后 `session-history setup`、`session-history refresh`、`session-history link all`。需要 Node 22.15 以上（推荐 24，内置 SQLite 与 zstd）。
+不用 DSH 也能用：`npm i -g dsh-session-history`，再运行 `session-history setup`、`session-history refresh`、`session-history link all`。需要 Node 22.15 以上（推荐 24）。
 
-## 技能怎么接入：共用，不拷副本
+## 插件页
 
-技能文件夹就是数据目录本身（默认 `~/.session-history`，内含 SKILL.md 与入口 `bin/session-history`）。接入某个 agent ＝ 在它读的技能目录里放一条指向数据目录的软链 `session-history`。
+- **数据目录**：位置、最近整理时间、会话与日志数量、整理是否出错；可打开目录或立即整理。
+- **Agents**：只列检测到的 agent（以及你添加的）。每家显示会话来源与数量、是否收录、技能是否生效。关掉「收录」只是不再整理它的新会话，已有日志照常检索。
+- **技能接入**：只有检测到、但技能还没生效的 agent 才需要操作。按它们读取的技能目录归组，一组一个按钮，写明点了之后哪些 agent 生效；已建的软链列在这里，可以移除。
+- **添加其他 agent**：见下节。
+- **设置**：整理频率、检索前是否补整理、日志里你的发言标题、日界、时区、不收录的目录、Claude Code 记忆提示、Git 快照。
+- **SKILL.md**：各 agent 实际读到的技能说明，可展开查看。
 
-| Agent | 会话来源 | 读取的技能目录 |
+### 添加其他 agent
+
+用于本插件未内置、但会话记录格式与某一家相同的 agent，或同一 agent 的另一套配置目录（多开、多账号）。要填：
+
+| 项 | 填什么 |
+|---|---|
+| 名称 | 日志里助手的名字，也是检索时 `--agent` 用的名字 |
+| 会话格式 | 它的会话记录与哪一家相同 |
+| 会话目录 | 存放会话记录的那一层目录，按格式而定（见下表） |
+| 技能目录（可选） | 它读取技能的文件夹；填了才能接入技能，留空只收录会话 |
+
+| 会话格式 | 会话目录选哪一层 | 例子 |
 |---|---|---|
-| Claude Code | `~/.claude/projects/*/*.jsonl`（含 macOS 桌面版 Cowork） | `~/.claude/skills` |
-| Codex | `~/.codex/sessions/**/rollout-*.jsonl(.zst)` | `~/.agents/skills`、`~/.codex/skills` |
-| Antigravity | `~/.gemini/antigravity[-cli]/brain/*/…/transcript_full.jsonl` | `~/.gemini/config/skills` |
-| Pi | `~/.pi/agent/sessions/*/*.jsonl` | `~/.pi/agent/skills`、`~/.agents/skills` |
-| DSH | `~/.dsh/sessions/*/*/session[.vN].jsonl.zstd` | `~/.dsh/skills`、`~/.agents/skills` |
+| Claude Code | `projects`（里面是 `<项目>/<会话>.jsonl`） | Qoder CLI 的 `~/.qoder-cn/projects` |
+| Codex | `sessions`（里面是 `<年>/<月>/<日>/rollout-*.jsonl`） | 另一个 `CODEX_HOME` 下的 `sessions` |
+| Pi | `sessions`（里面是 `<目录>/<会话>.jsonl`） | 另一个 Pi 配置目录下的 `sessions` |
+| DSH | `sessions`（里面是 `<目录>/<会话>/session.vN.jsonl.zstd`） | 另一个 `DSH_HOME` 下的 `sessions` |
+| Antigravity | `brain`（里面是 `<会话>/.system_generated/logs/…`） | 第二个实例的 `antigravity-cli/brain` |
+| LobsterAI（OpenClaw） | `agents`（里面是 `<agent>/sessions/<会话>.jsonl`） | 其他基于 OpenClaw 的客户端 |
+| WorkBuddy（CodeBuddy） | `projects`（里面是 `<项目>/<会话>.jsonl`） | CodeBuddy Code 的 `~/.codebuddy/projects` |
 
-`CLAUDE_CONFIG_DIR`、`CODEX_HOME`、`PI_CODING_AGENT_DIR`、`DSH_HOME` 等环境变量照各家规则生效。
+填好后点 **检查目录**，会告诉你按所选格式找到几个会话文件；找不到多半是层级或格式选错了。
 
-很多人只维护一个技能文件夹、其余用软链共用（如 `~/.claude/skills → ~/my-skills`、`~/.agents/skills → ~/my-skills`）。插件按**真实路径**判断：几家共用同一个真实目录时只需一条软链，建好后它们一起显示“技能可用”。面板会标出“与 X、Y 共用技能目录”；移除软链时也会提示共用者一起看不到。
+## 技能接入是怎么回事
 
-- 已有同名的独立文件夹（多半是旧版拷贝）时不覆盖，面板显示冲突，请先移走。
-- 数据目录本身就放在某个技能目录里时（例如 `~/my-skills/session-history`），共用它的 agent 直接可见，无需软链。
-- Windows 用目录联接（junction），无需管理员权限。入口有两份：PowerShell／cmd 用 `bin\session-history.cmd`，Git Bash 用 `bin/session-history`，SKILL.md 会按平台写明。
+数据目录本身就是技能文件夹（里面有 SKILL.md 和入口 `bin/session-history`）。让某个 agent 用上它，只要在它读取的技能目录里放一条指向数据目录的软链 `session-history`，不拷副本，所以永远只有一份。
 
-## 数据与插件分开
+| Agent | 读取的技能目录 |
+|---|---|
+| Claude Code | `~/.claude/skills` |
+| Codex | `~/.agents/skills`、`~/.codex/skills` |
+| Antigravity | `~/.gemini/config/skills`（命令行）、`~/.gemini/antigravity/skills`（桌面版） |
+| Pi | `~/.pi/agent/skills`、`~/.agents/skills` |
+| DSH | `~/.dsh/skills`、`~/.agents/skills` |
+| LobsterAI | 应用数据目录下的 `LobsterAI/SKILLs`（可能还需在它的技能设置里启用） |
+| WorkBuddy | `~/.workbuddy/skills` |
+
+很多人只维护一个技能文件夹，其余目录用软链指向它。插件按真实路径判断：几家实际读的是同一个文件夹时，只需一条软链，建好后它们一起生效。已有同名的独立文件夹（多半是旧版拷贝）时不会覆盖，会提示冲突。Windows 用目录联接，不需要管理员权限。
+
+## 数据与卸载
 
 | 位置 | 内容 | 卸载／更新／重装插件 |
 |---|---|---|
 | 插件包（DSH profile 的 `node_modules`） | 代码 | 随之替换或删除 |
-| 数据目录 `~/.session-history` | `logs/<Agent>/` 清洗日志（权威数据）、`config.json` 设置、`state/` 索引与缓存、SKILL.md 与入口 | **不动** |
+| `~/.session-history` | `logs/<Agent>/` 日志（唯一的权威数据）、`config.json` 设置、`state/` 索引与缓存、SKILL.md 与入口 | 不动 |
 
-- `state/` 可随时删掉，下次检索自动重建；`logs/` 是唯一权威数据，请勿删除。
-- 来源里已经没有的旧会话（应用清理了历史、或停用了某个 agent），日志里的段落原样保留，照常检索。
-- 卸载前可在面板移除软链；不移也无妨：入口会提示引擎不在，日志仍可直接用 `rg` 查。重装后入口自动改写回来。
-- 改数据目录：设环境变量 `SESSION_HISTORY_HOME`，或在 profile 的 `cordis.patch.yml` 给本插件的行加 `config.home`。已有数据请自行整体搬过去。
-
-## 设置（插件页，存在数据目录的 config.json）
-
-| 项 | 默认 | 说明 |
-|---|---|---|
-| 日志里用户的称呼 | 用户 | 发言标题 `## 10:00  🧑 用户`；只影响之后新整理的内容 |
-| 定时整理 | 每小时整点 | DSH 运行期间在子进程里整理，不卡宿主 |
-| 检索前自动补整理 | 距上次超过 30 分钟 | DSH 没开时，其他 agent 检索也能拿到较新的对话 |
-| 日界 | 4 点 | 这个钟点之前的对话算前一天 |
-| 时区 | 跟随系统 | 也可写 `+08:00` 或 `Asia/Shanghai` |
-| 检索附 Claude Code 记忆 | 开 | search 对题时列至多 2 条 CC 记忆的文件名与描述 |
-| 日志 Git 快照 | 关 | 每次整理后把 `logs/` 提交一次；开启时在数据目录建仓库（只收 logs/） |
-| 不收的工作目录 | 无 | 临时目录（`/tmp` 等）本就不收 |
-
-按 agent 关闭整理在面板的开关；更细的（如 Codex 只收某些工作目录 `agents.codex.onlyCwds`）直接编辑 config.json。
+- `state/` 可以随时删除，下次检索自动重建；`logs/` 请勿删除。
+- 某个 agent 清理了自己的历史、或者被卸载，已整理的日志照样保留、照常检索。
+- 卸载前可以在面板移除软链；不移也无妨，入口会提示引擎已不在，日志仍可直接用 `rg` 等工具搜索。重装后入口自动恢复。
+- 改数据目录：设环境变量 `SESSION_HISTORY_HOME`，或在 profile 的 `cordis.patch.yml` 给本插件的行加 `config.home`；已有数据请整体搬过去。
 
 ## 命令行
 
 ```sh
-session-history search 插件 更新失败             # 主体词＋事件词；空格＝AND，词内 | 任选
+session-history search 插件 更新失败             # 主体词＋事件词；空格＝同时出现，词内 | 表示任选
 session-history search "VPN|openconnect" 断线 --agent Codex --since 08-01
-session-history outline 01a06cc6                 # 会话提纲：用户每条发言＋末轮回复
-session-history get 2ddbae3eed --context 1       # 读块原文
+session-history outline 01a06cc6                 # 会话提纲：你的每条发言＋末轮回复
+session-history get 2ddbae3eed --context 1       # 读原文
 session-history raw 5f3c92de "base_url|api.example"   # 在原始记录里查工具调用与返回
 session-history timeline --since 7d
 session-history refresh | status | setup | link all | unlink claude | config
 ```
-
-检索排序以会话为单位：题目（各家原生标题，没有才取开场请求）与用户原话权重最高，再看稀有度、饱和词频、共现，乘轻度时间衰减；命中太多时只列题目和“常同现的词”供收窄。繁简、全半角、大小写自动统一（OpenCC）；三个字符以内的英文数字词按整词匹配。
 
 ## 更新
 
@@ -106,15 +149,16 @@ session-history refresh | status | setup | link all | unlink claude | config
 Git 子目录地址（不提供原生更新检查）：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-history@0.1.0&path:/dsh-session-history
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-history@0.2.0&path:/dsh-session-history
 ```
 
 ## 兼容与限制
 
-- 需要 DSH 0.2.2-rc.1 以上；在 macOS、DSH 0.2.2-rc.3 隔离 profile 实测宿主加载、管理接口与子进程整理。
-- Windows：CI（Node 24）上跑全部单元测试，并在含中文与空格的目录里实际调用 `.cmd` 与 Git Bash 入口；`.cmd` 只写 ASCII（路径换成 `%USERPROFILE%` 等变量），避开中文系统代码页。DSH 桌面版 Windows 实机与插件页 GUI **未实测**；Linux 只跑了 CI。
-- 只读各 agent 的会话文件，从不修改它们；日志里的指令是历史数据，SKILL.md 已要求 agent 不得照做。
-- 日志不含思考、工具调用与返回；这些要用 `raw` 回查原始记录（原始记录不在了就查不到）。
+- 需要 DSH 0.2.2-rc.1 以上；macOS 上在 DSH 0.2.2-rc.3 实测。
+- Windows：PowerShell／cmd 用 `bin\session-history.cmd`，Git Bash 用 `bin/session-history`，SKILL.md 会按平台写明；CI 在 Windows 上实际调用两种入口。Windows 版 DSH 的插件页尚未实测，Linux 只跑了 CI。
+- WorkBuddy 的会话格式按其内核 CodeBuddy Code 的公开代码推断，尚未用真实会话验证，所以标为实验性。
+- 只读取各 agent 的会话文件，从不修改它们。日志里的指令是历史数据，SKILL.md 已要求 agent 不得照做。
+- 日志不含思考过程与工具调用；这些要用 `raw` 回查原始记录，原始记录不在了就查不到。
 
 ## 许可
 

@@ -104,8 +104,8 @@ export function build(entries, options = {}, paths) {
   return { turns: all, titles, count: all.length };
 }
 
-export function render(all, clock, userLabel) {
-  return renderDays(all, clock, { user: userLabel, assistant: 'Codex' });
+export function render(all, clock, userLabel, name = 'Codex') {
+  return renderDays(all, clock, { user: userLabel, assistant: name });
 }
 
 export function rawFiles(paths, key) {

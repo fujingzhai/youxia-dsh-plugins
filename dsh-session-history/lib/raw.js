@@ -24,10 +24,10 @@ const pick = (o, keys) => Object.fromEntries(Object.entries(o).filter(([k]) => k
 const omit = (o, keys) => Object.fromEntries(Object.entries(o).filter(([k]) => !keys.includes(k)));
 
 /** 原始记录的一行拆成 [类别, 文本]。CC 的请求快照、Codex 的配置与计量等跳过，否则查什么都是噪声。 */
-export function* rawItems(folder, e) {
+export function* rawItems(kind, e) {
   if (!isObject(e)) return;
-  if (folder === 'Antigravity') { yield [AGY[e.type] || '工具返回', joined(pick(e, ['content', 'tool_calls']))]; return; }
-  if (folder === 'DSH') {
+  if (kind === 'antigravity') { yield [AGY[e.type] || '工具返回', joined(pick(e, ['content', 'tool_calls']))]; return; }
+  if (kind === 'dsh') {
     const kind = e.type || '', d = isObject(e.data) ? e.data : {};
     if (kind === 'user/message' && [undefined, null, 'user'].includes(isObject(d.source) ? d.source.kind : undefined)) yield ['用户', joined(d.content)];
     else if (kind === 'assistant/message') {
@@ -41,7 +41,15 @@ export function* rawItems(folder, e) {
     else if (kind.includes('error')) yield ['报错', joined(d)];
     return;
   }
-  if (folder === 'Codex') {
+  if (kind === 'workbuddy') {
+    const p = isObject(e.providerData) ? e.providerData : {};
+    if (e.type === 'message' && ['user', 'assistant'].includes(e.role) && !p.isMeta && !p.skipRun) yield [e.role === 'user' ? '用户' : '助手', joined(e.content)];
+    else if (e.type === 'reasoning') yield ['思考', joined(e.content ?? e.summary)];
+    else if (e.type === 'function_call') yield ['工具调用', joined(pick(e, ['name', 'arguments']))];
+    else if (e.type === 'function_call_result') yield ['工具返回', joined(e.output)];
+    return;
+  }
+  if (kind === 'codex') {
     const p = isObject(e.payload) ? e.payload : {};
     const kind = e.type === 'response_item' ? (p.type || '') : '';
     if (kind === 'message' && ['user', 'assistant'].includes(p.role)) yield [p.role === 'user' ? '用户' : '助手', joined(p.content)];
@@ -75,9 +83,10 @@ export function raw(db, args, ctx) {
   const [about, message] = pickSession(db, args.target, args.agent);
   if (!about) return message;
   const tag = `${about.agent} ${shortSid(about.session)}「${about.title}」`;
-  const source = byFolder(about.agent);
+  const source = byFolder(about.agent, config);
   const key = about.session.startsWith('session-') ? about.session.slice(8) : about.session;
   const files = source ? source.rawFiles(pathsOf(source, config), key) : [];
+  const kind = source ? (source.custom ? source.format : source.id) : '';
   if (!files.length) return `${tag}的原始记录已不在（已删除、来源已停用或不支持），只能查清洗日志。`;
   const groups = parseQuery(args.query);
   if (!groups.length) throw new UsageError('请提供至少一个关键词。');
@@ -92,7 +101,7 @@ export function raw(db, args, ctx) {
       if (!probes.some(p => low.includes(p))) return;
       const e = parseJson(line);
       if (e === undefined) return;
-      for (const [label, value] of rawItems(about.agent, e)) {
+      for (const [label, value] of rawItems(kind, e)) {
         const text = value.replaceAll('\\n', '\n'); // 工具返回常是二次编码的 JSON 字符串
         const normalized = norm(text);
         const found = groups.filter(([, alts]) => alts.some(a => occurrences(normalized, a))).length;

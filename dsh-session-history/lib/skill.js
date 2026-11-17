@@ -2,7 +2,7 @@
 import { readFileSync, existsSync, chmodSync, statSync, mkdirSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { SOURCES, enabled } from './agents.js';
+import { allSources, enabled } from './agents.js';
 import { layout, loadConfig, SKILL_NAME } from './config.js';
 import { atomicWrite } from './markdown.js';
 import { entries, isDir, tilde, exists, home } from './files.js';
@@ -33,7 +33,7 @@ export function logFolders(home) {
 
 /** 生成 SKILL.md 要用的事实：哪些在用、哪些只剩旧日志。 */
 export function inventory(home, config = loadConfig(home)) {
-  const active = SOURCES.filter(s => enabled(s, config));
+  const active = allSources(config).filter(s => enabled(s, config));
   const folders = logFolders(home);
   const legacy = folders.filter(f => !active.some(s => s.folder === f));
   return { active, legacy, folders: [...new Set([...active.map(s => s.folder), ...folders])] };
@@ -55,12 +55,12 @@ export function skillMarkdown(home, { config = loadConfig(home), platform = proc
   const first = active[0]?.folder || folders[0] || 'Claude';
   const scope = names.length
     ? `${list(names)}${legacy.length ? `，以及已停用的 ${list(legacy)}（旧日志照常检索）` : ''}`
-    : legacy.length ? `已停用的 ${list(legacy)}（只剩旧日志）` : '本机 agent（尚未检测到会话来源）';
+    : legacy.length ? `已停用的 ${list(legacy)}（只剩旧日志）` : '各 agent（尚未检测到会话来源）';
   const cmd = 'session-history';
   const lines = [
     '---',
     `name: ${SKILL_NAME}`,
-    `description: 查本机 agent（${list(names.length ? names : legacy) || '各家'}）的历史对话。用户提起过往，或提到你不清楚来由的事时使用；上下文和记忆里能找到就不查，同一件事每个会话最多查一次。`,
+    `description: 查各 agent（${list(names.length ? names : legacy) || '各家'}）的历史对话。用户提起过往，或提到你不清楚来由的事时使用；上下文和记忆里能找到就不查，同一件事每个会话最多查一次。`,
     '---',
     '',
     '# Session History',
@@ -99,7 +99,7 @@ export function skillMarkdown(home, { config = loadConfig(home), platform = proc
     '',
     `每次命令自动增量更新索引${config.staleMinutes ? `；距上次整理超过 ${config.staleMinutes} 分钟会先补整理（只重读变过的会话，通常几秒）` : ''}。要查刚刚的对话可先跑一次 \`${cmd} refresh\`，别反复跑。依赖或索引报错时别当无命中：先报告，再按日志路径兜底（兼顾繁简）：\`rg -n -m 5 '关键词|關鍵詞' ${platform === 'win32' ? layout(home).logs.replaceAll('\\', '/') : tilde(layout(home).logs)}/${first}/2026-08-*-log.md\``,
     '',
-    '除非用户要求维护本技能，不改日志正文。本文件由 Session History 按本机检测到的 agent 自动生成，手改会被覆盖。',
+    '除非用户要求维护本技能，不改日志正文。本文件由 Session History 按检测到的 agent 自动生成，手改会被覆盖。',
     '',
   ];
   return lines.join('\n');
@@ -160,7 +160,7 @@ function readme(home) {
 - \`logs/<Agent>/\`：每天一份的清洗日志（只留问答原文），是唯一的权威数据，请勿删除。
 - \`config.json\`：设置（DSH 插件页可改）。
 - \`state/\`：索引、解析缓存与运行状态，可随时删掉，下次检索自动重建。
-- \`SKILL.md\`、\`bin/\`：给各 agent 用的技能与入口，按本机检测到的 agent 自动生成。
+- \`SKILL.md\`、\`bin/\`：给各 agent 用的技能与入口，按检测到的 agent 自动生成。
 
 各 agent 的技能目录里放的是指向本目录的软链（名为 \`${SKILL_NAME}\`），不是副本。
 `;

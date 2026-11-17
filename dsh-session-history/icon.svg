@@ -1,9 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <circle cx="32" cy="32" r="28" fill="#4F46E5"/>
-  <path d="M19.5 17H44.5A4.5 4.5 0 0 1 49 21.5V37A4.5 4.5 0 0 1 44.5 41.5H31.5L24 47.5V41.5H19.5A4.5 4.5 0 0 1 15 37V21.5A4.5 4.5 0 0 1 19.5 17Z" stroke="#FFFFFF" stroke-width="2.8" stroke-linejoin="round"/>
-  <g transform="translate(23.6 20.85) scale(0.7)" stroke="#FFFFFF" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-    <path d="M3 3v5h5"/>
-    <path d="M12 7v5l4 2"/>
-  </g>
+  <circle cx="32" cy="32" r="28" fill="#1F2A44"/>
+  <path d="M27 14H45A4 4 0 0 1 49 18V27A4 4 0 0 1 45 31H27A4 4 0 0 1 23 27V18A4 4 0 0 1 27 14Z" fill="#4285F4"/>
+  <path d="M23 21H41A4 4 0 0 1 45 25V34A4 4 0 0 1 41 38H23A4 4 0 0 1 19 34V25A4 4 0 0 1 23 21Z" fill="#10A37F"/>
+  <path d="M19 28H37A4 4 0 0 1 41 32V42A4 4 0 0 1 37 46H25L19.5 50.5V46A4 4 0 0 1 15 42V32A4 4 0 0 1 19 28Z" fill="#FFFFFF"/>
+  <path d="M20.5 34.5H35.5M20.5 39.5H30" stroke="#1F2A44" stroke-width="2.6" stroke-linecap="round"/>
 </svg>

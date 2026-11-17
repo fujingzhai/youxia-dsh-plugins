@@ -18,12 +18,12 @@ const { connect, updateIndex } = await import('../lib/store.js');
 const { search, get, outline, timeline, UsageError } = await import('../lib/recall.js');
 const { raw } = await import('../lib/raw.js');
 const { refresh, refreshIfStale } = await import('../lib/refresh.js');
-const { SOURCES, byId, byFolder, enabled, detected } = await import('../lib/agents.js');
+const { allSources, byId, byFolder, enabled } = await import('../lib/agents.js');
 const { installSkill, logFolders, VERSION } = await import('../lib/skill.js');
 const { skillStatus, link, linkAll, unlink } = await import('../lib/links.js');
 const { tilde } = await import('../lib/files.js');
 
-const HELP = `Session History ${VERSION} — 本机 agent 历史对话检索（不调用模型）
+const HELP = `Session History ${VERSION} — 各 agent 的历史对话检索（不调用模型）
 
 检索
   search <词…> [--agent A] [--since D] [--until D] [--session ID] [--role user|assistant]
@@ -71,11 +71,16 @@ function parseArgs(argv) {
 }
 
 /** --agent 收 Claude／claude／Claude Code 等写法，统一成日志文件夹名。 */
-function agentFolder(value, home) {
+function findSource(value, config) {
+  const v = String(value).toLowerCase().replace(/\s+/g, '');
+  return allSources(config).find(s => s.id === v || s.folder.toLowerCase() === v || s.name.toLowerCase().replace(/\s+/g, '') === v);
+}
+
+function agentFolder(value, home, config) {
   if (!value) return null;
   const v = String(value).toLowerCase().replace(/\s+/g, '');
-  const folders = [...new Set([...SOURCES.map(s => s.folder), ...logFolders(home)])];
-  const hit = SOURCES.find(s => s.id === v || s.folder.toLowerCase() === v || s.name.toLowerCase().replace(/\s+/g, '') === v)?.folder
+  const folders = [...new Set([...allSources(config).map(s => s.folder), ...logFolders(home)])];
+  const hit = findSource(value, config)?.folder
     || folders.find(f => f.toLowerCase() === v);
   if (!hit) throw new UsageError(`--agent 可选：${folders.join('、')}`);
   return hit;
@@ -89,16 +94,18 @@ function withIndex(home, config, fn) {
 function statusText(home) {
   const config = loadConfig(home);
   const last = readJson(layout(home).status, null);
-  const agents = skillStatus(home, config);
+  const { agents, targets, links } = skillStatus(home, config);
   const lines = [`Session History ${VERSION}｜数据目录 ${tilde(home)}`];
   lines.push(last ? `最近整理 ${last.run}（${(last.ms / 1000).toFixed(1)} 秒）｜索引 ${last.index?.sessions ?? '?'} 个会话、${last.index?.files ?? '?'} 份日志` : '尚未整理过：先跑 refresh');
-  for (const a of agents) {
+  for (const a of agents.filter(x => x.installed || x.custom)) {
     const run = last?.agents?.[a.folder];
     const src = !a.installed ? '未检测到' : enabled(byId(a.id), config) ? (run ? (run.ok ? `已整理 ${run.files} 个会话文件` : `整理出错：${run.error}`) : '已启用，待整理') : '已检测到，未启用整理';
-    const skill = a.visible ? `技能可用（经 ${a.via}）` : a.conflict ? `技能冲突：${a.conflict.path}` : `技能未接入（link ${a.id}）`;
+    const skill = { ready: `技能已生效（经 ${a.via}）`, missing: '技能未生效', conflict: `技能冲突：${a.conflict?.path}`, nodir: '未设技能目录' }[a.state];
     lines.push(`  ${a.name.padEnd(12)} ${src}｜${skill}`);
   }
-  const legacy = logFolders(home).filter(f => !byFolder(f));
+  for (const t of targets) lines.push(`  → 在 ${t.display} 建软链可让 ${t.agents.join('、')} 生效：session-history link all`);
+  for (const l of links) lines.push(`  软链 ${l.entry} → 数据目录（${l.agents.join('、')}）`);
+  const legacy = logFolders(home).filter(f => !byFolder(f, config));
   if (legacy.length) lines.push(`  已停用来源的旧日志：${legacy.join('、')}`);
   return lines.join('\n');
 }
@@ -112,7 +119,7 @@ async function main() {
   const config = loadConfig(home);
   const log = message => console.error(message);
   const ctx = { config, cmd: 'session-history' };
-  const agent = agentFolder(args.agent, home);
+  const agent = agentFolder(args.agent, home, config);
   const ensure = () => { if (!args['no-refresh']) refreshIfStale({ home }); };
   const budget = d => args.budget ?? d;
   if (args.budget !== undefined && args.budget < 100) throw new UsageError('budget 至少 100');
@@ -141,7 +148,7 @@ async function main() {
     case 'index':
       return console.log(JSON.stringify(updateIndex(home, config)));
     case 'refresh': {
-      const only = agent ? [byFolder(agent)?.id].filter(Boolean) : null;
+      const only = agent ? [byFolder(agent, config)?.id].filter(Boolean) : null;
       const status = refresh({ home, only, log });
       if (args.json) return console.log(JSON.stringify(status, null, 2));
       if (status.skipped) return console.log(status.reason);
@@ -164,13 +171,14 @@ async function main() {
     case 'link': {
       if (!rest[0]) throw new UsageError('用法：link <agent|all>');
       installSkill(home);
-      const results = rest[0] === 'all' ? linkAll(home, config) : [{ id: rest[0], ...link(home, (SOURCES.find(s => s.id === rest[0].toLowerCase() || s.folder.toLowerCase() === rest[0].toLowerCase()) || {}).id || rest[0], config) }];
-      for (const r of results) console.log(`${r.id}: ${r.error ? '失败：' + r.error : r.changed ? `已建软链 ${r.entry}` : `已可用（经 ${r.via}）`}`);
+      const results = rest[0] === 'all' ? linkAll(home, config) : [link(home, findSource(rest[0], config)?.id || rest[0], config)];
+      if (!results.length) console.log('所有检测到的 agent 技能都已生效。');
+      for (const r of results) console.log(r.error ? `失败：${r.error}` : r.changed ? `已建软链 ${r.entry}（${r.agents.join('、')} 生效）` : `已生效（经 ${r.via}）`);
       return;
     }
     case 'unlink': {
       if (!rest[0]) throw new UsageError('用法：unlink <agent>');
-      const id = (SOURCES.find(s => s.id === rest[0].toLowerCase() || s.folder.toLowerCase() === rest[0].toLowerCase()) || {}).id || rest[0];
+      const id = findSource(rest[0], config)?.id || rest[0];
       const r = unlink(home, id, config);
       return console.log(`已移除 ${r.removed.join('、')}${r.affects.length ? `；共用该目录的 ${r.affects.join('、')} 也随之看不到` : ''}`);
     }

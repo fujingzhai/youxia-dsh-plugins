@@ -4,10 +4,10 @@ import { spawn } from 'node:child_process';
 import { existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { resolveHome, loadConfig, saveConfig, layout, readJson } from './lib/config.js';
-import { SOURCES, enabled, byId } from './lib/agents.js';
+import { SOURCES, FORMATS, enabled, byId, allSources, customSource, folderFor } from './lib/agents.js';
 import { installSkill, skillMarkdown, logFolders, findNode, ENGINE, VERSION } from './lib/skill.js';
-import { skillStatus, link, linkAll, unlink } from './lib/links.js';
-import { tilde } from './lib/files.js';
+import { skillStatus, linkTarget, linkAll, unlinkTarget } from './lib/links.js';
+import { tilde, expand, isDir } from './lib/files.js';
 
 export const name = 'session-history';
 export const ROUTE = '/youxia-session-history/api';
@@ -75,20 +75,43 @@ export function createRunner(home, { node = findNode(), engine = ENGINE } = {}) 
 
 export function snapshot(home, runner) {
   const config = loadConfig(home);
-  const agents = skillStatus(home, config).map(a => ({ ...a, enabled: enabled(byId(a.id), config) }));
-  const known = new Set(SOURCES.map(s => s.folder));
+  const last = readJson(layout(home).status, null);
+  const status = skillStatus(home, config);
+  const sources = new Map(allSources(config).map(source => [source.id, source]));
+  const shown = status.agents.filter(a => a.installed || a.custom).map(a => {
+    const source = sources.get(a.id);
+    const run = last?.agents?.[a.folder] || null;
+    return { ...a, enabled: enabled(source, config), sessions: (roots => roots.filter(isDir).map(tilde).join('、') || tilde(roots[0]))(source.locate(process.env, config.agents?.[a.id] || {}).roots),
+      run: run && { ok: run.ok, files: run.files, days: run.days, error: run.error || null },
+      ...(a.custom ? { def: config.custom.find(c => c.id === a.id) } : {}) };
+  });
+  const known = new Set(allSources(config).map(s => s.folder));
   return {
-    version: VERSION,
-    home: tilde(home),
-    homeAbs: home,
-    config,
-    last: readJson(layout(home).status, null),
-    running: runner?.running ?? false,
-    agents,
+    version: VERSION, home: tilde(home), homeAbs: home, config, last, running: runner?.running ?? false,
+    agents: shown,
+    undetected: status.agents.filter(a => !a.installed && !a.custom).map(a => a.name),
+    targets: status.targets, links: status.links, conflicts: status.conflicts,
     legacy: logFolders(home).filter(f => !known.has(f)),
+    formats: Object.entries(FORMATS).map(([id, f]) => ({ id, label: f.label, dir: f.dir, layout: f.layout, example: f.example })),
     git: existsSync(join(home, '.git')),
     skill: skillMarkdown(home, { config }),
   };
+}
+
+/** 检查自定义 agent 的会话目录：存在与否、按所选格式能找到几个会话文件。 */
+export function probe(format, sessions) {
+  if (!FORMATS[format]) throw invalid('未知的会话格式');
+  const path = expand(String(sessions || '').trim());
+  if (!path) throw invalid('请填写会话目录');
+  if (!isDir(path)) return { exists: false, files: 0, path: tilde(path) };
+  const source = customSource({ id: 'probe', folder: 'probe', name: 'probe', format, sessions: path });
+  const files = source.files(source.locate());
+  // 只看文件名分不出格式（几家的目录结构相近），抽几个实际解析，能解析出对话才算对。
+  let turns = 0;
+  for (const file of files.slice(0, 5)) {
+    try { const data = source.parse(file); turns += (data.turns || data.records || []).length; } catch { /* 解析失败按 0 计 */ }
+  }
+  return { exists: true, files: files.length, turns, path: tilde(path), sample: files[0] ? tilde(files[0]) : null };
 }
 
 function gitInit(home) {
@@ -121,11 +144,28 @@ export async function command(home, runner, input) {
       if (!r.ok) throw invalid(`整理失败：${r.error || '见状态'}`, 500);
       return snapshot(home, runner);
     }
-    case 'link': link(home, String(input.agent), config); break;
+    case 'linkTarget': linkTarget(home, String(input.key), config); break;
     case 'linkAll': linkAll(home, config); break;
-    case 'unlink': unlink(home, String(input.agent), config); break;
+    case 'unlinkTarget': unlinkTarget(home, String(input.key), config); break;
+    case 'probe': return { probe: probe(input.format, input.sessions) };
+    case 'addCustom': {
+      const name = String(input.name || '').trim();
+      if (!name || name.length > 24 || /[\n#]/.test(name)) throw invalid('名称须为 1–24 个字，不含 # 与换行');
+      const result = probe(input.format, input.sessions);
+      if (!result.exists) throw invalid(`会话目录不存在：${result.path}`);
+      const def = { name, format: input.format, sessions: String(input.sessions).trim(), ...(input.skills?.trim() ? { skills: input.skills.trim() } : {}) };
+      saveConfig(home, { custom: [...config.custom, def] });
+      installSkill(home);
+      break;
+    }
+    case 'removeCustom': {
+      if (!config.custom.some(c => c.id === input.id)) throw invalid('没有这个自定义 agent');
+      saveConfig(home, { custom: config.custom.filter(c => c.id !== input.id) });
+      installSkill(home);
+      break;
+    }
     case 'enable': {
-      if (!byId(input.agent) || typeof input.enabled !== 'boolean') throw invalid('参数无效');
+      if (!byId(input.agent, config) || typeof input.enabled !== 'boolean') throw invalid('参数无效');
       saveConfig(home, { agents: { [input.agent]: { enabled: input.enabled } } });
       installSkill(home);
       break;

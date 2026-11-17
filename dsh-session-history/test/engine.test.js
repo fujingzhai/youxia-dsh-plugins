@@ -161,7 +161,7 @@ test('检索：search／outline／get／timeline／raw', () => {
   } finally { db.close(); }
 });
 
-test('SKILL.md 按本机 agent 自适应', () => {
+test('SKILL.md 按检测到的 agent 自适应', () => {
   const md = readFileSync(join(DATA, 'SKILL.md'), 'utf8');
   assert.match(md, /^---\nname: session-history\n/);
   assert.match(md, /# Session History/);
@@ -178,37 +178,103 @@ test('SKILL.md 按本机 agent 自适应', () => {
   assert.match(launcher, /--home "\$HERE"/);
 });
 
-test('技能接入：按真实路径识别共用目录，只建一条软链', () => {
-  const { skillStatus, link, linkAll, unlink } = lib.links;
-  let status = skillStatus(DATA);
-  const byId = id => status.find(a => a.id === id);
-  assert.equal(byId('claude').visible, false);
-  assert.deepEqual(byId('claude').dirs[0].sharedWith.sort(), ['Codex', 'DSH', 'Pi']);
-  const r = link(DATA, 'codex');
+test('技能接入：按真实路径归组，只对未生效的 agent 给操作，一条软链覆盖共用者', () => {
+  const { skillStatus, linkTarget, linkAll, unlinkTarget, link } = lib.links;
+  let st = skillStatus(DATA);
+  const agent = id => st.agents.find(a => a.id === id);
+  assert.equal(agent('claude').state, 'missing');
+  // ~/.claude/skills 与 ~/.agents/skills 都指向 my-skills：只有一组，四家都在里面。
+  assert.equal(st.targets.length, 1);
+  assert.deepEqual([...st.targets[0].agents].sort(), ['Claude Code', 'Codex', 'DSH', 'Pi']);
+  assert.ok(!st.targets[0].create);
+  assert.throws(() => linkTarget(DATA, '/somewhere/else'), /无需建软链/, '只接受算出来的目标');
+  const r = linkTarget(DATA, st.targets[0].key);
   assert.equal(r.changed, true);
   assert.ok(lstatSync(join(HOME, 'my-skills/session-history')).isSymbolicLink());
-  status = skillStatus(DATA);
-  for (const id of ['claude', 'codex', 'pi', 'dsh']) assert.equal(byId(id).visible, true, id);
-  assert.equal(byId('antigravity').visible, false);
-  assert.ok(linkAll(DATA).every(x => !x.error));
-  assert.equal(skillStatus(DATA).find(a => a.id === 'antigravity').installed, false);
-  const removed = unlink(DATA, 'claude');
-  assert.deepEqual(removed.affects.sort(), ['Codex', 'DSH', 'Pi']);
-  assert.equal(skillStatus(DATA).find(a => a.id === 'pi').visible, false);
-  // 同名的独立副本算冲突，不覆盖。
+  st = skillStatus(DATA);
+  for (const id of ['claude', 'codex', 'pi', 'dsh']) assert.equal(agent(id).state, 'ready', id);
+  assert.equal(st.targets.length, 0, '都生效后不再给建软链的操作');
+  assert.equal(st.links.length, 1);
+  assert.deepEqual([...st.links[0].agents].sort(), ['Claude Code', 'Codex', 'DSH', 'Pi']);
+  assert.equal(agent('antigravity').installed, false, '未检测到的不参与');
+  assert.deepEqual(linkAll(DATA), [], '无事可做');
+  const removed = unlinkTarget(DATA, st.links[0].key);
+  assert.deepEqual([...removed.affects].sort(), ['Claude Code', 'Codex', 'DSH', 'Pi']);
+  assert.equal(skillStatus(DATA).agents.find(a => a.id === 'pi').state, 'missing');
+  // 同名的独立副本算冲突，不覆盖，也不给建软链的按钮。
   mkdirSync(join(HOME, 'my-skills/session-history'));
   writeFileSync(join(HOME, 'my-skills/session-history/SKILL.md'), '---\nname: session-history\n---\n');
-  assert.throws(() => link(DATA, 'pi'), /独立副本/);
+  st = skillStatus(DATA);
+  assert.equal(st.agents.find(a => a.id === 'pi').state, 'conflict');
+  assert.equal(st.targets.length, 0);
+  assert.ok(st.conflicts.length >= 1);
+  assert.throws(() => link(DATA, 'pi'), /旧版副本/);
+  rmSync(join(HOME, 'my-skills/session-history'), { recursive: true });
+});
+
+test('自定义 agent：同格式的另一套目录，独立日志与名称；可检查目录、移除后日志保留', async () => {
+  // 一个 Claude Code 格式的“第二实例”。
+  put(join(HOME, '.qoder/projects/-work/abcdef12-0000.jsonl'), jsonl([
+    { type: 'user', cwd: '/work', timestamp: '2026-11-10T09:00:00.000Z', message: { content: '用 Qoder 查一下集韵的版本' } },
+    { type: 'assistant', timestamp: '2026-11-10T09:01:00.000Z', message: { content: [{ type: 'text', text: '好的。' }] } },
+  ]));
+  const { probe, command } = await import('../index.js');
+  assert.deepEqual({ ...probe('claude', '~/.qoder/projects'), sample: undefined }, { exists: true, files: 1, turns: 2, path: '~/.qoder/projects', sample: undefined });
+  assert.equal(probe('pi', '~/.qoder/projects').turns, 0, '目录结构相近但格式不对：解析不出对话');
+  assert.ok(probe('claude', '~/.qoder/projects').turns > 0);
+  assert.equal(probe('claude', '~/.nope').exists, false);
+  const runner = { running: false, run: async () => ({ ok: true }) };
+  const after = await command(DATA, runner, { op: 'addCustom', name: 'Qoder CLI', format: 'claude', sessions: '~/.qoder/projects', skills: '' });
+  const q = after.agents.find(a => a.name === 'Qoder CLI');
+  assert.ok(q && q.custom && q.state === 'nodir', '未填技能目录：只收录会话');
+  lib.refresh.refresh({ home: DATA });
+  const log = readFileSync(join(DATA, 'logs/Qoder-CLI/2026-11-10-qoder-cli-log.md'), 'utf8');
+  assert.match(log, /## 17:01  🤖 Qoder CLI\n/);
+  assert.match(lib.skill.skillMarkdown(DATA), /Qoder CLI/);
+  const removed = await command(DATA, runner, { op: 'removeCustom', id: q.id });
+  assert.ok(!removed.agents.some(a => a.name === 'Qoder CLI'));
+  assert.ok(existsSync(join(DATA, 'logs/Qoder-CLI/2026-11-10-qoder-cli-log.md')), '日志保留');
+  assert.ok(removed.legacy.includes('Qoder-CLI'), '移除后作为旧日志照常检索');
+  await assert.rejects(command(DATA, runner, { op: 'addCustom', name: 'X', format: 'claude', sessions: '~/.nope' }), /不存在/);
+});
+
+test('LobsterAI：剥掉系统信封、合并流式重复；WorkBuddy：缺时间戳的条目按前后时刻补', async () => {
+  const lob = (await import('../lib/sources/lobsterai.js')).default;
+  const lpath = join(HOME, 'lob/main/sessions/5a5a5a5a-1.jsonl');
+  put(lpath, jsonl([
+    { type: 'session' },
+    { type: 'message', timestamp: '2026-11-10T01:00:00Z', message: { role: 'user', content: [{ type: 'text', text: '[LobsterAI system instructions]\nxx\n[Current user request]\n帮我订票' }] } },
+    { type: 'message', timestamp: '2026-11-10T01:01:00Z', message: { role: 'assistant', content: [{ type: 'text', text: '订好了' }] } },
+    { type: 'message', timestamp: '2026-11-10T01:01:01Z', message: { role: 'assistant', content: [{ type: 'text', text: '订好了\nMEDIA: x.png' }] } },
+  ]));
+  const data = lob.parse(lpath);
+  assert.equal(data.turns[0][2], '帮我订票');
+  const { createClock } = await import('../lib/clock.js');
+  const body = lob.render(lob.build([{ path: lpath, data }]).turns, createClock({ timezone: '+08:00' }), '用户').get('2026-11-10');
+  assert.equal((body.match(/订好了/g) || []).length, 1, '流式收尾的重复版本只留一份');
+  const wb = (await import('../lib/sources/workbuddy.js')).default;
+  const wpath = join(HOME, '.workbuddy/projects/p/77777777-a.jsonl');
+  put(wpath, jsonl([
+    { type: 'message', role: 'user', content: [{ type: 'input_text', text: '<system-reminder>x' }], providerData: { isMeta: true } },
+    { type: 'message', role: 'user', content: [{ type: 'input_text', text: '整理一下会议纪要' }] },
+    { type: 'function_call', name: 'read', timestamp: Date.parse('2026-11-10T02:00:00Z') },
+    { type: 'message', role: 'assistant', content: [{ type: 'output_text', text: '好了' }], timestamp: Date.parse('2026-11-10T02:05:00Z') },
+    { type: 'custom-title', customTitle: '会议纪要' },
+  ]));
+  const w = wb.parse(wpath);
+  assert.deepEqual(w.turns.map(t => [t[1], t[2]]), [['user', '整理一下会议纪要'], ['assistant', '好了']]);
+  assert.equal(w.turns[0][0], '2026-11-10T02:00:00.000Z', '缺时刻的用户发言取之后最近的时刻');
+  assert.equal(wb.build([{ path: wpath, data: w }]).titles['77777777'], '会议纪要');
 });
 
 test('数据目录就在技能目录里时直接可见（共用，不需软链）', () => {
   const inside = join(HOME, 'skills-real/session-history');
   mkdirSync(join(HOME, 'skills-real'), { recursive: true });
   lib.skill.installSkill(inside);
-  const status = lib.links.skillStatus(inside, { agents: {} }).map(a => a);
+  const status = lib.links.skillStatus(inside, { agents: {} }).agents;
   // ~/.agents/skills 指向 my-skills，不含 inside：不可见；把 my-skills 换成指向 skills-real 的场景用 entryState 直接测。
   assert.equal(lib.links.entryState(join(HOME, 'skills-real'), inside).state, 'shared');
-  assert.ok(status.length === 5);
+  assert.ok(status.length >= 5);
 });
 
 test('Windows：cmd 入口只含 ASCII，路径换成环境变量；Git Bash 入口用 MSYS 路径', () => {

@@ -102,8 +102,8 @@ export function build(entriesList, options = {}) {
   return { turns: all, titles, count: all.length, skipped: notes.length };
 }
 
-export function render(all, clock, userLabel) {
-  return renderDays(all, clock, { user: `🧑 ${userLabel}`, assistant: '🤖 DSH' });
+export function render(all, clock, userLabel, name = 'DSH') {
+  return renderDays(all, clock, { user: `🧑 ${userLabel}`, assistant: `🤖 ${name}` });
 }
 
 export function rawFiles(paths, key) {
