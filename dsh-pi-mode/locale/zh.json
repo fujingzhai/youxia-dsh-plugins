@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "DSH-Pi",
+    "description": "新建会话时选择 Pi、Pi+ 或 Pi-IM。Pi+ 可用 apply_patch 编辑文件，用 codemode 批量调用工具并筛选结果。"
+  }
+}

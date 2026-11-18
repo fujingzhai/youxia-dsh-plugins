@@ -29,5 +29,17 @@ jobs:
       - name: 安装会话历史插件的依赖
         working-directory: dsh-session-history
         run: npm install --ignore-scripts --package-lock=false --no-audit --no-fund
+      - name: 安装 Pi+ Code Mode 及最低受支持的 DSH 测试宿主
+        working-directory: dsh-pi-mode
+        run: >-
+          npm install --no-save --ignore-scripts --package-lock=false --no-audit --no-fund
+          @deepseek-ai/dsh-agent@0.2.2-rc.2 @deepseek-ai/dsh-tools@0.2.2-rc.2 @deepseek-ai/dsh-llm@0.2.2-rc.2
+          @deepseek-ai/dsh-session@0.2.2-rc.2 @deepseek-ai/dsh-system-prompt@0.2.2-rc.2 @deepseek-ai/dsh-scope@0.2.2-rc.2
+          @deepseek-ai/dsh-tool-office@0.2.2-rc.2 @deepseek-ai/dsh-tool-web@0.2.2-rc.2
+          @deepseek-ai/dsh-agent-loop@0.2.2-rc.2 @deepseek-ai/dsh-session-projection@0.2.2-rc.2
+          @deepseek-ai/dsh-tool-executor-native@0.2.2-rc.2 @deepseek-ai/dsh-tool-fs@0.2.2-rc.2
+          @deepseek-ai/dsh-fs-local@0.2.2-rc.2 @deepseek-ai/dsh-working-directory@0.2.2-rc.2
       - name: 校验清单、文档、语法、测试及打包内容
+        env:
+          DSH_PI_CODEMODE_TEST: '1'
         run: npm run check

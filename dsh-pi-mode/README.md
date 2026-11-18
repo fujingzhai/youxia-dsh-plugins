@@ -1,11 +1,11 @@
-# dsh-pi-mode
+# DSH-Pi
 
 给 DeepSeek Harness（DSH）新增三个模式：工具与系统提示词以 [pi](https://github.com/earendil-works/pi) 为蓝本，精简、直接。一个插件安装一次，DSH 自带模式不受影响。
 
 | 模式 | ID | order | 用途 |
 |---|---|---|---|
 | Pi 模式 | `pi` | 5 | 桌面／Web 的精简基线 |
-| Pi+模式 | `pi-plus` | 6 | Pi 模式加官方 `apply_patch`，适合同一文件多处或跨文件修改 |
+| Pi+模式 | `pi-plus` | 6 | 补丁编辑与 Code Mode 工具编排 |
 | Pi-IM | `pi-im` | 7 | IM 版，调整交付方式与个人工具屏蔽名单 |
 
 三个模式共用核心、联网和命令行定义，菜单依次排在 DSH 自带模式之后。Pi / Pi+ 共用桌面交付，Pi / Pi-IM 共用原文件编辑规则，不另装插件、不复制整份预设。
@@ -46,7 +46,7 @@ dsh plugin --profile desktop add dsh-pi-mode
 仅需固定 Git 版本时使用下面地址；Git 安装不提供原生 npm 更新入口：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.4.4&path:/dsh-pi-mode
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.5.0&path:/dsh-pi-mode
 ```
 
 ### 检查更新
@@ -57,13 +57,31 @@ git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.4.4&path:
 
 ## Pi+模式
 
-Pi+ 与 Pi 只差一个工具和两条文件规则，其余 system、交付和工具屏蔽配置共用：
+Pi+ 可以在普通工具调用之外，用 JavaScript 组合本步的工具，也支持跨文件补丁。
 
 - 增加官方 `apply_patch`；Pi / Pi-IM 不开启它。
 - 单处针对性修改用 edit，同一文件多处或跨文件修改优先用 apply_patch；write 用于新建或整篇重写，覆盖已有文件前先 read。
 - 补丁块保留足够且不重叠的上下文；预检拒绝不改文件，执行中失败可能保留已完成的改动，须重读受影响文件后再试。
 
 不额外限制补丁的新增、删除或移动能力，仍遵守用户规则。跨文件补丁不是原子事务，已完成的效果可在 Review 查看。
+
+### Code Mode
+
+模型调用 `codemode({code})`，在独立 QuickJS Worker 中执行 JavaScript。只在 Pi+ 声明此工具。单次读取或编辑可以直接调用；有前后依赖或需要筛选多项结果时，可以在一次脚本中完成。例如在两份已经确定的文献里查找题记，保留出处与行号：
+
+```js
+const paths = ["甲本.txt", "乙本.txt"]
+return await Promise.all(paths.map(async file_path => {
+  const page = await tools.read({file_path, limit: 300})
+  return {file_path, totalLines: page.totalLines, hits: page.lines.filter(line => line.text.includes("题记"))}
+}))
+```
+
+`ALL_TOOLS` 列出可调用项，`await searchTools("搜索词")` 查名称和说明，`await describeTool("read")` 查 DSH 的输入与输出结构。脚本用 `text()` 或 `return` 输出。读图和 Office 渲染会自动附上宿主的图片；支持读图的模型还可用 `image(dataURL)` 把生成的图片保存为 DSH 附件。一次脚本内可以保存局部变量，跨调用需显式返回所需信息。
+
+子调用继承本步骤的工具范围、工具策略、审批和取消信号。只读工具按宿主判定并发，独占调用依次执行。桌面交付、询问用户仍从原生入口发起。失败保留已完成的副作用；要分别处理一批成功与失败结果，用 `Promise.allSettled()`。脚本结束会取消未等待的调用，并等待已启动的宿主操作结算。
+
+Pi+ 按需加载依赖 `@earendil-works/pi-codemode@1.5.2`。每次限 128 个子调用、8 个并发，默认 120 秒；首行可用 `// @options: {"timeout_ms": 180000, "max_output_tokens": 4000}` 调整，最长 5 分钟。输出过长会保留头尾并标出截断，建议先在脚本里提取所需字段。
 
 ## Pi-IM
 
@@ -193,7 +211,7 @@ DSH 的预设工具与全局工具不同。Pi 不挂某项预设能力，不代�
 替用户安装或定制时，在授权范围内核对实际请求，不扫描全部历史或分享私人上下文：
 
 1. 重启并新建相应模式的会话，检查实际工具及 system。必要时只读该会话的 `session.v4.jsonl.zstd`（`zstd -dcq`）：`request/header` 的 `data.header.tools` 是工具声明，`system/message` 是提示词，`user/message` 包含动态上下文。
-2. 确认变量已展开、平台命令正确；Pi+ 有 apply_patch，Pi / Pi-IM 没有；Pi-IM 不挂 present 或 GUI 规则。若有额外工具，先辨明是否来自全局插件。
+2. 确认变量已展开、平台命令正确；Pi+ 有 apply_patch 和 codemode，Pi / Pi-IM 没有；Pi-IM 不挂 present 或 GUI 规则。若有额外工具，先辨明是否来自全局插件。
 3. 确认搜索后端可用，按用户需求设置 `deny`／`imDeny`；IM 用户另核对机器人预设和上下文增强。不要为检查更新去卸载插件。
 
 ## 兼容性与验证范围
@@ -207,6 +225,8 @@ DSH 的预设工具与全局工具不同。Pi 不挂某项预设能力，不代�
 0.4.3 在同版 DSH 的隔离 profile 核对三个预设的「关于DSH」原文、插件末条和 GUI 规则，并从当前 ASAR 经 `skill` 成功加载官方 `dsh-doc`；加载文档不激活 Office，随后加载 Office 仍可启用三个工具。未请求模型或操作 GUI。
 
 0.4.4 的静默提醒修正已在 macOS／DSH 0.2.2-rc.2 的独立内存 AgentLoop 验证连续三次触发、思考不重置、正文与工具同次输出后继续并正常收尾；模型与工具为无副作用模拟。可在目标 DSH 环境下设置 `DSH_PI_RUNTIME_TEST=1`，用该安装的 Node／Desktop Electron 执行 `node --test test/runtime.test.js` 复测，普通单元测试默认跳过这项宿主测试。另对 Grok 4.7 `xhigh` 做过小样本真实请求：简短场景能汇报并继续，但连续工具历史下仍出现漏报，不能据此宣称模型依从性已稳定修复。验证不改当前安装或操作真实客服。
+
+0.5.0 在 macOS 的 DSH 0.2.2-rc.2、rc.3、rc.4 工具管线中验证了并发读取、独占屏障、拒绝、条件激活、取消和部分失败。另在 rc.3 的隔离 Web profile 通过模拟模型驱动真实工具，按行提取两个文件中的题记、写入文件、回传图片，并与 0.4.4 对比三个预设的模型工具声明和提示词。
 
 源码入口：`cordis.patch.yml`（组合与提示词）、`index.js`（渠道变量与工具屏蔽）、`files.js`、`shell.js`、`web.js`（工具接入与规则）、`settings.js`（个人设置）、`progress.js`（静默提醒）。
 

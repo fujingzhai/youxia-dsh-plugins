@@ -1,4 +1,4 @@
-/** 三种预设共用文件工具入口；Pi+ 只多开 apply_patch 并替换两条文件规矩。 */
+/** 三种预设共用文件工具入口；Pi+ 启用 apply_patch，并提供补丁和工具编排规则。 */
 export const name = 'pi-mode-files'
 export const inject = ['tools', 'fs', 'systemPrompt', 'workingDirectory']
 
@@ -6,6 +6,7 @@ export const EDIT_RULES = '- 针对性修改用 edit，write 用于新建或整�
 export const PATCH_RULES = [
   '- 单处针对性修改用 edit，同一文件多处或跨文件修改优先用 apply_patch；write 用于新建或整篇重写，覆盖已有文件前先 read 一遍。',
   '- apply_patch 各补丁块保留足够且不重叠的上下文以准确匹配；预检拒绝不改文件，但执行中失败会保留已完成的改动，不会整批回滚。失败或中断后先重读受影响文件，再按实际状态重试。',
+  '- 单次操作直接用工具；需要组合工具、按前一步结果继续处理或筛选大段输出时，优先用 codemode，返回完成任务所需的原文、出处或结果。',
 ].join('\n')
 
 export function fileRules(config = {}) {

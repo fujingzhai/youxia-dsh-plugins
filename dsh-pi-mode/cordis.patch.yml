@@ -1,7 +1,7 @@
 # 一个插件，三个预设，DSH 自带模式原样不动：
 # - pi（Pi 模式）：桌面端／网页端用；
 # - pi-im（Pi-IM）：IM 版，只调整交付方式与全局工具个人名单；
-# - pi-plus（Pi+模式）：Pi 模式加官方 apply_patch 与对应两条文件编辑规矩。
+# - pi-plus（Pi+模式）：增加 apply_patch 与 codemode。
 # 列表顺序由 order 决定（值小在前，同值再按 id 字典序）：内置模式为 standard 1、ptc 2、minimal 3、cordis 4，
 # 这里用 5、6、7，排在自带模式之后，且不与内置值相同；Pi-IM 排最后（7）。
 # 三者原样引用 *pi-core；Pi / Pi-IM 共用 *pi-files，Pi / Pi+ 共用 present 与桌面 channel。
@@ -176,7 +176,7 @@
       config:
         id: pi-plus
         name: Pi+模式
-        description: Pi 模式加官方 apply_patch，同一文件多处或跨文件修改一次完成
+        description: 补丁编辑与 Code Mode，可在一次脚本里组合工具并筛选结果
         order: 6
         plugins:
           - *pi-core
@@ -184,6 +184,8 @@
             name: 'dsh-pi-mode/files.js'
             config:
               applyPatch: true
+          - id: codemode
+            name: dsh-pi-mode/codemode.js
           - *pi-present
           - *pi-desktop
     # 个人设置入口：deny 管 Pi / Pi+，imDeny 管 Pi-IM；progressReminder 管静默提醒；改完无需重启。
