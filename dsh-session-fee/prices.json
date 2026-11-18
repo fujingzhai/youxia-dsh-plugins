@@ -137,6 +137,20 @@
       ]
     },
     {
+      "name": "GPT-6.2 Astra",
+      "match": ["*/gpt-6.2-astra"],
+      "rules": [
+        {"name": "GPT-6.2 Astra", "currency": "USD", "input": 8, "cacheRead": 0.4, "cacheWrite": 10, "output": 40, "tiers": [{"above": 272000, "input": 16, "cacheRead": 0.8, "cacheWrite": 20, "output": 60.0}]}
+      ]
+    },
+    {
+      "name": "GPT-6.2 Sol",
+      "match": ["*/gpt-6.2-sol"],
+      "rules": [
+        {"name": "GPT-6.2 Sol", "currency": "USD", "input": 2, "cacheRead": 0.1, "cacheWrite": 2.5, "output": 10, "tiers": [{"above": 272000, "input": 4, "cacheRead": 0.2, "cacheWrite": 5.0, "output": 15.0}]}
+      ]
+    },
+    {
       "name": "GPT-6 Astra",
       "match": ["*/gpt-6-astra"],
       "rules": [
@@ -162,6 +176,13 @@
       "match": ["*/gpt-6-luna"],
       "rules": [
         {"name": "GPT-6 Luna", "currency": "USD", "input": 0.1, "cacheRead": 0.01, "cacheWrite": 0.125, "output": 0.5, "tiers": [{"above": 272000, "input": 0.2, "cacheRead": 0.02, "cacheWrite": 0.25, "output": 0.75}]}
+      ]
+    },
+    {
+      "name": "Claude Fable 5.2",
+      "match": ["*/claude-fable-5-2*", "*/claude-fable-5.2*"],
+      "rules": [
+        {"name": "Claude Fable 5.2", "currency": "USD", "input": 8, "cacheRead": 0.2, "cacheWrite": 10, "output": 40}
       ]
     },
     {

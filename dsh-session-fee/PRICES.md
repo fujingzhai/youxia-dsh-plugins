@@ -42,14 +42,17 @@ Qoder（经 [dsh-provider-qoder](https://www.npmjs.com/package/dsh-provider-qode
 
 ## 美国模型（USD）
 
-数值以 pi-ai 1.5.0 模型目录（2026-11-05，当时最新版）为基础，Gemini 按 Google Cloud 官方价格页、Grok 按 xAI 官方模型页核对。路由一律写 `*/模型ID`，Claude 同时兼容点号写法（如 `claude-opus-5.5`）与带后缀的变体。
+数值以 pi-ai 1.5.0 模型目录（2026-11-05，当时最新版）为基础，Gemini 按 Google Cloud 官方价格页、Grok 按 xAI 官方模型页核对。GPT-6.2 采用 [OpenAI Standard 定价](https://developers.openai.com/api/docs/pricing)，缓存写入按 30 分钟计。Claude Fable 5.2 采用 [Anthropic 标准价](https://platform.claude.com/docs/en/models/fable-5-2/whats-new-fable-5-2)，缓存写入按 5 分钟计。路由一律写 `*/模型ID`，Claude 同时兼容点号写法（如 `claude-opus-5.5`）与带后缀的变体。
 
 | 模型 | 输入 | 缓存读取 | 缓存写入 | 输出 | 长上下文 |
 |---|---:|---:|---:|---:|---|
+| GPT-6.2 Astra | 8 | 0.4 | 10 | 40 | >272K：16 / 0.8 / 20 / 60 |
+| GPT-6.2 Sol | 2 | 0.1 | 2.5 | 10 | >272K：4 / 0.2 / 5 / 15 |
 | GPT-6 Astra | 10 | 1 | 12.5 | 50 | >272K：20 / 2 / 25 / 75 |
 | GPT-6.1 Sol | 2 | 0.1 | 2.5 | 10 | >272K：4 / 0.2 / 5 / 15 |
 | GPT-6.1 Terra | 1 | 0.05 | 1.25 | 5 | >272K：2 / 0.1 / 2.5 / 7.5 |
 | GPT-6 Luna | 0.1 | 0.01 | 0.125 | 0.5 | >272K：0.2 / 0.02 / 0.25 / 0.75 |
+| Claude Fable 5.2 | 8 | 0.2 | 10 | 40 | — |
 | Claude Fable 5.1 | 10 | 0.25 | 12.5 | 50 | — |
 | Claude Opus 5.5 | 4 | 0.2 | 5 | 20 | — |
 | Claude Sonnet 5.5 | 2 | 0.1 | 2.5 | 10 | — |
