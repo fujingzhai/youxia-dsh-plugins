@@ -46,7 +46,7 @@ dsh plugin --profile desktop add dsh-pi-mode
 仅需固定 Git 版本时使用下面地址；Git 安装不提供原生 npm 更新入口：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.5.0&path:/dsh-pi-mode
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.5.1&path:/dsh-pi-mode
 ```
 
 ### 检查更新
@@ -77,7 +77,7 @@ return await Promise.all(paths.map(async file_path => {
 }))
 ```
 
-`ALL_TOOLS` 列出可调用项，`await searchTools("搜索词")` 查名称和说明，`await describeTool("read")` 查 DSH 的输入与输出结构。脚本用 `text()` 或 `return` 输出。读图和 Office 渲染会自动附上宿主的图片；支持读图的模型还可用 `image(dataURL)` 把生成的图片保存为 DSH 附件。一次脚本内可以保存局部变量，跨调用需显式返回所需信息。
+`ALL_TOOLS` 列出可调用项，`await searchTools("搜索词")` 查名称和说明，`await describeTool("read")` 查 DSH 的输入与输出结构。工具说明直接写明 read 与命令行工具（macOS / Linux 为 bash，Windows 为 pwsh）的返回结构，命令行调用须带 `description`；write、edit、apply_patch 的结果含改动前后的整份文件，脚本里只返回所需字段。沙箱内没有 Node、文件系统、网络和定时器，这些都通过工具完成。脚本用 `text()` 或 `return` 输出。读图和 Office 渲染会自动附上宿主的图片；支持读图的模型还可用 `image(dataURL)` 把生成的图片保存为 DSH 附件。一次脚本内可以保存局部变量，跨调用需显式返回所需信息。
 
 子调用继承本步骤的工具范围、工具策略、审批和取消信号。只读工具按宿主判定并发，独占调用依次执行。桌面交付、询问用户仍从原生入口发起。失败保留已完成的副作用；要分别处理一批成功与失败结果，用 `Promise.allSettled()`。脚本结束会取消未等待的调用，并等待已启动的宿主操作结算。
 
@@ -227,6 +227,8 @@ DSH 的预设工具与全局工具不同。Pi 不挂某项预设能力，不代�
 0.4.4 的静默提醒修正已在 macOS／DSH 0.2.2-rc.2 的独立内存 AgentLoop 验证连续三次触发、思考不重置、正文与工具同次输出后继续并正常收尾；模型与工具为无副作用模拟。可在目标 DSH 环境下设置 `DSH_PI_RUNTIME_TEST=1`，用该安装的 Node／Desktop Electron 执行 `node --test test/runtime.test.js` 复测，普通单元测试默认跳过这项宿主测试。另对 Grok 4.7 `xhigh` 做过小样本真实请求：简短场景能汇报并继续，但连续工具历史下仍出现漏报，不能据此宣称模型依从性已稳定修复。验证不改当前安装或操作真实客服。
 
 0.5.0 在 macOS 的 DSH 0.2.2-rc.2、rc.3、rc.4 工具管线中验证了并发读取、独占屏障、拒绝、条件激活、取消和部分失败。另在 rc.3 的隔离 Web profile 通过模拟模型驱动真实工具，按行提取两个文件中的题记、写入文件、回传图片，并与 0.4.4 对比三个预设的模型工具声明和提示词。
+
+0.5.1 只改 codemode 的工具说明。在 macOS 的 DSH 0.2.2-rc.3 隔离 Web profile 安装打包产物，通过模拟模型在 Pi+ 脚本中调用 bash、write、edit、apply_patch，核对说明所写的返回结构与 bash 缺少 `description` 时的报错；与 0.5.0 相比，Pi、Pi-IM 的工具声明与提示词不变，Pi+ 只有 codemode 说明变化。Windows 的 pwsh 结构按 DSH 源码核对，未实测。
 
 源码入口：`cordis.patch.yml`（组合与提示词）、`index.js`（渠道变量与工具屏蔽）、`files.js`、`shell.js`、`web.js`（工具接入与规则）、`settings.js`（个人设置）、`progress.js`（静默提醒）。
 

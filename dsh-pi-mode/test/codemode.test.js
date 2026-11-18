@@ -107,7 +107,8 @@ test('Pi+ Code Mode 在真实 DSH 步骤中执行、筛选与取消', { skip: pr
       await started.promise
       ctrl.abort()
       assert((await call).isError); assert(stopped)
-      assert.equal((await run('return typeof process')).value, 'undefined')
+      // 工具说明写明沙箱里没有 Node、网络和定时器。
+      assert.equal((await run('return [typeof process, typeof require, typeof fetch, typeof setTimeout].join()')).value, 'undefined,undefined,undefined,undefined')
     })
   } finally { await handle?.dispose(); await root.fiber.dispose() }
 })

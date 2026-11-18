@@ -1,4 +1,5 @@
 import { DispatchQueue } from './codemode-queue.js'
+import { shellTool } from './shell.js'
 
 export const name = 'pi-plus-codemode'
 export const inject = ['tools']
@@ -93,9 +94,10 @@ export async function apply(ctx) {
     import('@deepseek-ai/dsh-llm'), import('@deepseek-ai/dsh-scope'),
   ])
   const pipeline = new ToolExecutionPipeline(ctx)
+  const shell = shellTool()
   ctx.tools.register(defineTool({
     name: 'codemode',
-    description: 'Run a JavaScript async function body to combine DSH tool calls and filter their structured results. Use await tools.read({file_path}), Promise.allSettled(), text(value) or return. read returns {lines:[{number,text}],totalLines,path,offset}. ALL_TOOLS lists callable names; await describeTool(name) for input/output schemas or await searchTools(query) for matches. DSH image results are attached automatically. Each call starts fresh. Await all work; completed tool effects persist even if the script fails.',
+    description: 'Run a JavaScript async function body to combine DSH tool calls and filter their structured results. The QuickJS sandbox has no Node, file system, network, or timers; use tools. Use await tools.read({file_path}), Promise.allSettled(), text(value) or return. read returns {lines:[{number,text}],totalLines,path,offset}. ' + shell + ' needs description; a foreground run returns {exitCode,stdout:{text,truncated},stderr:{text,truncated}}. write, edit, and apply_patch results include full file text; do not return them whole. ALL_TOOLS lists callable names; await describeTool(name) for input/output schemas or await searchTools(query) for matches. DSH image results are attached automatically. Each call starts fresh. Await all work; completed tool effects persist even if the script fails.',
     parameters: { code: { type: 'string', required: true, description: 'JavaScript function body, with top-level await and return.' } },
     output: { schema: { type: 'string' }, render: (_args, text) => [{ type: 'text', text }] },
     isConcurrencySafe: () => false,

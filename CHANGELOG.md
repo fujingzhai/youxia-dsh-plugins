@@ -4,6 +4,10 @@
 
 ## 2026-11-18
 
+### dsh-pi-mode 0.5.1
+
+- Pi+ 的 `codemode` 工具说明补充：沙箱内没有 Node、文件系统、网络和定时器；bash（Windows 为 pwsh）须带 `description`，前台运行返回 `{exitCode, stdout:{text,truncated}, stderr:{text,truncated}}`；write、edit、apply_patch 的结果含整份文件，不宜原样返回。以免模型把 bash 结果当字符串处理或漏传 `description`，白白多一轮重试。说明增加约 270 字符；Pi、Pi-IM 与 Pi+ 的系统提示词不变。
+
 ### dsh-pi-mode 0.5.0
 
 - 插件页显示名为 **DSH-Pi**。Pi+ 新增 `codemode`，支持批量读取、按结果继续调用工具和筛选证据。Pi 和 Pi-IM 沿用原有工具与提示词。
