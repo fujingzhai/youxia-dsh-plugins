@@ -33,8 +33,8 @@ import { dirname, join, resolve } from 'node:path'
 /** Stable cordis plugin name. */
 export const name = 'quick-chat'
 
-/** The web server is the only Host service this plugin needs. */
-export const inject = ['webServer']
+/** The web server carries the routes; the connection service authenticates them. */
+export const inject = ['webServer', 'connection']
 
 /** The page this plugin exists to show. */
 export const PAGE_URL = 'https://chat.deepseek.com/'
@@ -50,7 +50,7 @@ export const ROUTES = {
   forget: '/api/dsh-quick-chat/session/forget',
 }
 
-/** Header the browser half sends; blocks cross-site reads of a credential route. */
+/** Extra header the browser half sends; the Host admission check below is what authenticates. */
 const GUARD_HEADER = 'x-dsh-quick-chat'
 
 /**
@@ -200,6 +200,23 @@ function guarded(req) {
   return req.headers[GUARD_HEADER] === '1'
 }
 
+/**
+ * DSH's own admission check for a raw Web route: the Host/Origin fence and the
+ * login-cookie authentication that guard the Host's `/api`. `requestRejection`
+ * wraps `admit`; hosts that predate it still expose `admit`.
+ * @returns 401 or 403 to refuse, 503 while the check is unavailable, undefined to admit.
+ */
+export function hostRejection(connection, req) {
+  if (typeof connection?.requestRejection === 'function') return connection.requestRejection(req)
+  if (typeof connection?.admit === 'function') {
+    const admission = connection.admit(req)
+    return admission && !('rejection' in admission) ? undefined : (admission?.rejection ?? 403)
+  }
+  return 503
+}
+
+const REJECTION_TEXT = { 401: 'unauthorized', 403: 'forbidden', 503: 'host admission check unavailable' }
+
 /** Last outcome of each session operation, for diagnostics only. */
 const last = {
   restore: { at: '', ok: false, error: '', storage: 0 },
@@ -340,8 +357,8 @@ export function createRoutes() {
 }
 
 /**
- * Register the session routes.
- * @param ctx - Host context carrying the web server.
+ * Register the session routes behind the Host admission check.
+ * @param ctx - Host context carrying the web server and connection service.
  */
 export function apply(ctx) {
   for (const route of createRoutes()) {
@@ -349,6 +366,8 @@ export function apply(ctx) {
       kind: 'exact',
       path: route.path,
       handler: (req, res) => {
+        const refused = hostRejection(ctx.connection, req)
+        if (refused !== undefined) return json(res, refused, { ok: false, error: REJECTION_TEXT[refused] ?? 'forbidden' })
         if (req.method !== route.method) {
           res.writeHead(405, { allow: route.method })
           res.end()

@@ -26,6 +26,9 @@ import {
   detectionTarget,
   detectionScript,
   createRoutes,
+  apply,
+  hostRejection,
+  inject,
   defaultSettings,
   parseSettings,
   readSettings,
@@ -613,4 +616,77 @@ test('routes inherit the official default directory and reject invalid overrides
     assert.equal(invalid.res.status, 400)
     assert.equal(readSettings().cwd, '')
   } finally { await controller.dispose(); setSettingsFile(null); trashDirectory(dir) }
+})
+
+/** Register the Host routes against stub services; returns lookup and cleanup. */
+function applyWith(connection) {
+  const subprocess = fakeSubprocess()
+  const registered = []
+  const disposers = []
+  apply({
+    subprocess,
+    workingDirectory: { defaultDirectory: homedir() },
+    connection,
+    webServer: { register(entry) { registered.push(entry); return () => {} } },
+    effect(fn) { const stop = fn(); if (typeof stop === 'function') disposers.push(stop) },
+  })
+  return {
+    subprocess,
+    route: (path) => registered.find((entry) => entry.path === path),
+    dispose: () => Promise.all(disposers.map((stop) => stop())),
+  }
+}
+
+test('the connection service is a required Host service', () => {
+  assert.ok(inject.includes('connection'))
+})
+
+test('every route asks the Host admission check first and refuses before its handler', async () => {
+  const dir = tempDirectory()
+  setSettingsFile(join(dir, 'settings.json'))
+  try {
+    for (const status of [401, 403]) {
+      const seen = []
+      const host = applyWith({ requestRejection(req) { seen.push(req); return status } })
+      for (const path of Object.values(ROUTES)) {
+        const req = request('POST', path, { id: 'claude', type: 'write', data: 'rm -rf ~\r' })
+        const res = response()
+        host.route(path).handler(req, res)
+        assert.equal(res.status, status, `${path} answers ${status}`)
+        assert.equal(JSON.parse(res.body).ok, false)
+        assert.equal(seen.at(-1), req)
+      }
+      await new Promise((resolve) => setImmediate(resolve))
+      assert.equal(host.subprocess.handles.length, 0)
+      await host.dispose()
+    }
+  } finally {
+    setSettingsFile(null)
+    trashDirectory(dir)
+  }
+})
+
+test('an admitted request continues to the route checks', async () => {
+  const host = applyWith({ requestRejection: () => undefined })
+  const res = response()
+  host.route(ROUTES.open).handler(request('GET', ROUTES.open), res)
+  assert.equal(res.status, 405)
+  await host.dispose()
+})
+
+test('without the connection service every route answers 503', async () => {
+  const host = applyWith(undefined)
+  const res = response()
+  host.route(ROUTES.state).handler(request('POST', ROUTES.state, {}), res)
+  assert.equal(res.status, 503)
+  await host.dispose()
+})
+
+test('hosts that only expose admit are checked through it', () => {
+  const req = request('POST', ROUTES.state)
+  assert.equal(hostRejection({ admit: () => ({ peer: {} }) }, req), undefined)
+  assert.equal(hostRejection({ admit: () => ({ rejection: 401 }) }, req), 401)
+  assert.equal(hostRejection({ admit: () => undefined }, req), 403)
+  assert.equal(hostRejection({ requestRejection: () => 403, admit: () => ({ peer: {} }) }, req), 403)
+  assert.equal(hostRejection({}, req), 503)
 })

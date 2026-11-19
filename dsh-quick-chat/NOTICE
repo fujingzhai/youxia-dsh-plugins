@@ -21,7 +21,10 @@ Changes made in this fork:
     scales instead of being CSS-transformed;
   * request-race guards: a lease acquired after teardown is released, and the
     guest no longer posts a "releasing" save while being disposed;
-  * plugin stylesheet is removed and the guest released when the plugin unloads.
+  * plugin stylesheet is removed and the guest released when the plugin unloads;
+  * every Host route first passes the Host's own admission check
+    (`ctx.connection.requestRejection`: Host/Origin fence plus the DSH login
+    cookie); the upstream request header is kept as an extra check.
 
 Upstream itself states it was inspired by jaychang1989/dsh-webchat and
 xmuwenxiang/dsh-web-chat (both Apache-2.0); see the upstream NOTICE for that

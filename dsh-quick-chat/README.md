@@ -25,7 +25,7 @@ dsh plugin --profile desktop add dsh-quick-chat
 仅需固定 Git 版本时使用下面地址；Git 安装不显示原生 npm 更新入口：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.4&path:/dsh-quick-chat
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.5&path:/dsh-quick-chat
 ```
 
 ### 检查更新
@@ -70,8 +70,9 @@ DSH 0.2.2-rc.1 已支持 npm 插件原生更新：打开「插件」点「刷新
 | 页面密度 | 100% | 固定 90% |
 | 销毁竞态 | 租约到达竞态未处理 | 卸载后到达的租约立即释放；销毁时不再补发保存 |
 | 卸载 | 保留样式与 guest | 释放 guest 并移除本插件样式 |
+| Host 路由认证 | 只认自定义请求头 | 先过 DSH 宿主访问检查（Host／Origin 校验加登录 Cookie），请求头保留 |
 
-登录恢复的流程、快照护栏与 Host 路由沿用上游；上游的 `x-dsh-quick-chat` 请求头校验保留，跨站表单无法通过。
+登录恢复的流程与快照护栏沿用上游。Host 路由在上游的 `x-dsh-quick-chat` 请求头之外，先过 DSH 宿主自己的访问检查（`ctx.connection.requestRejection`），与宿主 `/api` 同一套：浏览器里打开的其他网页、未登录的本机请求都读不到也改不了登录快照（0.1.5 起）。
 
 ## 隐私
 
@@ -83,7 +84,6 @@ DSH 0.2.2-rc.1 已支持 npm 插件原生更新：打开「插件」点「刷新
 - 网页在切走后仍驻留，占一个渲染进程。
 - 网站改版可能使登录键名变化；此时重新登录即可，快照不会被写坏。
 - 未在 Windows / Linux 实测；macOS 由使用者在 DSH 0.2.2-rc.1 上验收跨重启登录。
-- 上游 0.1.2 的 HTTP 请求头校验依赖自定义头，本 fork 未改动该机制。
 
 ## 许可
 

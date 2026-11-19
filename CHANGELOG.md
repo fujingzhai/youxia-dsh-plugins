@@ -2,6 +2,18 @@
 
 各插件独立版本，Git 标签采用 `<插件名>@<版本>`。未说明的插件不随其他插件升级。
 
+## 2026-11-19
+
+### dsh-agents-cli 0.1.7
+
+- **HTTP 路由接入 DSH 宿主认证**：每个路由先过 `ctx.connection.requestRejection`（Host／Origin 校验加 DSH 登录 Cookie，与宿主 `/api` 同一套），不通过回 401／403，宿主缺少认证服务时回 503。此前只认自定义请求头 `x-dsh-agents-cli`，挡得住普通跨站表单，挡不住 DNS 重绑定：恶意域名解析到 127.0.0.1 后与本机同源，可以带上这个头读写终端、往里输入命令。请求头保留作额外校验。依赖的 Host 服务增加 `connection`；只提供 `admit` 的宿主按 `admit` 判定。
+- 新增 5 项测试。隔离 DSH 0.2.2-rc.3 web profile 实测：无登录 Cookie 回 401，伪造 Host 或跨站 Origin 回 403，登录后同源请求正常；同条件下 0.1.6 全部放行。本版未做 GUI 实测。
+
+### dsh-quick-chat 0.1.5
+
+- **HTTP 路由接入 DSH 宿主认证**：同 dsh-agents-cli 0.1.7。此前只认 `x-dsh-quick-chat` 请求头，DNS 重绑定页面可以读写或删除保存的 chat.deepseek.com 登录快照。上游请求头保留作额外校验；NOTICE 补记此项改动。
+- 新增 3 项测试。隔离 profile 实测结果同上；本版未做 GUI 实测。
+
 ## 2026-11-18
 
 ### dsh-session-fee 0.4.12

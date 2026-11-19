@@ -20,12 +20,12 @@ import { activityCommand, antigravityTitleSettings } from './launch.js'
 export const name = 'agents-cli'
 
 /** Host services required by this plugin. */
-export const inject = ['webServer', 'subprocess', 'workingDirectory']
+export const inject = ['webServer', 'connection', 'subprocess', 'workingDirectory']
 
 /** Sidebar and main panel key. */
 export const PANEL_ID = 'agents-cli'
 
-/** Header checked on JSON routes to block cross-site form posts. */
+/** Extra header the panel sends; the Host admission check below is what authenticates. */
 export const GUARD_HEADER = 'x-dsh-agents-cli'
 
 /** Built-in CLI agent entries. */
@@ -637,6 +637,23 @@ function guarded(req) {
   return req.headers?.[GUARD_HEADER] === '1'
 }
 
+/**
+ * DSH's own admission check for a raw Web route: the Host/Origin fence and the
+ * login-cookie authentication that guard the Host's `/api`. `requestRejection`
+ * wraps `admit`; hosts that predate it still expose `admit`.
+ * @returns 401 or 403 to refuse, 503 while the check is unavailable, undefined to admit.
+ */
+export function hostRejection(connection, req) {
+  if (typeof connection?.requestRejection === 'function') return connection.requestRejection(req)
+  if (typeof connection?.admit === 'function') {
+    const admission = connection.admit(req)
+    return admission && !('rejection' in admission) ? undefined : (admission?.rejection ?? 403)
+  }
+  return 503
+}
+
+const REJECTION_TEXT = { 401: 'unauthorized', 403: 'forbidden', 503: 'host admission check unavailable' }
+
 /** Create a self-contained controller over a subprocess service for Host or tests. */
 export function createAgentsCliController(subprocess, { defaultDirectory = () => process.cwd() } = {}) {
   const resolveCwd = (cwd = '') => resolveWorkingDirectory(cwd, typeof defaultDirectory === 'function' ? defaultDirectory() : defaultDirectory)
@@ -1041,6 +1058,8 @@ export function apply(ctx) {
       kind: 'exact',
       path: route.path,
       handler: (req, res) => {
+        const refused = hostRejection(ctx.connection, req)
+        if (refused !== undefined) return json(res, refused, { ok: false, error: REJECTION_TEXT[refused] ?? 'forbidden' })
         const pathname = (req.url || '').split('?')[0]
         if (pathname !== route.path) {
           res.writeHead(404)

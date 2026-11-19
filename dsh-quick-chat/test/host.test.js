@@ -17,6 +17,7 @@ import { fileURLToPath } from 'node:url'
 const {
   apply,
   createRoutes,
+  hostRejection,
   dshHome,
   readSnapshot,
   ROUTES,
@@ -92,6 +93,7 @@ test('apply registers the four exact routes on the web server', () => {
   apply({
     effect(fn) { fn() },
     webServer: { register(entry) { registered.push(entry) } },
+    connection: { requestRejection: () => undefined },
   })
   assert.deepEqual(registered.map((entry) => entry.path).sort(), Object.values(ROUTES).sort())
   assert.ok(registered.every((entry) => entry.kind === 'exact'))
@@ -249,6 +251,7 @@ test('a wrong method is answered with 405 before the handler runs', () => {
   apply({
     effect(fn) { fn() },
     webServer: { register(entry) { registered.push(entry) } },
+    connection: { requestRejection: () => undefined },
   })
   const save = registered.find((entry) => entry.path === ROUTES.save)
   const res = response()
@@ -274,4 +277,51 @@ test('a malformed body is rejected without touching the snapshot', async () => {
 test('the default snapshot lives under the DSH home', () => {
   setSessionFile(null)
   assert.match(SESSION_FILE(), /dsh-quick-chat[\\/]session\.json$/)
+})
+
+/** Register the routes against a stub connection service. */
+function registerWith(connection) {
+  const registered = []
+  apply({ effect(fn) { fn() }, webServer: { register(entry) { registered.push(entry) } }, connection })
+  return (path) => registered.find((entry) => entry.path === path)
+}
+
+test('every route asks the Host admission check first and refuses before its handler', async () => {
+  const { file, cleanup } = tempSnapshot()
+  try {
+    writeSnapshot(file, { version: 1, savedAt: '2026-01-01T00:00:00.000Z', ...TOKEN_STATE })
+    const before = readFileSync(file, 'utf8')
+    for (const status of [401, 403]) {
+      const seen = []
+      const registered = registerWith({ requestRejection(req) { seen.push(req); return status } })
+      for (const [path, method] of [[ROUTES.state, 'GET'], [ROUTES.save, 'POST'], [ROUTES.restore, 'POST'], [ROUTES.forget, 'POST']]) {
+        const req = request(method, {})
+        const res = response()
+        await registered(path).handler(req, res)
+        assert.equal(res.status, status, `${path} answers ${status}`)
+        assert.equal(res.json().ok, false)
+        assert.doesNotMatch(res.body, /a-jwt|smidV2/)
+        assert.equal(seen.at(-1), req)
+      }
+    }
+    assert.equal(readFileSync(file, 'utf8'), before)
+  } finally {
+    cleanup()
+  }
+})
+
+test('without the connection service every route answers 503', async () => {
+  const registered = registerWith(undefined)
+  const res = response()
+  await registered(ROUTES.state).handler(request('GET'), res)
+  assert.equal(res.status, 503)
+})
+
+test('hosts that only expose admit are checked through it', () => {
+  const req = request('GET')
+  assert.equal(hostRejection({ admit: () => ({ peer: {} }) }, req), undefined)
+  assert.equal(hostRejection({ admit: () => ({ rejection: 401 }) }, req), 401)
+  assert.equal(hostRejection({ admit: () => undefined }, req), 403)
+  assert.equal(hostRejection({ requestRejection: () => 403, admit: () => ({ peer: {} }) }, req), 403)
+  assert.equal(hostRejection({}, req), 503)
 })
