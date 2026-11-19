@@ -14,6 +14,10 @@
 - **HTTP 路由接入 DSH 宿主认证**：同 dsh-agents-cli 0.1.7。此前只认 `x-dsh-quick-chat` 请求头，DNS 重绑定页面可以读写或删除保存的 chat.deepseek.com 登录快照。上游请求头保留作额外校验；NOTICE 补记此项改动。
 - 新增 3 项测试。隔离 profile 实测结果同上；本版未做 GUI 实测。
 
+### dsh-session-fee 0.4.13
+
+- 新增 Gemini 4 Neon 的 Vertex AI Global 标准价。每百万 token 输入 $3、缓存读取 $0.15、输出（含推理）$15。缓存写入自北京时间 2027-01-12 起按 $3.75 计，测试覆盖费率切换。
+
 ## 2026-11-18
 
 ### dsh-session-fee 0.4.12

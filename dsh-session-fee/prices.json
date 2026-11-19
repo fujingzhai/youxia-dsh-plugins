@@ -234,6 +234,16 @@
       ]
     },
     {
+      "name": "Gemini 4 Neon",
+      "match": ["*/gemini-4-neon"],
+      "rules": [
+        {"name": "Gemini 4 Neon（缓存写入计费）", "currency": "USD", "input": 3, "cacheRead": 0.15, "cacheWrite": 3.75, "output": 15, "when": {
+          "from": "2027-01-12T00:00:00+08:00"
+        }},
+        {"name": "Gemini 4 Neon", "currency": "USD", "input": 3, "cacheRead": 0.15, "cacheWrite": 0, "output": 15}
+      ]
+    },
+    {
       "name": "Gemini 4 Argon",
       "match": ["*/gemini-4-argon"],
       "rules": [

@@ -259,6 +259,13 @@ test("the shipped Google rules price every global bucket across promotional boun
   }
   assert.equal(price(shipped, { provider: "google-vertex", model: "gemini-4-hydrogen" }, sample, "2027-01-11T23:59:00+08:00").amount, 9.075);
   assert.equal(price(shipped, { provider: "google-vertex", model: "gemini-4-hydrogen" }, sample, "2027-01-12T00:00:00+08:00").amount, 10.95);
+  const neon = { provider: "google-vertex", model: "gemini-4-neon" };
+  assert.deepEqual(price(shipped, neon, sample, "2027-01-11T23:59:59+08:00"), {
+    currency: "USD", amount: 18.15, rule: "Gemini 4 Neon", source: "book"
+  });
+  assert.deepEqual(price(shipped, neon, sample, "2027-01-12T00:00:00+08:00"), {
+    currency: "USD", amount: 21.9, rule: "Gemini 4 Neon（缓存写入计费）", source: "book"
+  });
   assert.equal(price(shipped, { provider: "google-vertex", model: "gemini-3.8-flash" }, sample, "2026-12-31T23:59:00+08:00").amount, 4.575);
   assert.equal(price(shipped, { provider: "google-vertex", model: "gemini-3.8-flash" }, sample, "2027-01-01T00:00:00+08:00").amount, 9.15);
 });

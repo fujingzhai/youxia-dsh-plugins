@@ -1,6 +1,6 @@
 # 价格维护记录
 
-核对日期：**2026-11-18**。口径：模型的**市面 token 刊例价**，不是订阅或额度的实际扣费。单位：每 100 万 token。
+核对日期：**2026-11-19**。口径：模型的**市面 token 刊例价**，不是订阅或额度的实际扣费。单位：每 100 万 token。
 
 ## 原则
 
@@ -39,6 +39,7 @@ Qoder（经 [dsh-provider-qoder](https://www.npmjs.com/package/dsh-provider-qode
 - **Gemini 4 Carbon / Argon**：首发价 $2 / 缓存 $0.10 / $10 至 2026-11-30；2026-12-01 起标准价 $4 / $0.20 / $20。
 - **Gemini 3.8 Flash**：首发价 $0.75 / 缓存 $0.075 / $3.75 至 2026-12-31；2027-01-01 起标准价 $1.50 / $0.15 / $7.50。
 - **Gemini 4 Hydrogen**：输入 $1.50 / 缓存读取 $0.075 / 输出 $7.50；缓存写入在 2027-01-12 前为 $0，此后按 $1.875 计费。
+- **Gemini 4 Neon** 按 Global 标准价计，输出含推理。缓存写入费率沿用本表的北京时间，自 2027-01-12 起按 $3.75 计。
 
 ## 美国模型（USD）
 
@@ -59,6 +60,7 @@ Qoder（经 [dsh-provider-qoder](https://www.npmjs.com/package/dsh-provider-qode
 | Claude Haiku 5.5 | 0.1 | 0.01 | 0.125 | 0.5 | >100K：0.5 / 0.05 / 0.625 / 2.5 |
 | Gemini 4 Hydrogen | 1.5 | 0.075 | 0（2027-01-12 起 1.875） | 7.5 | — |
 | Gemini 4 Carbon | 2（12-01 起 4） | 0.1（0.2） | 0 | 10（20） | — |
+| Gemini 4 Neon | 3 | 0.15 | 0（2027-01-12 起 3.75） | 15 | — |
 | Gemini 4 Argon | 2（12-01 起 4） | 0.1（0.2） | 0 | 10（20） | — |
 | Gemini 3.8 Flash | 0.75（2027-01-01 起 1.5） | 0.075（0.15） | 0 | 3.75（7.5） | — |
 | Grok 4.7 | 2 | 0.5 | 0 | 6 | ≥200K：4 / 1 / 0 / 12 |
@@ -84,7 +86,7 @@ Qoder（经 [dsh-provider-qoder](https://www.npmjs.com/package/dsh-provider-qode
 
 - [DeepSeek 价格与错峰](https://api-docs.deepseek.com/zh-cn/quick_start/pricing)
 - [xAI Grok 4.7](https://docs.x.ai/developers/models/grok-4.7)、[Grok Build 0.1](https://docs.x.ai/developers/models/grok-build-0.1)
-- [Gemini 4 Hydrogen / Carbon / Argon 与 Gemini 3.8 Flash on Google Cloud](https://cloud.google.com/model-garden/pricing?hl=en)
+- [Gemini 4 Neon / Hydrogen / Carbon / Argon 与 Gemini 3.8 Flash on Google Cloud](https://cloud.google.com/model-garden/pricing?hl=en)
 - [Moonshot 模型推理价格](https://platform.kimi.com/docs/pricing/chat)、[阿里云 Qwen4-Max](https://help.aliyun.com/zh/model-studio/qwen4-max)、[阿里云 Qwen3.8-Max](https://help.aliyun.com/zh/model-studio/qwen3-8-max)
 
 修改 `prices.json` 并保存即可，立即生效；校验失败的文件不会替换上一份有效价格（错误写进 DSH 数据目录下的 `plugins/session-fee/status.json`）。
