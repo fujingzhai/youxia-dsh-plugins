@@ -25,7 +25,7 @@ dsh plugin --profile desktop add dsh-quick-chat
 仅需固定 Git 版本时使用下面地址；Git 安装不显示原生 npm 更新入口：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.5&path:/dsh-quick-chat
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.6&path:/dsh-quick-chat
 ```
 
 ### 检查更新
@@ -72,7 +72,7 @@ DSH 0.2.2-rc.1 已支持 npm 插件原生更新：打开「插件」点「刷新
 | 卸载 | 保留样式与 guest | 释放 guest 并移除本插件样式 |
 | Host 路由认证 | 只认自定义请求头 | 先过 DSH 宿主访问检查（Host／Origin 校验加登录 Cookie），请求头保留 |
 
-登录恢复的流程与快照护栏沿用上游。Host 路由在上游的 `x-dsh-quick-chat` 请求头之外，先过 DSH 宿主自己的访问检查（`ctx.connection.requestRejection`），与宿主 `/api` 同一套：浏览器里打开的其他网页、未登录的本机请求都读不到也改不了登录快照（0.1.5 起）。
+登录恢复的流程与快照护栏沿用上游。Host 路由在上游的 `x-dsh-quick-chat` 请求头之外，先过 DSH 宿主自己的访问检查（`ctx.connection.requestRejection`；DSH 0.2.3 起由宿主 WebServer 先行准入，插件只认它交来的 owner Peer），与宿主 `/api` 同一套：浏览器里打开的其他网页、未登录的本机请求都读不到也改不了登录快照（0.1.5 起）。
 
 ## 隐私
 

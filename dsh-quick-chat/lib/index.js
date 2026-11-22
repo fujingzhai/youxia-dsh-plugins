@@ -202,11 +202,15 @@ function guarded(req) {
 
 /**
  * DSH's own admission check for a raw Web route: the Host/Origin fence and the
- * login-cookie authentication that guard the Host's `/api`. `requestRejection`
- * wraps `admit`; hosts that predate it still expose `admit`.
+ * login-cookie authentication that guard the Host's `/api`. DSH 0.2.3 admits
+ * every `required` route itself and hands the handler that Peer, so only an
+ * owner Peer passes; older hosts pass no Peer and the plugin asks them:
+ * `requestRejection` wraps `admit`, and hosts that predate it still expose `admit`.
+ * @param peer - Peer the WebServer admitted for this request (DSH 0.2.3+), or undefined.
  * @returns 401 or 403 to refuse, 503 while the check is unavailable, undefined to admit.
  */
-export function hostRejection(connection, req) {
+export function hostRejection(connection, req, peer) {
+  if (peer !== undefined) return peer?.principal?.kind === 'owner' ? undefined : 403
   if (typeof connection?.requestRejection === 'function') return connection.requestRejection(req)
   if (typeof connection?.admit === 'function') {
     const admission = connection.admit(req)
@@ -365,8 +369,8 @@ export function apply(ctx) {
     ctx.effect(() => ctx.webServer.register({
       kind: 'exact',
       path: route.path,
-      handler: (req, res) => {
-        const refused = hostRejection(ctx.connection, req)
+      handler: (req, res, peer) => {
+        const refused = hostRejection(ctx.connection, req, peer)
         if (refused !== undefined) return json(res, refused, { ok: false, error: REJECTION_TEXT[refused] ?? 'forbidden' })
         if (req.method !== route.method) {
           res.writeHead(405, { allow: route.method })

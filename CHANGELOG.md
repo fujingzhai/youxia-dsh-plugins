@@ -2,6 +2,19 @@
 
 各插件独立版本，Git 标签采用 `<插件名>@<版本>`。未说明的插件不随其他插件升级。
 
+## 2026-11-23
+
+DSH 0.2.3-alpha 适配。以下各版在 DSH 0.2.2-rc.5 与 0.2.3-alpha.2 的隔离 Web profile 实测通过，旧版宿主行为不变。
+
+### dsh-session-history 0.3.1、dsh-session-labels 0.1.5、dsh-quick-chat 0.1.6、dsh-agents-cli 0.1.8
+
+- **宿主认证适配 DSH 0.2.3**：0.2.3 起宿主 WebServer 先按路由准入（默认 `required`），再把准入的 Peer 作为 handler 的第三个参数交来；`connection.requestRejection` 已移除，插件自己调 `connection.admit` 还须另外注入 `connection.authentication`，否则抛错。旧版各插件的 HTTP 路由因此在 0.2.3 全部报错（会话标签、会话检索、快捷对话、终端都用不了）。现在有 Peer 时只认 owner，没有 Peer 的旧宿主照旧自己检查。实测两版宿主下带登录 Cookie 回 200，不带回 401／403。
+- dsh-quick-chat、dsh-agents-cli 各新增 1 项测试。
+
+### dsh-pi-mode 0.5.2
+
+- DSH 0.2.3 移除了全局 `working_directory` 工具（工作树改用 `enter_worktree`／`exit_worktree`）。bash 规矩只在该工具仍注册时提「或切 working_directory」，0.2.3 起不再提及不存在的工具；0.2.2 及更早的提示词不变。
+
 ## 2026-11-19
 
 ### dsh-agents-cli 0.1.7

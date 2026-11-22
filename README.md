@@ -6,15 +6,15 @@
 
 | 插件 | 当前版本 | 作用 |
 |---|---|---|
-| [dsh-pi-mode](dsh-pi-mode) | 0.5.1 | DSH-Pi 提供 Pi / Pi+ / Pi-IM，Pi+ 独有 Code Mode 工具编排与补丁编辑 |
-| [dsh-session-history](dsh-session-history) | 0.3.0 | 各 agent（Claude Code、Codex 等）的对话历史：原文日志、离线检索，以一个共用技能提供给所有 agent |
+| [dsh-pi-mode](dsh-pi-mode) | 0.5.2 | DSH-Pi 提供 Pi / Pi+ / Pi-IM，Pi+ 独有 Code Mode 工具编排与补丁编辑 |
+| [dsh-session-history](dsh-session-history) | 0.3.1 | 各 agent（Claude Code、Codex 等）的对话历史：原文日志、离线检索，以一个共用技能提供给所有 agent |
 | [dsh-session-fee](dsh-session-fee) | 0.4.13 | 在统计条显示会话（含子代理）按市面 token 价折算的费用 |
-| [dsh-session-labels](dsh-session-labels) | 0.1.4 | Finder 风格会话标签：悬浮按钮与右键打标、标题着色或标签符号、视图筛选 |
+| [dsh-session-labels](dsh-session-labels) | 0.1.5 | Finder 风格会话标签：悬浮按钮与右键打标、标题着色或标签符号、视图筛选 |
 | [dsh-settings-customizer](dsh-settings-customizer) | 0.3.2 | 用个人配置覆盖设置导航的顺序、名称、图标；公共默认为空 |
 | [dsh-speed-pair](dsh-speed-pair) | 0.1.0 | 输出速度改双口径 `X(Y) tok/s`：括号外是首字后的解码速度，括号内是含首字延迟的整段速度 |
 | [dsh-zh-slash](dsh-zh-slash) | 0.1.1 | 用「、」唤出原生 `/` 命令菜单 |
-| [dsh-quick-chat](dsh-quick-chat) | 0.1.5 | DSH 主面板里的 DeepSeek 官方网页：复用原生浏览器，登录跨重启恢复 |
-| [dsh-agents-cli](dsh-agents-cli) | 0.1.7 | 在主面板使用本机 CLI Agents：持久终端、后台工作／完成提醒、可编辑入口 |
+| [dsh-quick-chat](dsh-quick-chat) | 0.1.6 | DSH 主面板里的 DeepSeek 官方网页：复用原生浏览器，登录跨重启恢复 |
+| [dsh-agents-cli](dsh-agents-cli) | 0.1.8 | 在主面板使用本机 CLI Agents：持久终端、后台工作／完成提醒、可编辑入口 |
 
 兼容要求与使用说明见各插件目录；当前 Pi 模式要求 DSH 0.2.2-rc.2 或更新版本。
 
@@ -82,15 +82,15 @@ dsh plugin --profile desktop add dsh-agents-cli
 只在有意固定版本时使用，地址必须包含标签和子目录；各地址独立：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.5.1&path:/dsh-pi-mode
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-history@0.3.0&path:/dsh-session-history
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.5.2&path:/dsh-pi-mode
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-history@0.3.1&path:/dsh-session-history
 git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-fee@0.4.13&path:/dsh-session-fee
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-labels@0.1.4&path:/dsh-session-labels
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-labels@0.1.5&path:/dsh-session-labels
 git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-settings-customizer@0.3.2&path:/dsh-settings-customizer
 git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-speed-pair@0.1.0&path:/dsh-speed-pair
 git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-zh-slash@0.1.1&path:/dsh-zh-slash
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.5&path:/dsh-quick-chat
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-agents-cli@0.1.7&path:/dsh-agents-cli
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-quick-chat@0.1.6&path:/dsh-quick-chat
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-agents-cli@0.1.8&path:/dsh-agents-cli
 ```
 
 固定标签不会跟随 `main`；新版见 [Releases](https://github.com/fujingzhai/youxia-dsh-plugins/releases)。将标签换成 `#main` 只是滚动开发来源，不保证 DSH 自动刷新分支。

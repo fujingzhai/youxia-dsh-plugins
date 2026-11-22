@@ -34,7 +34,7 @@ DSH 0.2.2-rc.1 已支持 npm 插件原生更新：打开「插件」点「刷新
 仅需固定 Git 版本时使用下面地址；Git 安装不显示原生 npm 更新入口：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-labels@0.1.4&path:/dsh-session-labels
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-labels@0.1.5&path:/dsh-session-labels
 ```
 
 开发时也可在合集根目录链接安装（无原生版本检查）：

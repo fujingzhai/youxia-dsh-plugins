@@ -5,7 +5,13 @@ import { catalog } from './lib/sessions.js';
 
 export const name = 'session-labels';
 export const ROUTE = '/youxia-session-labels/api';
-export function authorize(ctx, req) {
+// DSH 0.2.3 起 WebServer 先按路由准入（默认 required），handler 第三个参数就是准入的 Peer；
+// 此时再调 connection.admit 还得另外注入 connection.authentication，所以直接认这个 Peer。旧版不传 Peer，仍自己 admit。
+export function authorize(ctx, req, peer) {
+  if (peer !== undefined) {
+    if (peer?.principal?.kind !== 'owner') throw invalid('仅限已认证的 owner', 403);
+    return;
+  }
   const connection = ctx.get('connection');
   if (!connection?.admit) throw invalid('认证服务不可用', 503);
   const admission = connection.admit(req);
@@ -24,10 +30,10 @@ async function body(req) {
   catch { throw invalid('JSON 格式错误'); }
 }
 export function handler(ctx, store) {
-  return async (req, res) => {
+  return async (req, res, peer) => {
     let status = 200, payload;
     try {
-      authorize(ctx, req);
+      authorize(ctx, req, peer);
       if (req.method === 'GET') payload = store.snapshot();
       else if (req.method === 'POST') payload = store.mutate(await body(req));
       else throw invalid('不支持此请求方法', 405);

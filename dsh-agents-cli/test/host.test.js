@@ -690,3 +690,11 @@ test('hosts that only expose admit are checked through it', () => {
   assert.equal(hostRejection({ requestRejection: () => 403, admit: () => ({ peer: {} }) }, req), 403)
   assert.equal(hostRejection({}, req), 503)
 })
+
+test('a Peer the WebServer already admitted decides without asking connection (DSH 0.2.3+)', () => {
+  const req = request('GET')
+  const throwing = { admit: () => { throw new Error('connection.authentication without inject') } }
+  assert.equal(hostRejection(throwing, req, { principal: { kind: 'owner' } }), undefined)
+  assert.equal(hostRejection(throwing, req, { principal: { kind: 'guest' } }), 403)
+  assert.equal(hostRejection(throwing, req, null), 403)
+})

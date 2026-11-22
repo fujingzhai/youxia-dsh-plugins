@@ -21,7 +21,7 @@ dsh plugin --profile desktop add dsh-agents-cli
 仅需固定 Git 版本时使用下面地址；Git 安装不显示原生 npm 更新入口：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-agents-cli@0.1.7&path:/dsh-agents-cli
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-agents-cli@0.1.8&path:/dsh-agents-cli
 ```
 
 ### 检查更新
@@ -51,7 +51,7 @@ DSH 0.2.2-rc.1 已支持 npm 插件原生更新：打开「插件」点「刷新
 - **macOS**：已用 DSH 0.2.2-rc.1 官方终端服务和浏览器验证持久会话、编辑／停用／恢复、检测、底部留白；隔离 profile 验证右侧状态位置、后台完成、逐入口已读、侧栏折叠及 Codex／Antigravity／Pi 的真实短任务状态。真实 xterm 已验证中文标点／组合输入与 Ctrl+C／Esc 的合成事件；实际 macOS 输入法操作待人工复测。
 - **Windows**：复用 DSH 官方 ConPTY 服务，支持 cmd、PowerShell 及 Git Bash 风格启动；cmd 调用 npm 的 `.cmd` 启动器使用 `call`，确保退出检测生效。GitHub Actions 在 Windows 实际执行 cmd／PowerShell 的启动和完成标记测试；完整 DSH Windows GUI 尚未实测。PowerShell 若限制 npm `.ps1`，将入口指令改为相应的 `.cmd`，无需插件修改系统执行策略。
 - **Linux**：提供登录 shell 启动和非执行式检测，由 GitHub Actions 跑回归测试；完整 DSH GUI 尚未实测。
-- 插件的 HTTP 路由先过 DSH 宿主自己的访问检查（`ctx.connection.requestRejection`：Host／Origin 校验加 DSH 登录 Cookie），与宿主 `/api` 同一套；浏览器里打开的其他网页、未登录的本机请求都调不动终端（0.1.7 起；此前只认自定义请求头）。
+- 插件的 HTTP 路由先过 DSH 宿主自己的访问检查（`ctx.connection.requestRejection`：Host／Origin 校验加 DSH 登录 Cookie；DSH 0.2.3 起由宿主 WebServer 先行准入，插件只认它交来的 owner Peer），与宿主 `/api` 同一套；浏览器里打开的其他网页、未登录的本机请求都调不动终端（0.1.7 起；此前只认自定义请求头）。
 - 命令权限等同当前用户，不走 Agent 沙箱。Windows PowerShell profile、macOS／Linux shell 配置中的代理与登录态由用户维护。
 - 检测只查询命令是否可解析，不运行 `--version` 或启动 CLI。Windows cmd 下裸命令名用 `where`、带路径的用 `if exist` 判断，脚本原样交给 cmd（0.1.6 起；此前引号被转义，所有入口都显示未检测到）。Windows 安装器若更改系统 PATH，正在运行的 DSH 可能需要重启才能继承新 PATH。
 - 部分 CLI 缓存启动时颜色，运行中换主题后自绘区域可能不会立即更新；插件不会为此重启会话。

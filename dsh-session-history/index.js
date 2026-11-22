@@ -31,7 +31,13 @@ export const Config = {
 
 const invalid = (message, status = 400) => Object.assign(new Error(message), { status });
 
-function authorize(ctx, req) {
+// DSH 0.2.3 起 WebServer 先按路由准入（默认 required），handler 第三个参数就是准入的 Peer；
+// 此时再调 connection.admit 还得另外注入 connection.authentication，所以直接认这个 Peer。旧版不传 Peer，仍自己 admit。
+function authorize(ctx, req, peer) {
+  if (peer !== undefined) {
+    if (peer?.principal?.kind !== 'owner') throw invalid('仅限已认证的 owner', 403);
+    return;
+  }
   const connection = ctx.get('connection');
   if (!connection?.admit) throw invalid('认证服务不可用', 503);
   const admission = connection.admit(req);
@@ -199,10 +205,10 @@ export async function command(home, runner, input) {
 }
 
 export function handler(ctx, home, runner) {
-  return async (req, res) => {
+  return async (req, res, peer) => {
     let status = 200, payload;
     try {
-      authorize(ctx, req);
+      authorize(ctx, req, peer);
       if (req.method === 'GET') payload = snapshot(home, runner);
       else if (req.method === 'POST') payload = await command(home, runner, await body(req));
       else throw invalid('不支持此请求方法', 405);

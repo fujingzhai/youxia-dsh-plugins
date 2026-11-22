@@ -46,7 +46,7 @@ dsh plugin --profile desktop add dsh-pi-mode
 仅需固定 Git 版本时使用下面地址；Git 安装不提供原生 npm 更新入口：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.5.1&path:/dsh-pi-mode
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.5.2&path:/dsh-pi-mode
 ```
 
 ### 检查更新
@@ -107,7 +107,7 @@ Pi-IM 与 Pi 共用文件编辑规则，主要区别是交付、GUI 指导与个
 
 互不依赖且无资源冲突的操作优先批量、安全并行并汇总；需要命令并发时，在同一次 bash／pwsh 调用内用脚本实现，收集各项输出与退出码。有依赖时顺序执行，不把同批调用当作已并行。这些是行为引导，不改变执行器、超时或权限，也不保证模型每次遵循。
 
-平台看运行 DSH 的 `process.platform`，不是浏览器所在系统：macOS / Linux 用 bash（ls、rg、find），Windows 用 pwsh 与官方 glob / grep；只注入本平台规则。退出码结合命令语义判断，不把无匹配等正常状态当失败。POSIX 另要求同一子目录连续操作优先传 `workdir` 或切 `working_directory`，内联多行脚本用 `<<'EOF'`，减少重复 `cd` 与引号转义错误。
+平台看运行 DSH 的 `process.platform`，不是浏览器所在系统：macOS / Linux 用 bash（ls、rg、find），Windows 用 pwsh 与官方 glob / grep；只注入本平台规则。退出码结合命令语义判断，不把无匹配等正常状态当失败。POSIX 另要求同一子目录连续操作优先传 `workdir`（DSH 0.2.2 及更早还注册着 `working_directory` 时，另提可切它），内联多行脚本用 `<<'EOF'`，减少重复 `cd` 与引号转义错误。
 
 ## 联网
 
@@ -174,7 +174,7 @@ DSH 的预设工具与全局工具不同。Pi 不挂某项预设能力，不代�
 
 | 全局工具示例 | 建议 |
 |---|---|
-| working_directory | 保留：切换会话工作目录 |
+| working_directory | 保留：切换会话工作目录（DSH 0.2.3 起官方已移除） |
 | load_workspace_dependencies | 保留：内置 Office 技能用它定位 Python 与库 |
 | 模型提供方的图片工具 | 不需要时在来源插件中关闭 |
 | IM、MCP、会话搜索等插件工具 | 按实际需求保留，或用个人名单屏蔽 |
@@ -227,6 +227,8 @@ DSH 的预设工具与全局工具不同。Pi 不挂某项预设能力，不代�
 0.4.4 的静默提醒修正已在 macOS／DSH 0.2.2-rc.2 的独立内存 AgentLoop 验证连续三次触发、思考不重置、正文与工具同次输出后继续并正常收尾；模型与工具为无副作用模拟。可在目标 DSH 环境下设置 `DSH_PI_RUNTIME_TEST=1`，用该安装的 Node／Desktop Electron 执行 `node --test test/runtime.test.js` 复测，普通单元测试默认跳过这项宿主测试。另对 Grok 4.7 `xhigh` 做过小样本真实请求：简短场景能汇报并继续，但连续工具历史下仍出现漏报，不能据此宣称模型依从性已稳定修复。验证不改当前安装或操作真实客服。
 
 0.5.0 在 macOS 的 DSH 0.2.2-rc.2、rc.3、rc.4 工具管线中验证了并发读取、独占屏障、拒绝、条件激活、取消和部分失败。另在 rc.3 的隔离 Web profile 通过模拟模型驱动真实工具，按行提取两个文件中的题记、写入文件、回传图片，并与 0.4.4 对比三个预设的模型工具声明和提示词。
+
+0.5.2 适配 DSH 0.2.3：官方移除了 `working_directory` 工具，bash 规矩只在该工具仍注册时（DSH 0.2.2 及更早）提「或切 working_directory」。在 0.2.2-rc.5 与 0.2.3-alpha.2 的隔离 Web profile 用模拟模型实测 Pi、Pi+、Pi-IM：建会话、请求内容符合预期，Pi+ 的 codemode、apply_patch 可用。
 
 0.5.1 只改 codemode 的工具说明。在 macOS 的 DSH 0.2.2-rc.3 隔离 Web profile 安装打包产物，通过模拟模型在 Pi+ 脚本中调用 bash、write、edit、apply_patch，核对说明所写的返回结构与 bash 缺少 `description` 时的报错；与 0.5.0 相比，Pi、Pi-IM 的工具声明与提示词不变，Pi+ 只有 codemode 说明变化。Windows 的 pwsh 结构按 DSH 源码核对，未实测。
 

@@ -7,7 +7,7 @@
  * 检测只看 process.platform，用户不用改配置。
  */
 export const name = 'pi-mode-shell'
-export const inject = ['systemPrompt']
+export const inject = ['systemPrompt', 'tools']
 
 const RULES = {
   win32: [
@@ -16,12 +16,14 @@ const RULES = {
     '- 检查 pwsh 的 [exit code: N] 标记并结合命令语义判断；非预期失败或输出异常先查明再继续，不把无匹配等正常状态当失败。被中断后单独一个 [exit code: 1] 且没有信号标记，是终止，不是命令本身失败。',
   ].join('\n'),
   posix: [
-    "- 列目录、找文件、搜内容都用 bash（ls、rg、find）。围绕同一子目录连续操作时优先传 workdir 或切 working_directory；内联多行脚本用 <<'EOF' 避免引号转义出错。",
+    "- 列目录、找文件、搜内容都用 bash（ls、rg、find）。围绕同一子目录连续操作时优先传 workdir{{wd}}；内联多行脚本用 <<'EOF' 避免引号转义出错。",
     '- 检查 bash 的 [exit code: N] 标记并结合命令语义判断；非预期失败或输出异常先查明再继续，不把无匹配等正常状态当失败。',
   ].join('\n'),
 }
 
-export const shellRules = (platform = process.platform) => platform === 'win32' ? RULES.win32 : RULES.posix
+// DSH 0.2.3 移除了 working_directory 工具：只在它还注册着时提一句。
+export const shellRules = (platform = process.platform, workingDirectoryTool = false) =>
+  (platform === 'win32' ? RULES.win32 : RULES.posix).replace('{{wd}}', workingDirectoryTool ? ' 或切 working_directory' : '')
 export const shellTool = (platform = process.platform) => platform === 'win32' ? 'pwsh' : 'bash'
 
 export function dshRules() {
@@ -30,6 +32,6 @@ export function dshRules() {
 
 export function apply(ctx) {
   ctx.systemPrompt.variable('shell_tool', () => shellTool())
-  ctx.systemPrompt.variable('shell_rules', () => shellRules())
+  ctx.systemPrompt.variable('shell_rules', () => shellRules(process.platform, ctx.tools.get('working_directory') !== undefined))
   ctx.systemPrompt.variable('dsh_rules', () => dshRules())
 }
