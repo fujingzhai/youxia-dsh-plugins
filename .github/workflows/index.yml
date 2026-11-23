@@ -29,3 +29,11 @@ jobs:
           @deepseek-ai/dsh-plugin-market-index@0.2.3-alpha.2
       - name: 比对 index.json 与 npm 现状
         run: node scripts/build-index.mjs --check
+      # README 推荐的索引地址走 jsDelivr，它对分支文件缓存最多 12 小时；main 推送后请它立即刷新。
+      - name: 刷新 jsDelivr 上的 index.json
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          curl -fsS --retry 3 --max-time 30 \
+            "https://purge.jsdelivr.net/gh/fujingzhai/youxia-dsh-plugins@main/index.json" | tee purge.json
+          node -e "const r=require('./purge.json'); const ok=r.status==='finished' && Object.values(r.paths ?? {}).every(p => !p.throttled); process.exit(ok ? 0 : 1)" \
+            || echo "::warning::jsDelivr 刷新未完成或被限流，最迟 12 小时后自动更新"

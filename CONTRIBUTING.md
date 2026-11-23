@@ -3,7 +3,7 @@
 ## 结构
 
 - 根目录是合集索引与检查入口，不是可安装的 DSH 插件。
-- 根目录 `index.json` 是 DSH 插件页「发现 → 索引源」读取的合集目录（DSH 插件市场索引格式 1），由 `node scripts/build-index.mjs` 依 npm 官方源生成，**不要手改**。每个插件只列 npm 发布标签指向的版本，来源一律 `{ "type": "npm" }`、不写 registry，用户按自己配置的源（含国内镜像）安装。
+- 根目录 `index.json` 是 DSH 插件页「发现 → 索引源」读取的合集目录（DSH 插件市场索引格式 1），由 `node scripts/build-index.mjs` 依 npm 官方源生成，**不要手改**。每个插件只列 npm 发布标签指向的版本，来源一律 `{ "type": "npm" }`、不写 registry，用户按自己配置的源（含国内镜像）安装。对外推荐的索引地址是 jsDelivr 的 `https://cdn.jsdelivr.net/gh/fujingzhai/youxia-dsh-plugins@main/index.json`（国内可访问、下拉框显示合集名）；它缓存最多 12 小时，CI「合集索引」任务在 `main` 每次推送后自动请求刷新。
 - 文档分层：About 只写仓库定位；首页列插件与通用安装方式；细节放插件目录；变更记录只写版本变化。表述简洁，不加发布套话。
 - 每个 `dsh-*` 子目录是独立包，必须包含 `package.json`、README、MIT 许可、组合补丁及测试。
 - 插件不能依赖作者的路径、密钥、私有插件或未公开服务。可选适配必须有可用的公共默认值。
