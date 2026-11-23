@@ -235,6 +235,14 @@ test('共用技能目录从当前安装包解析，提供官方 dsh-doc 而不�
   assert.doesNotMatch(patch, /\/Users\/|\.agents\/skills|\.dsh\/skills|cordis-plugin-development/)
 })
 
+test('三个模式只在自己的技能行排除官方推荐技能，不靠工具屏蔽名单', () => {
+  const patch = readFileSync(new URL('../cordis.patch.yml', import.meta.url), 'utf8')
+  const core = patch.split(/- &pi-files\r?\n/)[0]
+  assert.match(core, /- id: tool-skill\r?\n\s+name: '@deepseek-ai\/dsh-tool-skill'\r?\n\s+config:\r?\n\s+excludedSkills: \[official-plugins, personalized-pages\]/)
+  assert.equal((patch.match(/excludedSkills:/g) ?? []).length, 1)
+  assert.doesNotMatch(patch, /- (official-plugins|personalized-pages)\r?\n/)
+})
+
 test('三个模式共用官方按需 Office 工具，不复制工具、技能或宿主引擎', () => {
   const patch = readFileSync(new URL('../cordis.patch.yml', import.meta.url), 'utf8')
   const [base, remainder] = patch.split(/- id: preset-pi-im\r?\n/)

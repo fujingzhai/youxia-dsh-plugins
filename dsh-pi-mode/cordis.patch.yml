@@ -99,8 +99,12 @@
                 config:
                   customSkillDirs:
                     - !!js process.getBuiltinModule('node:path').join(process.getBuiltinModule('node:path').dirname(process.getBuiltinModule('node:module').createRequire(baseUrl).resolve('@deepseek-ai/dsh-agent-preset/package.json')), 'skills')
+              # DSH 0.2.3 起「个性化推荐」默认开启，会往技能清单加 official-plugins（查官方插件）与 personalized-pages（提议生成页面插件）。
+              # 与官方 cordis 预设一样只在本预设排除；官方模式不受影响。旧版 tool-skill 不认这项，会忽略。
               - id: tool-skill
                 name: '@deepseek-ai/dsh-tool-skill'
+                config:
+                  excludedSkills: [official-plugins, personalized-pages]
               # 与标准模式共用官方按需工具；Office 技能和引擎由 Web／Desktop 宿主提供。
               # 成功加载 Office 技能后，下一步才公开渲染、转换和重算，不增加常驻 system。
               - id: tool-office

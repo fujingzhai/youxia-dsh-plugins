@@ -46,7 +46,7 @@ dsh plugin --profile desktop add dsh-pi-mode
 仅需固定 Git 版本时使用下面地址；Git 安装不提供原生 npm 更新入口：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.5.2&path:/dsh-pi-mode
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.5.3&path:/dsh-pi-mode
 ```
 
 ### 检查更新
@@ -227,6 +227,8 @@ DSH 的预设工具与全局工具不同。Pi 不挂某项预设能力，不代�
 0.4.4 的静默提醒修正已在 macOS／DSH 0.2.2-rc.2 的独立内存 AgentLoop 验证连续三次触发、思考不重置、正文与工具同次输出后继续并正常收尾；模型与工具为无副作用模拟。可在目标 DSH 环境下设置 `DSH_PI_RUNTIME_TEST=1`，用该安装的 Node／Desktop Electron 执行 `node --test test/runtime.test.js` 复测，普通单元测试默认跳过这项宿主测试。另对 Grok 4.7 `xhigh` 做过小样本真实请求：简短场景能汇报并继续，但连续工具历史下仍出现漏报，不能据此宣称模型依从性已稳定修复。验证不改当前安装或操作真实客服。
 
 0.5.0 在 macOS 的 DSH 0.2.2-rc.2、rc.3、rc.4 工具管线中验证了并发读取、独占屏障、拒绝、条件激活、取消和部分失败。另在 rc.3 的隔离 Web profile 通过模拟模型驱动真实工具，按行提取两个文件中的题记、写入文件、回传图片，并与 0.4.4 对比三个预设的模型工具声明和提示词。
+
+0.5.3 跟进 DSH 0.2.3 官方模式的两处改动：文件链接与图片路径只写绝对路径（会话工作目录可变，相对路径会指错）；Pi 三个模式的技能清单排除 0.2.3 默认开启的「个性化推荐」技能 `official-plugins`、`personalized-pages`（与官方 cordis 模式同法，只影响本插件的预设）。在 0.2.3-alpha.2 隔离 Web profile 抓真实请求核对：新规矩已发给模型，Pi 技能清单不含这两项，标准模式照旧含。
 
 0.5.2 适配 DSH 0.2.3：官方移除了 `working_directory` 工具，bash 规矩只在该工具仍注册时（DSH 0.2.2 及更早）提「或切 working_directory」。在 0.2.2-rc.5 与 0.2.3-alpha.2 的隔离 Web profile 用模拟模型实测 Pi、Pi+、Pi-IM：建会话、请求内容符合预期，Pi+ 的 codemode、apply_patch 可用。
 
