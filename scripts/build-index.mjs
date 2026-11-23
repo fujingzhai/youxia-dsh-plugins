@@ -159,7 +159,7 @@ async function build() {
   }
   const index = {
     format: 1,
-    title: { en: 'youxia DSH plugins', zh: '游侠 DSH 插件合集' },
+    title: { en: 'youxia DSH plugins', zh: '游夏 DSH 插件合集' },
     description: {
       en: 'DSH plugins maintained by youxia, each installed and updated on its own.',
       zh: '自用并持续维护的 DSH 插件合集，各插件独立安装、独立更新。',
