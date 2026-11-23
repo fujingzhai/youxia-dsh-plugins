@@ -6,6 +6,9 @@
 #   ./scripts/publish-npm.sh dsh-zh-slash
 #   ./scripts/publish-npm.sh --status
 #
+# 真正发布了新版本后，脚本会通知 npmmirror 立即同步、重新生成根目录 index.json 并单独提交；
+# 之后记得 git push origin main。
+#
 # 合集根是 private，不会发布。本机默认源若是镜像，本脚本仍只写 registry.npmjs.org。
 
 set -euo pipefail
@@ -47,6 +50,7 @@ fi
 TOKEN="$(get_token)"
 published=0
 skipped=0
+PUBLISHED=()
 
 for dir in "${TARGETS[@]}"; do
   pkg_dir="$ROOT/$dir"
@@ -65,7 +69,23 @@ for dir in "${TARGETS[@]}"; do
       --//registry.npmjs.org/:_authToken="$TOKEN"
   )
   published=$((published + 1))
+  PUBLISHED+=("$name@$ver")
 done
 
 unset TOKEN
 echo "完成：发布 ${published}，跳过 ${skipped}"
+
+if [[ -z "$DRY" && $published -gt 0 ]]; then
+  # 国内镜像常滞后；npmmirror 是 DSH 默认的备选源，发布后主动请它同步。
+  for spec in "${PUBLISHED[@]}"; do
+    curl -sS -o /dev/null --max-time 20 -X PUT "https://registry-direct.npmmirror.com/-/package/${spec%@*}/syncs" || true
+  done
+  echo "→ 已通知 npmmirror 同步：${PUBLISHED[*]}"
+  # 合集索引必须跟着 npm 走；CI 的「合集索引」任务会拦下没更新的 index.json。
+  node "$ROOT/scripts/build-index.mjs" --expect "$(IFS=,; echo "${PUBLISHED[*]}")"
+  if ! git -C "$ROOT" diff --quiet -- index.json; then
+    git -C "$ROOT" add index.json
+    git -C "$ROOT" commit -q -m "chore(index): 收录 ${PUBLISHED[*]}" -- index.json
+    echo "⚠ 已提交 index.json，记得 git push origin main"
+  fi
+fi

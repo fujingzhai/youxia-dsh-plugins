@@ -60,6 +60,16 @@ dsh plugin --profile desktop add dsh-agents-cli
 - **DeepSeek 网页**在左侧增加「DeepSeek」，首次需登录。
 - **CLI Agents** 增加「Agents」面板；首次进入会启动首个可用入口，其余入口点到才启动。
 
+### 作为插件市场索引源（DSH 0.2.3 起）
+
+在 **插件 → 发现 → 索引源** 添加本仓库，即可在「发现」里浏览、安装合集中的插件：
+
+```text
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git
+```
+
+索引里的插件同样从 npm 安装，使用你在 DSH 中配置的安装源（含国内镜像），之后照常在插件页检查更新。
+
 ## 检查更新与原地升级
 
 适用于 **DSH 0.2.2-rc.1 的第三方 npm 安装**；更早或更晚版本的界面可能不同：

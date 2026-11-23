@@ -1,0 +1,31 @@
+name: 合集索引
+
+# 根目录 index.json 是 DSH 插件页「索引源」读取的合集目录（格式 1），须与 npm 上已发布的版本一致。
+# 推送时比对，并每天定时比对一次：有人发布了 npm 却没重新生成 index.json，这里会失败并邮件通知仓库所有者。
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '17 1 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  index:
+    name: index.json 与 npm 一致
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: 安装 DSH 官方索引校验器
+        run: >-
+          npm install --no-save --ignore-scripts --package-lock=false --no-audit --no-fund
+          @deepseek-ai/dsh-plugin-market-index@0.2.3-alpha.2
+      - name: 比对 index.json 与 npm 现状
+        run: node scripts/build-index.mjs --check

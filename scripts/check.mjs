@@ -100,4 +100,15 @@ for (const name of plugins) {
   }
   console.log(`✓ ${name}@${manifest.version}: 清单、文档、语法、测试、打包通过`)
 }
+// 根目录 index.json 是 DSH 插件页「索引源」读取的合集目录，由 scripts/build-index.mjs 依 npm 生成，不手改。
+// 这里只做离线检查；与 npm 现状的比对在 CI 的「合集索引」任务里（推送与每日定时）。
+const index = JSON.parse(read(join(root, 'index.json')))
+assert.equal(index.format, 1, 'index.json: format 须为 1（运行 node scripts/build-index.mjs 生成）')
+for (const plugin of index.plugins) {
+  assert(plugins.includes(plugin.name), `index.json: ${plugin.name} 不是本仓库已跟踪的插件`)
+  for (const version of plugin.versions) {
+    assert.deepEqual(version.source, { type: 'npm' }, `index.json: ${plugin.name}@${version.version} 须从 npm 安装且不写 registry`)
+  }
+}
+console.log(`✓ index.json：${index.plugins.length} 个插件，来源均为 npm（与 npm 现状的比对见 CI）`)
 console.log(`\n${plugins.length} 个独立插件全部通过。`)
