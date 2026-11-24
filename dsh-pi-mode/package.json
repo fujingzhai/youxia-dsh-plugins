@@ -1,6 +1,6 @@
 {
   "name": "dsh-pi-mode",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "author": "youxia",
   "repository": {
     "type": "git",
@@ -61,6 +61,7 @@
     "@deepseek-ai/dsh-tool-fs": ">=0.2.2-rc.1",
     "@deepseek-ai/dsh-tool-office": ">=0.2.2-rc.2",
     "@deepseek-ai/dsh-tools": ">=0.2.2-rc.2",
+    "@deepseek-ai/dsh-session": ">=0.2.2-rc.2",
     "@deepseek-ai/dsh-scope": ">=0.2.2-rc.2"
   },
   "keywords": [

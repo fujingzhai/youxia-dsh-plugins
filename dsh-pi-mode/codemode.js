@@ -5,6 +5,7 @@ export const name = 'pi-plus-codemode'
 export const inject = ['tools']
 const directOnly = new Set(['codemode', 'run_code', 'ask_user_question', 'present', 'dsh_im_return_file'])
 const maxCalls = 128
+const storeRecord = 'plugin:dsh-pi-mode/codemode-store'
 let activeWorkers = 0
 
 function reserveWorker() {
@@ -38,6 +39,25 @@ function excerpt(text, chars) {
   if (chars === 0) return '[文本输出预算为 0]'
   const half = Math.floor(chars / 2)
   return text.slice(0, half) + '\n… [输出已截断，请在脚本内筛选或分段返回] …\n' + text.slice(-half)
+}
+
+function readStore(stores, session) {
+  let state = stores.get(session)
+  if (!state) {
+    state = { cursor: 0, values: Object.create(null) }
+    stores.set(session, state)
+  }
+  // 插件记录不进入模型上下文。恢复或分支时，按该会话自己的日志重建。
+  for (; state.cursor < session.seq; state.cursor++) {
+    const event = session.eventAt(state.cursor)
+    if (event.type !== storeRecord || event.ignorable !== true) continue
+    const writes = event.data
+    if (!writes?.set || typeof writes.set !== 'object' || Array.isArray(writes.set) ||
+      !Array.isArray(writes.delete) || writes.delete.some(key => typeof key !== 'string')) continue
+    for (const key of writes.delete) delete state.values[key]
+    Object.assign(state.values, writes.set)
+  }
+  return state.values
 }
 
 function dispatchChild({ ctx, exec, pipeline, queue, createUserMessage, scopeTarget }, input, record) {
@@ -89,20 +109,26 @@ async function forwardScriptImages(ctx, exec, images, createUserMessage) {
 
 // 在真正启动 QuickJS 时才加载 WASM 包；DSH 的工具定义与管线来自宿主。
 export async function apply(ctx) {
-  const [{ defineTool, projectToolSchema }, { ToolExecutionPipeline }, { createUserMessage }, { scopeTarget }] = await Promise.all([
+  const [{ defineTool, projectToolSchema }, { ToolExecutionPipeline }, { createUserMessage }, { scopeTarget }, sessionModule] = await Promise.all([
     import('@deepseek-ai/dsh-tools'), import('@deepseek-ai/dsh-tools/pipeline'),
-    import('@deepseek-ai/dsh-llm'), import('@deepseek-ai/dsh-scope'),
+    import('@deepseek-ai/dsh-llm'), import('@deepseek-ai/dsh-scope'), import('@deepseek-ai/dsh-session'),
   ])
   const pipeline = new ToolExecutionPipeline(ctx)
   const shell = shellTool()
+  const appendStore = sessionModule.appendPluginRecord
+  const stores = typeof appendStore === 'function' ? new WeakMap() : undefined
+  const storeHint = stores
+    ? ' For small JSON needed by later scripts in this session, use store(key, value) and load(key); store(key, undefined) clears a key. Return only what you need to see.'
+    : ''
   ctx.tools.register(defineTool({
     name: 'codemode',
-    description: 'Run a JavaScript async function body to combine DSH tool calls and filter their structured results. The QuickJS sandbox has no Node, file system, network, or timers; use tools. Use await tools.read({file_path}), Promise.allSettled(), text(value) or return. read returns {lines:[{number,text}],totalLines,path,offset}. ' + shell + ' needs description; a foreground run returns {exitCode,stdout:{text,truncated},stderr:{text,truncated}}. write, edit, and apply_patch results include full file text; do not return them whole. ALL_TOOLS lists callable names; await describeTool(name) for input/output schemas or await searchTools(query) for matches. DSH image results are attached automatically. Each call starts fresh. Await all work; completed tool effects persist even if the script fails.',
+    description: 'Run a JavaScript async function body to combine DSH tool calls and filter their structured results. The QuickJS sandbox has no Node, file system, network, or timers; use tools. Use await tools.read({file_path}), Promise.allSettled(), text(value) or return. read returns {lines:[{number,text}],totalLines,path,offset}. ' + shell + ' needs description; a foreground run returns {exitCode,stdout:{text,truncated},stderr:{text,truncated}}. write, edit, and apply_patch results include full file text; do not return them whole. ALL_TOOLS lists callable names; await describeTool(name) for input/output schemas or await searchTools(query) for matches. DSH image results are attached automatically. Await all work; completed tool effects persist even if the script fails.' + storeHint,
     parameters: { code: { type: 'string', required: true, description: 'JavaScript function body, with top-level await and return.' } },
     output: { schema: { type: 'string' }, render: (_args, text) => [{ type: 'text', text }] },
     isConcurrencySafe: () => false,
     async execute({ code }, exec) {
       if (!exec.agent || !exec.toolSet) throw new Error('codemode requires the current agent step and its admitted tools.')
+      const session = exec.agent.session
       const { CodemodeSandbox, toCodemodeIdentifier, parseCodemodeSource } = await import('@earendil-works/pi-codemode')
       const parsed = parseCodemodeSource(code)
       const queue = new DispatchQueue(8)
@@ -141,7 +167,8 @@ export async function apply(ctx) {
         memoryLimitBytes: 128 * 1024 ** 2, timeoutMs: Math.min(parsed.options.timeoutMs ?? 120_000, 300_000) })
       let result
       try {
-        result = await vm.execute(parsed.code, { signal })
+        const store = stores ? readStore(stores, session) : undefined
+        result = await vm.execute(parsed.code, { signal, store })
       } finally {
         stopped.abort()
         await vm.close()
@@ -159,6 +186,13 @@ export async function apply(ctx) {
       const output = excerpt(parts.join('\n'), budget)
       const scriptError = result.ok ? undefined : excerpt(result.error.stack ?? result.error.message, 2500)
       if (scriptError || imageError) throw new Error([output, scriptError, imageError].filter(Boolean).join('\n'))
+      if (stores && result.ok) {
+        const writes = result.storeWrites
+        if (Object.keys(writes.set).length || writes.delete.length) {
+          exec.signal.throwIfAborted()
+          appendStore(session, storeRecord, writes)
+        }
+      }
       return output || '(script completed with no output)'
     },
   }))

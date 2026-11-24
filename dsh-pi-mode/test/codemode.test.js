@@ -33,11 +33,12 @@ test('Pi+ Code Mode 在真实 DSH 步骤中执行、筛选与取消', { skip: pr
     const agent = handle.agent, host = agent.ctx
     await apply(host)
     let id = 0
-    async function run(code, signal = new AbortController().signal) {
-      const toolSet = await host.tools.resolve({ agent, modelSelection: agent.options, signal })
+    async function run(code, signal = new AbortController().signal, target = agent) {
+      const tools = target.ctx.tools
+      const toolSet = await tools.resolve({ agent: target, modelSelection: target.options, signal })
       try {
-        const batch = await host.tools.execute({ calls: [{ id: 'outer-' + ++id, type: 'tool-call',
-          name: 'codemode', arguments: JSON.stringify({ code }) }], agent, toolSet, signal })
+        const batch = await tools.execute({ calls: [{ id: 'outer-' + ++id, type: 'tool-call',
+          name: 'codemode', arguments: JSON.stringify({ code }) }], agent: target, toolSet, signal })
         return batch.results[0].result
       } finally { toolSet.dispose() }
     }
@@ -103,12 +104,42 @@ test('Pi+ Code Mode 在真实 DSH 步骤中执行、筛选与取消', { skip: pr
           return 'ended'
         } }))
       const ctrl = new AbortController()
-      const call = run('return await tools.wait_for_cancel({})', ctrl.signal)
+      const call = run('store("cancelled", true); return await tools.wait_for_cancel({})', ctrl.signal)
       await started.promise
       ctrl.abort()
       assert((await call).isError); assert(stopped)
       // 工具说明写明沙箱里没有 Node、网络和定时器。
       assert.equal((await run('return [typeof process, typeof require, typeof fetch, typeof setTimeout].join()')).value, 'undefined,undefined,undefined,undefined')
+      assert.equal((await run('return load("cancelled") === undefined')).value, 'true')
+    })
+    await t.test('脚本只回传摘要，保存的结果可恢复且按会话隔离', async () => {
+      assert.match(host.tools.get('codemode', agent).description, /store\(key, value\) and load\(key\)/)
+      const saved = await run('const hits = [{ line: 42, text: "原文命中" }]; store("hits", hits); return hits.length')
+      assert.equal(saved.value, '1')
+      assert.doesNotMatch(JSON.stringify(saved.content), /原文命中/)
+      const event = agent.session.snapshotEvents().find(value => value.type === 'plugin:dsh-pi-mode/codemode-store')
+      assert.equal(event.ignorable, true)
+      assert.equal(agent.session.deriveEventMessage(event), null)
+      assert.equal((await run('return load("hits")[0].text')).value, '原文命中')
+
+      const failed = await run('store("hits", []); store("discard", true); throw Error("failed")')
+      assert(failed.isError)
+      assert.equal((await run('return [load("hits")[0].line, load("discard") === undefined]')).value, '[42,true]')
+
+      const seed = JSON.parse(JSON.stringify(agent.session.snapshotEvents()))
+      const restored = await root.agents.create({ sessionId: 'pi-plus-restored', seed, agentOptions: agent.options, setup: apply })
+      try {
+        assert.equal((await run('return load("hits")[0].line', undefined, restored.agent)).value, '42')
+        const removed = await run('store("hits", undefined); return load("hits") === undefined', undefined, restored.agent)
+        assert.equal(removed.value, 'true')
+        assert.equal((await run('return load("hits") === undefined', undefined, restored.agent)).value, 'true')
+        assert.equal((await run('return load("hits")[0].line')).value, '42')
+      } finally { await restored.dispose() }
+
+      const fresh = await root.agents.create({ sessionId: 'pi-plus-new', agentOptions: agent.options, setup: apply })
+      try {
+        assert.equal((await run('return load("hits") === undefined', undefined, fresh.agent)).value, 'true')
+      } finally { await fresh.dispose() }
     })
   } finally { await handle?.dispose(); await root.fiber.dispose() }
 })
