@@ -6,7 +6,7 @@
 
 | 插件 | 当前版本 | 作用 |
 |---|---|---|
-| [dsh-pi-mode](dsh-pi-mode) | 0.5.4 | DSH-Pi 提供 Pi / Pi+ / Pi-IM，Pi+ 独有 Code Mode 工具编排与补丁编辑 |
+| [dsh-pi-mode](dsh-pi-mode) | 0.5.5 | DSH-Pi 提供 Pi / Pi+ / Pi-IM，Pi+ 独有 Code Mode 工具编排与补丁编辑 |
 | [dsh-session-history](dsh-session-history) | 0.3.1 | 各 agent（Claude Code、Codex 等）的对话历史：原文日志、离线检索，以一个共用技能提供给所有 agent |
 | [dsh-session-fee](dsh-session-fee) | 0.4.13 | 在统计条显示会话（含子代理）按市面 token 价折算的费用 |
 | [dsh-session-labels](dsh-session-labels) | 0.1.5 | Finder 风格会话标签：悬浮按钮与右键打标、标题着色或标签符号、视图筛选 |
@@ -94,7 +94,7 @@ https://cdn.jsdelivr.net/gh/fujingzhai/youxia-dsh-plugins@main/index.json
 只在有意固定版本时使用，地址必须包含标签和子目录；各地址独立：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.5.4&path:/dsh-pi-mode
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.5.5&path:/dsh-pi-mode
 git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-history@0.3.1&path:/dsh-session-history
 git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-fee@0.4.13&path:/dsh-session-fee
 git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-labels@0.1.5&path:/dsh-session-labels

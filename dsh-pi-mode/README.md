@@ -46,7 +46,7 @@ dsh plugin --profile desktop add dsh-pi-mode
 仅需固定 Git 版本时使用下面地址；Git 安装不提供原生 npm 更新入口：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.5.4&path:/dsh-pi-mode
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.5.5&path:/dsh-pi-mode
 ```
 
 ### 检查更新
@@ -54,6 +54,12 @@ git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.5.4&path:
 打开 DSH「插件」点「刷新」，或进入本插件详情「版本 → 重新检查」；发现兼容新版后点击「更新到 <版本>」并确认，无需手动卸载重装。这是在打开详情／刷新时检查，不是全局推送，不自动升级。请先完成当前任务，更新后**重启 DSH、新建会话**。
 
 个人 `deny`、`imDeny`、`progressReminder` 留在 profile，不被包更新覆盖。不要直接定制发布包内文件，更新会替换它们。Git、压缩包和 `link:` 不显示这套 npm 更新入口；需要迁移来源时先保留源码定制与数据，勿为找更新按钮贸然卸载。镜像同步可能稍晚，网络失败时可重新检查或换源。
+
+### 插件页设置
+
+在「插件 → DSH-Pi」里可以直接开关**长任务静默提醒**，保存后即时生效。
+
+**帮助改进插件**默认开启。首次提示可以关闭，之后随时在插件页修改。实际用到 Pi、Pi+ 或 Pi-IM 时，后台只向 `dsh-pi-usage.you-xia.cc` 发送日期、插件版本、每周随机码、当天用过的模式和是否调用过 Code Mode，用于统计活跃安装和功能使用。关闭立即停止上报。接收端关闭请求日志，逐安装明细保留 14 天，长期保存日、周汇总。DSH 的 `DSH_TELEMETRY_DISABLED` 同样有效。只在无界面运行的 profile 可以在 `pi-mode-settings` 中明确设 `shareUsage: true` 开启。
 
 ## Pi+模式
 

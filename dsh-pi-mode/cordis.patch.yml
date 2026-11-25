@@ -132,6 +132,10 @@
               # 联网工具：默认 DSH 自带工具；有插件登记替代工具时改用它，联网规矩始终由共用核心提供，见 web.js
               - id: web-tools
                 name: 'dsh-pi-mode/web.js'
+          - id: usage
+            name: 'dsh-pi-mode/usage.js'
+            config:
+              mode: pi
           # 标准文件规则只在这里定义一次，Pi-IM 原样引用；Pi+ 使用补丁版。
           - &pi-files
             id: file-rules
@@ -165,6 +169,10 @@
         plugins:
           # 与 Pi 模式共用的整组（YAML 别名），不要在这里另抄一份
           - *pi-core
+          - id: usage
+            name: 'dsh-pi-mode/usage.js'
+            config:
+              mode: pi-im
           - *pi-files
           # IM 里看不到 present 卡片和本机文件链接，所以不挂 present；个人名单取 pi-mode-settings 的 imDeny。
           # 规矩只写 IM 工具的用法，不在系统提示词里交代"用户在用某个 IM"：渠道由 dsh-im 的「上下文增强」逐条消息附带（见 README）。
@@ -184,6 +192,10 @@
         order: 6
         plugins:
           - *pi-core
+          - id: usage
+            name: 'dsh-pi-mode/usage.js'
+            config:
+              mode: pi-plus
           - id: file-rules
             name: 'dsh-pi-mode/files.js'
             config:
@@ -199,3 +211,7 @@
         deny: []
         imDeny: []
         progressReminder: true
+    - id: pi-mode-usage
+      name: 'dsh-pi-mode'
+      config:
+        profile: true

@@ -7,6 +7,8 @@
  *    在预设作用域用 tools.restrict 屏蔽，模型声明与执行使用同一份限制；先用不带作用域的 tools.get 确认是全局注册，
  *    跳过预设工具和暂未注册的名字；注册表或个人设置变化时重算。DSH 0.2.2 起 assemble 监听器不再接收工具列表。
  */
+import { apply as applyUsage } from './usage.js'
+
 export const name = 'pi-mode-channel'
 export const inject = ['tools', 'systemPrompt']
 
@@ -15,6 +17,7 @@ const SETTINGS = Symbol.for('dsh-pi-mode.settings')
 const PERSONAL_KEY = { desktop: 'deny', im: 'imDeny' }
 
 export function apply(ctx, config) {
+  if (config?.profile === true) return applyUsage(ctx)
   const own = Array.isArray(config?.deny) ? config.deny : []
   const personalKey = PERSONAL_KEY[config?.channel] ?? 'deny'
   const rules = typeof config?.rules === 'string' ? config.rules : ''

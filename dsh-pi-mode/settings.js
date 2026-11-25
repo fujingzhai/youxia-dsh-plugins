@@ -17,11 +17,20 @@ const KEY = Symbol.for('dsh-pi-mode.settings')
 
 const names = list => Object.freeze(Array.isArray(list) ? list.filter(item => typeof item === 'string' && item !== '') : [])
 
+export const currentSettings = () => globalThis[KEY]
+
 export function apply(ctx, config) {
   const value = Object.freeze({
     deny: names(config?.deny),
     imDeny: names(config?.imDeny),
     progressReminder: config?.progressReminder !== false,
+    shareUsage: config?.shareUsage !== false,
+    usageNoticeSeen: config?.usageNoticeSeen === true || config?.shareUsage === true,
+    get edit() {
+      const editor = ctx.get?.('configEditor')
+      const entry = editor?.entries().find(row => row.options.id === 'pi-mode-settings' && row.options.name === 'dsh-pi-mode/settings.js')
+      return entry && (change => editor.edit(entry, current => ({ ...current, ...change })))
+    },
   })
   ctx.effect(() => {
     globalThis[KEY] = value

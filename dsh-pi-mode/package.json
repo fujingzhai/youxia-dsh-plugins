@@ -1,6 +1,6 @@
 {
   "name": "dsh-pi-mode",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "author": "youxia",
   "repository": {
     "type": "git",
@@ -20,17 +20,20 @@
     "dsh": ">=0.2.2-rc.2"
   },
   "scripts": {
-    "check": "node --check index.js && node --check web.js && node --check settings.js && node --check shell.js && node --check files.js && node --check progress.js && node --check codemode.js && node --check codemode-queue.js",
+    "check": "node --check index.js && node --check web.js && node --check settings.js && node --check shell.js && node --check files.js && node --check progress.js && node --check codemode.js && node --check codemode-queue.js && node --check usage.js && node --check usage-format.js && node --check client.js",
     "test": "node --test"
   },
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
-    }
+    },
+    "client": { "platform": "web", "immediately": true, "inject": ["@deepseek-ai/dsh-client-ui-plugin-manager"] }
   },
   "exports": {
     ".": "./index.js",
+    "./client": "./client.js",
     "./web.js": "./web.js",
+    "./usage.js": "./usage.js",
     "./settings.js": "./settings.js",
     "./shell.js": "./shell.js",
     "./files.js": "./files.js",
@@ -42,9 +45,12 @@
   },
   "files": [
     "index.js",
+    "client.js",
     "icon.svg",
     "web.js",
     "settings.js",
+    "usage.js",
+    "usage-format.js",
     "shell.js",
     "files.js",
     "progress.js",

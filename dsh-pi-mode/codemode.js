@@ -168,6 +168,7 @@ export async function apply(ctx) {
       let result
       try {
         const store = stores ? readStore(stores, session) : undefined
+        if (!signal.aborted) ctx.get('piModeUsage')?.record('pi-plus', true)
         result = await vm.execute(parsed.code, { signal, store })
       } finally {
         stopped.abort()

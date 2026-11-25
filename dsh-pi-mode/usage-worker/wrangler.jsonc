@@ -1,0 +1,18 @@
+{
+  "name": "dsh-pi-usage",
+  "main": "index.js",
+  "compatibility_date": "2026-11-25",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    { "pattern": "dsh-pi-usage.you-xia.cc", "custom_domain": true }
+  ],
+  "d1_databases": [
+    { "binding": "DB", "database_name": "dsh-pi-usage", "database_id": "83adc10f-e74d-4db3-8d84-29df05d4f94b" }
+  ],
+  "ratelimits": [
+    { "name": "INGEST_LIMIT", "namespace_id": "14354055", "simple": { "limit": 120, "period": 60 } }
+  ],
+  "observability": { "enabled": false },
+  "triggers": { "crons": ["17 16 * * *"] }
+}
