@@ -4,6 +4,10 @@
 
 ## 2026-11-25
 
+### dsh-session-history 0.3.2
+
+- 修复：配置里登记了自定义 agent 后，`session-history status` 报 `TypeError: Cannot read properties of undefined (reading 'id')` 退出。查找 agent 时漏传了配置，只找内置的；检索、整理不受影响。新增 1 项回归测试。
+
 ### dsh-pi-mode 0.5.5
 
 - 插件详情新增「长任务静默提醒」开关，沿用 profile 原有设置，保存即生效。

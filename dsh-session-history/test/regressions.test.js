@@ -205,3 +205,13 @@ test('索引已是最新时不开写事务：别的进程拿着写锁也能查',
     quick.close();
   }
 });
+
+test('0.3.2 自定义 agent：status 不崩，并列出这个 agent', () => {
+  const home = join(HOME, 'custom-status');
+  const sessions = join(home, 'pi-sessions');
+  mkdirSync(join(sessions, 'chat'), { recursive: true });
+  writeFileSync(join(home, 'config.json'), JSON.stringify({ custom: [{ name: 'wechat-agent', format: 'pi', sessions }] }));
+  const r = spawnSync(process.execPath, [BIN, 'status', '--home', home], { encoding: 'utf8', env: { ...process.env, HOME } });
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /wechat-agent/);
+});

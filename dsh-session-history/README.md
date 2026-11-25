@@ -191,7 +191,7 @@ session-history refresh | status | setup | link all | unlink claude | config
 Git 子目录地址（不提供原生更新检查）：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-history@0.3.1&path:/dsh-session-history
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-session-history@0.3.2&path:/dsh-session-history
 ```
 
 ## 兼容与限制
