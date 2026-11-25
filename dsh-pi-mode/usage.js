@@ -77,46 +77,85 @@ export function createReporter({ enabled, code, now = Date.now, post = fetch }) 
 }
 
 function reply(res, status, data) {
-  res.writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' })
+  res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' })
   res.end(JSON.stringify(data))
 }
 
+export function rejectRequest(connection, req, peer) {
+  // 0.2.3 already admitted the request. Older hosts require the same owner check here.
+  if (peer !== undefined) return peer?.principal?.kind === 'owner' ? undefined : 403
+  if (typeof connection?.admit === 'function') {
+    const admission = connection.admit(req)
+    if (!admission) return 403
+    if ('rejection' in admission) return admission.rejection ?? 403
+    return admission.peer?.principal?.kind === 'owner' ? undefined : 403
+  }
+  if (typeof connection?.requestRejection === 'function') return connection.requestRejection(req)
+  return 503
+}
+
 async function settingChange(req) {
-  if (req.headers['content-type'] !== 'application/json' || req.headers['x-dsh-pi-settings'] !== '1') return undefined
-  let text = '', size = 0
+  const contentType = String(req.headers['content-type'] ?? '').split(';', 1)[0].trim().toLowerCase()
+  if (contentType !== 'application/json' || req.headers['x-dsh-pi-settings'] !== '1') return undefined
+  const chunks = []
+  let size = 0
   try {
     for await (const chunk of req) {
-      size += chunk.length
+      const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)
+      size += buffer.length
       if (size > 256) return undefined
-      text += chunk.toString('utf8')
+      chunks.push(buffer)
     }
-    const change = JSON.parse(text)
-    if (!change || typeof change !== 'object' || Object.keys(change).length !== 1) return undefined
-    if (typeof change.shareUsage === 'boolean' || typeof change.progressReminder === 'boolean' || change.usageNoticeSeen === true) return change
+    const change = JSON.parse(Buffer.concat(chunks).toString('utf8'))
+    if (!change || typeof change !== 'object' || Array.isArray(change) || Object.keys(change).length !== 1) return undefined
+    if (typeof change.shareUsage === 'boolean') return { shareUsage: change.shareUsage, usageNoticeSeen: true }
+    if (change.usageNoticeSeen === true) return { usageNoticeSeen: true }
   } catch { /* Invalid request. */ }
   return undefined
 }
 
-function settingsRoute(ctx, globalOff) {
+export function settingsRoute(ctx, isGlobalOff) {
+  const globalDisabled = typeof isGlobalOff === 'function' ? isGlobalOff : () => Boolean(isGlobalOff)
+  let pendingWrite = Promise.resolve()
+
+  function enqueueEdit(change) {
+    const run = async () => {
+      const settings = currentSettings()
+      const edit = settings?.edit
+      if (!edit) return { status: 503, error: 'unavailable' }
+      if (Object.keys(change).length === 1 && change.usageNoticeSeen === true && settings.usageNoticeSeen) {
+        return { status: 200 }
+      }
+      try {
+        await edit(change)
+        return { status: 200 }
+      } catch {
+        return { status: 409, error: 'save_failed' }
+      }
+    }
+    const task = pendingWrite.then(run, run)
+    pendingWrite = task.then(() => {}, () => {})
+    return task
+  }
+
   return async (req, res, peer) => {
-    // 0.2.3 already admitted the request. Older hosts require the same owner check here.
-    const admitted = peer === undefined ? ctx.connection.admit(req)?.peer : peer
-    if (admitted?.principal?.kind !== 'owner') return reply(res, 403, { error: 'forbidden' })
+    const rejected = rejectRequest(ctx.get?.('connection') ?? ctx.connection, req, peer)
+    if (rejected !== undefined) return reply(res, rejected, { error: rejected === 503 ? 'unavailable' : 'forbidden' })
     if (!currentSettings()) return reply(res, 503, { error: 'unavailable' })
     if (req.method === 'PATCH') {
       const change = await settingChange(req)
       if (!change) return reply(res, 400, { error: 'invalid' })
-      const { edit } = currentSettings() ?? {}
-      if (!edit) return reply(res, 503, { error: 'unavailable' })
-      try { await edit(change) }
-      catch { return reply(res, 409, { error: 'save_failed' }) }
+      const outcome = await enqueueEdit(change)
+      if (outcome.status !== 200) return reply(res, outcome.status, { error: outcome.error })
     } else if (req.method !== 'GET') return reply(res, 405, { error: 'method' })
     const settings = currentSettings()
     if (!settings) return reply(res, 503, { error: 'unavailable' })
+    const globalOff = globalDisabled()
     return reply(res, 200, {
       shareUsage: settings.shareUsage && !globalOff,
       showNotice: settings.shareUsage && !globalOff && !settings.usageNoticeSeen && Boolean(settings.edit),
-      progressReminder: settings.progressReminder, editable: Boolean(settings.edit), globalOff,
+      editable: Boolean(settings.edit),
+      globalOff,
     })
   }
 }
@@ -140,10 +179,10 @@ export function apply(ctx, config) {
   })
   ctx.provide('piModeUsage', reporter)
   ctx.on('pi-mode/settings-change', () => {
-    if (currentSettings()?.shareUsage === false) reporter.clear()
+    if (!currentSettings()?.shareUsage) reporter.clear()
   })
   ctx.effect(() => reporter.clear)
   ctx.inject(['webServer', 'connection'], scoped => {
-    scoped.effect(() => scoped.webServer.register({ kind: 'exact', path: route, handler: settingsRoute(scoped, globalOff()) }))
+    scoped.effect(() => scoped.webServer.register({ kind: 'exact', path: route, handler: settingsRoute(scoped, globalOff) }))
   })
 }

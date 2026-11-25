@@ -46,20 +46,22 @@ dsh plugin --profile desktop add dsh-pi-mode
 仅需固定 Git 版本时使用下面地址；Git 安装不提供原生 npm 更新入口：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.5.5&path:/dsh-pi-mode
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.5.6&path:/dsh-pi-mode
 ```
 
 ### 检查更新
 
 打开 DSH「插件」点「刷新」，或进入本插件详情「版本 → 重新检查」；发现兼容新版后点击「更新到 <版本>」并确认，无需手动卸载重装。这是在打开详情／刷新时检查，不是全局推送，不自动升级。请先完成当前任务，更新后**重启 DSH、新建会话**。
 
-个人 `deny`、`imDeny`、`progressReminder` 留在 profile，不被包更新覆盖。不要直接定制发布包内文件，更新会替换它们。Git、压缩包和 `link:` 不显示这套 npm 更新入口；需要迁移来源时先保留源码定制与数据，勿为找更新按钮贸然卸载。镜像同步可能稍晚，网络失败时可重新检查或换源。
+个人 `deny`、`imDeny`、`progressReminder` 与统计选项留在 profile，不被包更新覆盖。不要直接定制发布包内文件，更新会替换它们。Git、压缩包和 `link:` 不显示这套 npm 更新入口；需要迁移来源时先保留源码定制与数据，勿为找更新按钮贸然卸载。镜像同步可能稍晚，网络失败时可重新检查或换源。
 
 ### 插件页设置
 
-在「插件 → DSH-Pi」里可以直接开关**长任务静默提醒**，保存后即时生效。
+在「插件 → DSH-Pi」里可以随时开关**帮助改进 Pi 模式插件**（匿名使用统计），保存后即时生效。
 
-**帮助改进插件**默认开启。首次提示可以关闭，之后随时在插件页修改。实际用到 Pi、Pi+ 或 Pi-IM 时，后台只向 `dsh-pi-usage.you-xia.cc` 发送日期、插件版本、每周随机码、当天用过的模式和是否调用过 Code Mode，用于统计活跃安装和功能使用。关闭立即停止上报。接收端关闭请求日志，逐安装明细保留 14 天，长期保存日、周汇总。DSH 的 `DSH_TELEMETRY_DISABLED` 同样有效。只在无界面运行的 profile 可以在 `pi-mode-settings` 中明确设 `shareUsage: true` 开启。
+该选项默认开启；首次安装启用并打开 DSH 时会在右下角弹出一次「帮助改进 Pi 模式插件」提示（仅提示一次），可以直接关闭，之后也随时可在插件页修改。仅在实际使用 Pi、Pi+ 或 Pi-IM 时，后台才向 `dsh-pi-usage.you-xia.cc` 发送匿名统计：日期、插件版本、每周轮换的随机编号、当天用过的模式，以及是否用过 Code Mode。**不收集对话内容、代码、脚本内容、文件路径、账号或任何隐私信息**；关闭后立即停止上报。接收端不记录请求日志，原始记录保留 14 天后自动清理，仅长期保存日、周汇总。DSH 的 `DSH_TELEMETRY_DISABLED` 同样有效。只在无界面运行的 profile 可在 `pi-mode-settings` 中明确设 `shareUsage: true` 开启。
+
+内置的**长任务静默提醒**保持默认开启，不在插件页提供开关；如需关闭，可在下方 profile 个人设置里配置 `progressReminder: false`。
 
 ## Pi+模式
 
@@ -244,7 +246,7 @@ DSH 的预设工具与全局工具不同。Pi 不挂某项预设能力，不代�
 
 0.5.1 只改 codemode 的工具说明。在 macOS 的 DSH 0.2.2-rc.3 隔离 Web profile 安装打包产物，通过模拟模型在 Pi+ 脚本中调用 bash、write、edit、apply_patch，核对说明所写的返回结构与 bash 缺少 `description` 时的报错；与 0.5.0 相比，Pi、Pi-IM 的工具声明与提示词不变，Pi+ 只有 codemode 说明变化。Windows 的 pwsh 结构按 DSH 源码核对，未实测。
 
-源码入口：`cordis.patch.yml`（组合与提示词）、`index.js`（渠道变量与工具屏蔽）、`files.js`、`shell.js`、`web.js`（工具接入与规则）、`settings.js`（个人设置）、`progress.js`（静默提醒）。
+源码入口：`cordis.patch.yml`（组合与提示词）、`index.js`（渠道变量与工具屏蔽）、`files.js`、`shell.js`、`web.js`（工具接入与规则）、`settings.js`（个人设置）、`progress.js`（静默提醒）、`codemode.js`（Code Mode）、`usage.js`（匿名统计与设置接口）、`client.js`（插件页设置与首次提示）。
 
 ## 许可
 
