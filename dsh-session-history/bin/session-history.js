@@ -106,7 +106,7 @@ function statusText(home) {
   for (const p of issues.filter(x => x.scope !== 'agent')) lines.push(`  ${p.text}`);
   for (const a of agents.filter(x => x.installed || x.custom)) {
     const run = last?.agents?.[a.folder];
-    const src = !a.installed ? '未检测到' : enabled(byId(a.id), config) ? (run ? (run.ok ? `${run.files} 个会话文件 · 日志 ${logDaysOf(a.folder)} 天` : `整理出错：${run.error}`) : '已启用，待整理') : '已检测到，未启用整理';
+    const src = !a.installed ? '未检测到' : enabled(byId(a.id, config), config) ? (run ? (run.ok ? `${run.files} 个会话文件 · 日志 ${logDaysOf(a.folder)} 天` : `整理出错：${run.error}`) : '已启用，待整理') : '已检测到，未启用整理';
     const skill = { ready: `已接入（经 ${a.via}）`, missing: '待接入', conflict: `冲突：${a.conflict?.path}`, nodir: '不接入（未设技能目录）' }[a.state];
     lines.push(`  ${a.name.padEnd(12)} ${src}｜${skill}`);
   }
