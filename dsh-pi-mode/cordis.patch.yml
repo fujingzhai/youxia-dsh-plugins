@@ -1,10 +1,10 @@
 # 一个插件，三个预设，DSH 自带模式原样不动：
 # - pi（Pi 模式）：桌面端／网页端用；
 # - pi-im（Pi-IM）：IM 版，只调整交付方式与全局工具个人名单；
-# - pi-plus（Pi+模式）：增加 apply_patch 与 codemode。
+# - pi-plus（Pi+模式）：增加 codemode。
 # 列表顺序由 order 决定（值小在前，同值再按 id 字典序）：内置模式为 standard 1、ptc 2、minimal 3、cordis 4，
 # 这里用 5、6、7，排在自带模式之后，且不与内置值相同；Pi-IM 排最后（7）。
-# 三者原样引用 *pi-core；Pi / Pi-IM 共用 *pi-files，Pi / Pi+ 共用 present 与桌面 channel。
+# 三者原样引用 *pi-core（含 apply_patch）；Pi / Pi+ 共用 present 与桌面 channel。
 # 与标准模式相比去掉了：子代理与 workflow、目标、计划模式、todo、定时提醒。
 # glob/grep 只在 Windows 上挂（官方工具自带 ripgrep，不依赖本机是否安装 rg）；macOS / Linux 不挂，改用 bash。
 # 联网由本包 web.js 接入（默认 DSH 自带工具，可被 pi 同款工具接管）；全局工具只挡点名的（默认为空），由本包 index.js 限制，
@@ -132,14 +132,12 @@
               # 联网工具：默认 DSH 自带工具；有插件登记替代工具时改用它，联网规矩始终由共用核心提供，见 web.js
               - id: web-tools
                 name: 'dsh-pi-mode/web.js'
+              - id: file-rules
+                name: 'dsh-pi-mode/files.js'
           - id: usage
             name: 'dsh-pi-mode/usage.js'
             config:
               mode: pi
-          # 标准文件规则只在这里定义一次，Pi-IM 原样引用；Pi+ 使用补丁版。
-          - &pi-files
-            id: file-rules
-            name: 'dsh-pi-mode/files.js'
           # Pi / Pi+ 共用桌面交付与个人 deny；Pi-IM 另用 imDeny。
           - &pi-present
             id: present
@@ -173,7 +171,6 @@
             name: 'dsh-pi-mode/usage.js'
             config:
               mode: pi-im
-          - *pi-files
           # IM 里看不到 present 卡片和本机文件链接，所以不挂 present；个人名单取 pi-mode-settings 的 imDeny。
           # 规矩只写 IM 工具的用法，不在系统提示词里交代"用户在用某个 IM"：渠道由 dsh-im 的「上下文增强」逐条消息附带（见 README）。
           - id: channel
@@ -188,7 +185,7 @@
       config:
         id: pi-plus
         name: Pi+模式
-        description: 补丁编辑与 Code Mode，可在一次脚本里组合工具并筛选结果
+        description: 在 Pi 模式基础上增加 Code Mode，可在一次脚本里组合工具并筛选结果
         order: 6
         plugins:
           - *pi-core
@@ -196,10 +193,6 @@
             name: 'dsh-pi-mode/usage.js'
             config:
               mode: pi-plus
-          - id: file-rules
-            name: 'dsh-pi-mode/files.js'
-            config:
-              applyPatch: true
           - id: codemode
             name: dsh-pi-mode/codemode.js
           - *pi-present

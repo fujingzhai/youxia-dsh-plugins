@@ -1,6 +1,6 @@
 {
   "name": "dsh-pi-mode",
-  "version": "0.5.7",
+  "version": "0.5.8",
   "author": "youxia",
   "repository": {
     "type": "git",
@@ -11,7 +11,7 @@
   "bugs": {
     "url": "https://github.com/fujingzhai/youxia-dsh-plugins/issues"
   },
-  "description": "DSH-Pi 提供 Pi、Pi+、Pi-IM 三种精简预设。Pi+ 支持补丁编辑和 JavaScript 工具编排。",
+  "description": "DSH-Pi 提供 Pi、Pi+、Pi-IM 三种精简预设，均支持补丁编辑。Pi+ 额外提供 JavaScript 工具编排。",
   "type": "module",
   "main": "index.js",
   "license": "MIT",

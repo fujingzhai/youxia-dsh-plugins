@@ -5,10 +5,10 @@
 | 模式 | ID | order | 用途 |
 |---|---|---|---|
 | Pi 模式 | `pi` | 5 | 桌面／Web 的精简基线 |
-| Pi+模式 | `pi-plus` | 6 | 补丁编辑与 Code Mode 工具编排 |
+| Pi+模式 | `pi-plus` | 6 | Pi 模式加 Code Mode 工具编排 |
 | Pi-IM | `pi-im` | 7 | IM 版，调整交付方式与个人工具屏蔽名单 |
 
-三个模式共用核心、联网和命令行定义，菜单依次排在 DSH 自带模式之后。Pi / Pi+ 共用桌面交付，Pi / Pi-IM 共用原文件编辑规则，不另装插件、不复制整份预设。
+三个模式共用文件工具（含 `apply_patch`）、联网和命令行定义，菜单依次排在 DSH 自带模式之后。Pi / Pi+ 共用桌面交付。
 
 版本变化见[更新日志](https://github.com/fujingzhai/youxia-dsh-plugins/blob/main/CHANGELOG.md)，本页说明当前功能和用法。
 
@@ -16,7 +16,7 @@
 
 | | 标准模式 | Pi 模式 |
 |---|---|---|
-| 预设工具 | 随 DSH 版本、profile 变化 | macOS / Linux 的基线为 read、read_image、write、edit、bash、job_output / job_list / job_kill、skill、ask_user_question、plugin_manager、present、web_search、web_fetch；Office 技能加载后按需增加三个官方工具；实际可见性受 profile、搜索后端及全局插件影响 |
+| 预设工具 | 随 DSH 版本、profile 变化 | macOS / Linux 的基线为 read、read_image、write、edit、apply_patch、bash、job_output / job_list / job_kill、skill、ask_user_question、plugin_manager、present、web_search、web_fetch；Office 技能加载后按需增加三个官方工具；实际可见性受 profile、搜索后端及全局插件影响 |
 | 精简的能力 | 完整默认工具组合 | 预设不挂子代理与 workflow、目标、计划模式、todo、定时任务工具；macOS / Linux 用 bash 搜索文件，Windows 保留官方 glob / grep，并用 pwsh 替代 bash |
 | 系统提示词 | DSH 各插件拼装身份、工具引导及应用说明 | 简短身份＋中文规则，覆盖文件与命令、任务执行、联网、结果交付和「关于DSH」 |
 | 运行时上下文 | 当前目录、权限、审批策略、实现位置、GUI 地址及插件附加上下文 | 原生保留，不裁剪，也不恢复标准模式的长 system |
@@ -46,7 +46,7 @@ dsh plugin --profile desktop add dsh-pi-mode
 仅需固定 Git 版本时使用下面地址；Git 安装不提供原生 npm 更新入口：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.5.7&path:/dsh-pi-mode
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.5.8&path:/dsh-pi-mode
 ```
 
 ### 检查更新
@@ -63,17 +63,17 @@ git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.5.7&path:
 
 内置的**长任务静默提醒**保持默认开启，不在插件页提供开关；如需关闭，可在下方 profile 个人设置里配置 `progressReminder: false`。
 
+## 文件编辑
+
+三个模式均启用宿主的 `apply_patch`，在默认关闭补丁工具的旧版 DSH 中也会显式开启。
+
+- 单处修改用 `edit`，多处或跨文件修改优先用 `apply_patch`。新建或整篇重写用 `write`。
+- 用 `edit` 前先读相关内容，刚创建或编辑过且掌握现状时可接着改。用 `write` 覆盖前先读原文。
+- 补丁块须有足够上下文以唯一定位。预检失败时文件不变。执行中遇到错误会停止并保留已完成的操作，重试前先重读受影响文件。
+
+补丁支持新增、删除和移动文件，沿用宿主的文件权限。已完成的改动可在 Review 查看。
+
 ## Pi+模式
-
-Pi+ 可以在普通工具调用之外，用 JavaScript 组合本步的工具，也支持跨文件补丁。
-
-- 增加官方 `apply_patch`；Pi / Pi-IM 不开启它。
-- 单处针对性修改用 edit，同一文件多处或跨文件修改优先用 apply_patch；write 用于新建或整篇重写，覆盖已有文件前先 read。
-- 补丁块保留足够且不重叠的上下文；预检拒绝不改文件，执行中失败可能保留已完成的改动，须重读受影响文件后再试。
-
-不额外限制补丁的新增、删除或移动能力，仍遵守用户规则。跨文件补丁不是原子事务，已完成的效果可在 Review 查看。
-
-### Code Mode
 
 模型调用 `codemode({code})`，在独立 QuickJS Worker 中执行 JavaScript。只在 Pi+ 声明此工具。单次读取或编辑可以直接调用；有前后依赖或需要筛选多项结果时，可以在一次脚本中完成。例如在两份已经确定的文献里查找题记，保留出处与行号：
 
@@ -95,7 +95,7 @@ Pi+ 按需加载依赖 `@earendil-works/pi-codemode@1.5.2`。每次限 128 个�
 
 ## Pi-IM
 
-Pi-IM 与 Pi 共用文件编辑规则，主要区别是交付、GUI 指导与个人工具名单：
+Pi-IM 继承 Pi 的文件工具和编辑规则。渠道差别见下表。
 
 | | Pi / Pi+ | Pi-IM |
 |---|---|---|
@@ -210,7 +210,7 @@ DSH 的预设工具与全局工具不同。Pi 不挂某项预设能力，不代�
 
 | 变量 | 来源 |
 |---|---|
-| `{{file_rules}}` | `files.js`：Pi / Pi-IM 用原编辑规则，Pi+ 用补丁规则 |
+| `{{file_rules}}` | `files.js` 提供三个模式共用的文件编辑指引 |
 | `{{shell_tool}}`、`{{shell_rules}}` | `shell.js`：按系统填写工具名、搜索与退出码规则 |
 | `{{dsh_rules}}` | `shell.js`：实现位置与官方 dsh-doc 入口 |
 | `{{channel_rules}}` | `index.js`：桌面交付或 IM 回传 |
@@ -221,10 +221,12 @@ DSH 的预设工具与全局工具不同。Pi 不挂某项预设能力，不代�
 替用户安装或定制时，在授权范围内核对实际请求，不扫描全部历史或分享私人上下文：
 
 1. 重启并新建相应模式的会话，检查实际工具及 system。必要时只读该会话的 `session.v4.jsonl.zstd`（`zstd -dcq`）：`request/header` 的 `data.header.tools` 是工具声明，`system/message` 是提示词，`user/message` 包含动态上下文。
-2. 确认变量已展开、平台命令正确；Pi+ 有 apply_patch 和 codemode，Pi / Pi-IM 没有；Pi-IM 不挂 present 或 GUI 规则。若有额外工具，先辨明是否来自全局插件。
+2. 确认变量已展开，平台命令正确。三个模式都有 `apply_patch`，`codemode` 仅在 Pi+ 声明。Pi-IM 使用 IM 交付规则。若有额外工具，先核对其注册来源。
 3. 确认搜索后端可用，按用户需求设置 `deny`／`imDeny`；IM 用户另核对机器人预设和上下文增强。不要为检查更新去卸载插件。
 
 ## 兼容性与验证范围
+
+0.5.8 已在 macOS 的 DSH 0.2.2-rc.2、0.2.3-alpha.2 和 0.2.3-alpha.3 隔离 Web profile 验证。用本地模拟模型确认三个预设收到相同的文件规则，都能用 `apply_patch` 跨文件编辑，预检失败时两个文件均保持原内容。Pi+ 的工具声明比 Pi 多一个 `codemode`。Windows 和 Linux 的完整宿主未实测。
 
 0.5.7 在 macOS 的 DSH 0.2.2-rc.3、0.2.3-alpha.2 和 0.2.3-alpha.3 中均用隔离 profile 和模拟模型验证了三个预设。Pi+ 通过真实工具管线读取文件、跨调用保存和读取值，并用 `apply_patch` 修改了测试文件。三个预设都在加载 Office 技能后声明宿主对应的三个工具。
 

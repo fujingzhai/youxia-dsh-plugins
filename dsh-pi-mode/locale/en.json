@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "DSH-Pi",
-    "description": "Choose Pi, Pi+, or Pi-IM for a new conversation. Pi+ adds patch editing and Code Mode for composing tools and filtering their results."
+    "description": "Choose Pi, Pi+, or Pi-IM for a new conversation. All three support apply_patch. Pi+ adds Code Mode for composing tools and filtering their results."
   }
 }

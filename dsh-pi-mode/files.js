@@ -1,24 +1,18 @@
-/** 三种预设共用文件工具入口；Pi+ 启用 apply_patch，并提供补丁和工具编排规则。 */
+/** 三种预设共用 DSH 原生文件工具和精简指引。 */
 export const name = 'pi-mode-files'
 export const inject = ['tools', 'fs', 'systemPrompt', 'workingDirectory']
 
-export const EDIT_RULES = '- 针对性修改用 edit，write 用于新建或整篇重写，覆盖已有文件前先 read 一遍。'
-export const PATCH_RULES = [
-  '- 单处针对性修改用 edit，同一文件多处或跨文件修改优先用 apply_patch；write 用于新建或整篇重写，覆盖已有文件前先 read 一遍。',
-  '- apply_patch 各补丁块保留足够且不重叠的上下文以准确匹配；预检拒绝不改文件，但执行中失败会保留已完成的改动，不会整批回滚。失败或中断后先重读受影响文件，再按实际状态重试。',
-  '- 单次操作直接用工具；需要组合工具、按前一步结果继续处理或筛选大段输出时，优先用 codemode，返回完成任务所需的原文、出处或结果。',
+export const FILE_RULES = [
+  '- 单处修改用 edit，多处或跨文件修改优先用 apply_patch。新建或整篇重写用 write。',
+  '- edit 前先用 read 核对相关内容，刚创建或编辑过且掌握现状时可接着改。write 覆盖前先读原文。',
+  '- 每个补丁块留足能唯一定位的上下文。预检失败不改文件。执行中遇错即停，已完成的操作保留。失败或中断后重读受影响文件再试。',
 ].join('\n')
 
-export function fileRules(config = {}) {
-  return config?.applyPatch === true ? PATCH_RULES : EDIT_RULES
-}
-
-export async function apply(ctx, config = {}) {
+export async function apply(ctx) {
   const builtin = await import('@deepseek-ai/dsh-tool-fs')
-  const applyPatch = config?.applyPatch === true
-  const resolved = builtin.Config({ applyPatch })
-  // 旧版 DSH 可能忽略未知配置；不得让 Pi+ 静默退化成没有补丁工具的 Pi。
-  if (applyPatch && resolved.applyPatch !== true) throw new Error('Pi+模式需要 DSH 0.2.2-rc.1 或更新版本的 apply_patch 支持')
+  // DSH 0.2.3-alpha.3 之前的宿主默认关闭 apply_patch。
+  const resolved = builtin.Config({ applyPatch: true })
+  if (resolved.applyPatch !== true) throw new Error('DSH-Pi 需要 DSH 0.2.2-rc.2 或更新版本的 apply_patch 支持')
   builtin.apply(ctx, resolved)
-  ctx.systemPrompt.variable('file_rules', () => fileRules({ applyPatch }))
+  ctx.systemPrompt.variable('file_rules', () => FILE_RULES)
 }

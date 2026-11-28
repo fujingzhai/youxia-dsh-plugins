@@ -16,8 +16,8 @@
         "zh": "DSH-Pi"
       },
       "description": {
-        "en": "Choose Pi, Pi+, or Pi-IM for a new conversation. Pi+ adds patch editing and Code Mode for composing tools and filtering their results.",
-        "zh": "新建会话时选择 Pi、Pi+ 或 Pi-IM。Pi+ 可用 apply_patch 编辑文件，用 codemode 批量调用工具并筛选结果。"
+        "en": "Choose Pi, Pi+, or Pi-IM for a new conversation. All three support apply_patch. Pi+ adds Code Mode for composing tools and filtering their results.",
+        "zh": "新建会话时选择 Pi、Pi+ 或 Pi-IM。三种模式均可用 apply_patch 编辑文件。Pi+ 额外提供 codemode，可组合工具并筛选结果。"
       },
       "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0IDQiIHNoYXBlLXJlbmRlcmluZz0iY3Jpc3BFZGdlcyI+PHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjMiIGhlaWdodD0iMSIgZmlsbD0icmdiKDIyOCAxMzggMTIyKSIvPjxyZWN0IHg9IjIiIHk9IjEiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9InJnYigyMjggMTM4IDEyMikiLz48cmVjdCB4PSIwIiB5PSIxIiB3aWR0aD0iMSIgaGVpZ2h0PSIzIiBmaWxsPSJyZ2IoNzkgMTQyIDE3OSkiLz48cmVjdCB4PSIxIiB5PSIyIiB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSJyZ2IoNzkgMTQyIDE3OSkiLz48cmVjdCB4PSIzIiB5PSIyIiB3aWR0aD0iMSIgaGVpZ2h0PSIyIiBmaWxsPSJyZ2IoMjM0IDE4MiA5MykiLz48L3N2Zz4K",
       "author": "youxia",

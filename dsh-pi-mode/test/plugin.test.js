@@ -5,7 +5,7 @@ import { apply } from '../index.js'
 import { apply as applyShell, dshRules, shellRules, shellTool } from '../shell.js'
 import { apply as applyWeb } from '../web.js'
 import { apply as applySettings } from '../settings.js'
-import { EDIT_RULES, PATCH_RULES, fileRules } from '../files.js'
+import { FILE_RULES } from '../files.js'
 
 function mask(config, globals = []) {
   const events = new Map()
@@ -203,7 +203,7 @@ test('官方插件管理工具只在共用核心注册一次，三个预设共�
   const patch = readFileSync(new URL('../cordis.patch.yml', import.meta.url), 'utf8')
   const [base, remainder] = patch.split(/- id: preset-pi-im\r?\n/)
   const [im, plus] = remainder.split(/- id: preset-pi-plus\r?\n/)
-  const core = base.split(/- &pi-files\r?\n/)[0]
+  const core = base.split(/^ {10}- id: usage$/m)[0]
   assert.match(core, /- id: tool-plugin-manager\r?\n\s+name: '@deepseek-ai\/dsh-plugin-manager\/tools'\r?\n\s+disabled: !!js "!ctx\.get\('profileContext'\)"/)
   assert.equal((patch.match(/- id: tool-plugin-manager\r?\n/g) ?? []).length, 1)
   assert.match(im, /- \*pi-core\r?\n/)
@@ -237,7 +237,7 @@ test('共用技能目录从当前安装包解析，提供官方 dsh-doc 而不�
 
 test('三个模式只在自己的技能行排除官方推荐技能，不靠工具屏蔽名单', () => {
   const patch = readFileSync(new URL('../cordis.patch.yml', import.meta.url), 'utf8')
-  const core = patch.split(/- &pi-files\r?\n/)[0]
+  const core = patch.split(/^ {10}- id: usage$/m)[0]
   assert.match(core, /- id: tool-skill\r?\n\s+name: '@deepseek-ai\/dsh-tool-skill'\r?\n\s+config:\r?\n\s+excludedSkills: \[official-plugins, personalized-pages\]/)
   assert.equal((patch.match(/excludedSkills:/g) ?? []).length, 1)
   assert.doesNotMatch(patch, /- (official-plugins|personalized-pages)\r?\n/)
@@ -247,7 +247,7 @@ test('三个模式共用官方按需 Office 工具，不复制工具、技能或
   const patch = readFileSync(new URL('../cordis.patch.yml', import.meta.url), 'utf8')
   const [base, remainder] = patch.split(/- id: preset-pi-im\r?\n/)
   const [im, plus] = remainder.split(/- id: preset-pi-plus\r?\n/)
-  const core = base.split(/- &pi-files\r?\n/)[0]
+  const core = base.split(/^ {10}- id: usage$/m)[0]
   assert.match(core, /- id: tool-skill\r?\n\s+name: '@deepseek-ai\/dsh-tool-skill'[\s\S]*?- id: tool-document\r?\n\s+name: 'dsh-pi-mode\/office\.js'/)
   assert.equal((patch.match(/- id: tool-document\r?\n/g) ?? []).length, 1)
   assert.match(im, /- \*pi-core\r?\n/)
@@ -407,14 +407,12 @@ test('前后台与批量并行规则在共用核心各出现一次，平台规�
   for (const platform of ['darwin', 'linux', 'win32']) {
     const shell = shellRules(platform)
     assert.doesNotMatch(shell, /长命令转后台|短任务默认前台|job id|安全并行/)
-    for (const applyPatch of [false, true]) {
-      const prompt = prefix.replace('{{shell_rules}}', shell).replace('{{shell_tool}}', shellTool(platform))
-        .replace('{{file_rules}}', fileRules({ applyPatch }))
-      assert.equal(prompt.split(foreground).length - 1, 1)
-      assert.equal(prompt.split(background).length - 1, 1)
-      assert.equal(prompt.split(parallel.replace('{{shell_tool}}', shellTool(platform))).length - 1, 1)
-      assert.doesNotMatch(prompt, /长命令转后台|\{\{(?:shell|file)_rules\}\}|\{\{shell_tool\}\}/)
-    }
+    const prompt = prefix.replace('{{shell_rules}}', shell).replace('{{shell_tool}}', shellTool(platform))
+      .replace('{{file_rules}}', FILE_RULES)
+    assert.equal(prompt.split(foreground).length - 1, 1)
+    assert.equal(prompt.split(background).length - 1, 1)
+    assert.equal(prompt.split(parallel.replace('{{shell_tool}}', shellTool(platform))).length - 1, 1)
+    assert.doesNotMatch(prompt, /长命令转后台|\{\{(?:shell|file)_rules\}\}|\{\{shell_tool\}\}/)
   }
 })
 
@@ -438,21 +436,19 @@ test('提示词按主题排序，整份展开后严格隔离平台命令', () =>
     assert.match(environment, /按需查阅当前安装版本的文档.*信息不足则进行联网搜索/)
     assert.match(environment, /不默认遍历、解包或通读源码/)
     assert.doesNotMatch(environment, /https?:|工作目录|\bpwd\b|Get-Location|当前实例|仅检查或扩展 DSH 时使用该实现/)
-    for (const applyPatch of [false, true]) {
-      const prompt = prefix.replace('{{shell_rules}}', shellRules(platform))
-        .replace('{{shell_tool}}', shellTool(platform))
-        .replace('{{file_rules}}', fileRules({ applyPatch }))
-        .replace('{{channel_rules}}', '').replace('{{dsh_rules}}', dshRules(platform)).replace('{{gui_rules}}', '')
-      assert.doesNotMatch(prompt, /\{\{[a-z_]+\}\}|跑命令用 pwsh|\$env:NAME/)
-      if (platform === 'win32') {
-        assert.match(prompt, /检查 pwsh 的/)
-        assert.match(prompt, /在同一次 pwsh 调用内用脚本实现，并汇总各项输出与退出码/)
-        assert.doesNotMatch(prompt, /\bbash\b|\bpwd\b/)
-      } else {
-        assert.match(prompt, /检查 bash 的/)
-        assert.match(prompt, /在同一次 bash 调用内用脚本实现，并汇总各项输出与退出码/)
-        assert.doesNotMatch(prompt, /Windows|PowerShell|Get-Location|pwsh|glob 工具|grep 工具|被中断后单独一个/)
-      }
+    const prompt = prefix.replace('{{shell_rules}}', shellRules(platform))
+      .replace('{{shell_tool}}', shellTool(platform))
+      .replace('{{file_rules}}', FILE_RULES)
+      .replace('{{channel_rules}}', '').replace('{{dsh_rules}}', dshRules(platform)).replace('{{gui_rules}}', '')
+    assert.doesNotMatch(prompt, /\{\{[a-z_]+\}\}|跑命令用 pwsh|\$env:NAME/)
+    if (platform === 'win32') {
+      assert.match(prompt, /检查 pwsh 的/)
+      assert.match(prompt, /在同一次 pwsh 调用内用脚本实现，并汇总各项输出与退出码/)
+      assert.doesNotMatch(prompt, /\bbash\b|\bpwd\b/)
+    } else {
+      assert.match(prompt, /检查 bash 的/)
+      assert.match(prompt, /在同一次 bash 调用内用脚本实现，并汇总各项输出与退出码/)
+      assert.doesNotMatch(prompt, /Windows|PowerShell|Get-Location|pwsh|glob 工具|grep 工具|被中断后单独一个/)
     }
   }
 })
@@ -467,34 +463,31 @@ test('glob/grep 与提示词变量随系统开关，两边不混用', () => {
   assert.equal((body.match(/\{\{shell_rules\}\}/g) ?? []).length, 1, '提示词里只引用一次')
 })
 
-test('Pi+ 原样复用核心、present 与桌面 channel，只有文件规则开启补丁', () => {
+test('文件工具在三个预设共用的核心内，Pi+ 独有 codemode', () => {
   const patch = readFileSync(new URL('../cordis.patch.yml', import.meta.url), 'utf8')
-  const [base, plus] = patch.split(/- id: preset-pi-plus\r?\n/)
-  assert(plus)
+  const [pi, remainder] = patch.split(/- id: preset-pi-im\r?\n/)
+  const [im, plus] = remainder.split(/- id: preset-pi-plus\r?\n/)
+  const core = pi.split(/^ {10}- id: usage$/m)[0]
+  assert.match(core, /^ {14}- id: file-rules\r?\n {16}name: 'dsh-pi-mode\/files\.js'$/m)
+  assert.equal((patch.match(/- id: file-rules\r?\n/g) ?? []).length, 1)
+  assert.equal((patch.match(/\{\{file_rules\}\}/g) ?? []).length, 1)
+  assert.match(im, /- \*pi-core\r?\n/)
   assert.match(plus, /id: pi-plus\r?\n\s+name: Pi\+模式/)
   assert.match(plus, /plugins:\r?\n\s+- \*pi-core/)
-  assert.match(plus, /name: 'dsh-pi-mode\/files\.js'\r?\n\s+config:\r?\n\s+applyPatch: true/)
   assert.match(plus, /- \*pi-present\r?\n\s+- \*pi-desktop/)
-  assert.doesNotMatch(base, /applyPatch: true|name: dsh-pi-mode\/codemode/)
   assert.match(plus, /name: dsh-pi-mode\/codemode\.js/)
-  assert.match(base, /- &pi-files\r?\n\s+id: file-rules/)
-  assert.match(base, /- \*pi-files/)
-  assert.match(base, /\{\{file_rules\}\}/)
+  assert.doesNotMatch(pi + im, /name: dsh-pi-mode\/codemode\.js/)
 })
 
-test('文件规则按审阅稿明确 edit/write 分工，Pi+ 保留补丁失败恢复', () => {
-  assert.equal(EDIT_RULES, '- 针对性修改用 edit，write 用于新建或整篇重写，覆盖已有文件前先 read 一遍。')
-  assert.equal(fileRules(), EDIT_RULES)
-  assert.equal(fileRules({ applyPatch: false }), EDIT_RULES)
-  assert.equal(fileRules({ applyPatch: true }), PATCH_RULES)
-  assert.match(PATCH_RULES, /优先用 codemode/)
-  assert.doesNotMatch(EDIT_RULES, /codemode/)
-  assert.match(PATCH_RULES, /单处针对性修改用 edit，同一文件多处或跨文件修改优先用 apply_patch/)
-  assert.match(PATCH_RULES, /write 用于新建或整篇重写，覆盖已有文件前先 read 一遍/)
-  assert.match(PATCH_RULES, /预检拒绝不改文件/)
-  assert.match(PATCH_RULES, /不会整批回滚/)
-  assert.match(PATCH_RULES, /失败或中断后先重读受影响文件/)
-  assert.doesNotMatch(PATCH_RULES, /本次试用|Delete File|Move to|只用于新增和更新/)
+test('共用文件规则包含修改前读取、补丁预检及失败后的恢复', () => {
+  assert.match(FILE_RULES, /单处修改用 edit，多处或跨文件修改优先用 apply_patch/)
+  assert.match(FILE_RULES, /新建或整篇重写用 write/)
+  assert.match(FILE_RULES, /edit 前先用 read.*刚创建或编辑过.*write 覆盖前先读/)
+  assert.match(FILE_RULES, /能唯一定位的上下文/)
+  assert.match(FILE_RULES, /预检失败不改文件/)
+  assert.match(FILE_RULES, /执行中遇错即停，已完成的操作保留/)
+  assert.match(FILE_RULES, /失败或中断后重读受影响文件再试/)
+  assert.doesNotMatch(FILE_RULES, /codemode/)
 })
 
 test('模式菜单顺序固定：order 5 / 6 / 7，Pi-IM 最后，且不与 DSH 内置值 1–4 相同', () => {

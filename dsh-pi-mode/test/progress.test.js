@@ -371,8 +371,7 @@ test('包内入口可解析、打包清单完整，三个预设只挂一次，�
   assert.equal(manifest.peerDependencies['@deepseek-ai/dsh-llm'], '>=0.2.2-rc.1')
   const patch = readFileSync(new URL('../cordis.patch.yml', import.meta.url), 'utf8')
   assert.equal((patch.match(/name: 'dsh-pi-mode\/progress\.js'/g) ?? []).length, 1)
-  const core = patch.split(/- &pi-files\r?\n/)[0]
-  assert(core.includes("name: 'dsh-pi-mode/progress.js'"))
+  assert.match(patch, /^ {14}- id: progress-reminder\r?\n {16}name: 'dsh-pi-mode\/progress\.js'$/m)
   assert.match(patch, /progressReminder: true/)
   const prefix = patch.match(/prefix: \|-\r?\n([\s\S]*?)(?=\r?\n {14}- id: agent-instructions)/)?.[1]
   assert.doesNotMatch(prefix, /progressReminder|5 分钟|5 个工具步|上次提醒后/)

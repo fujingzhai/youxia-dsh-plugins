@@ -7,7 +7,7 @@ import { pathToFileURL } from 'node:url'
 import test from 'node:test'
 import { installProgressReminder, SOURCE, REMINDER, ESCALATED_REMINDER } from '../progress.js'
 import { shellRules, shellTool, dshRules } from '../shell.js'
-import { fileRules } from '../files.js'
+import { FILE_RULES } from '../files.js'
 
 // 显式选择当前安装的运行时；Desktop 须用 DSH_NODE_EXECUTABLE 的 Electron 执行。
 // 不接真实供应商，不使用个人 profile、持久化或外部工具。
@@ -23,7 +23,7 @@ test('真实 AgentLoop：思考不解除升级，第三次仍提醒，正文与�
   const patch = readFileSync(new URL('../cordis.patch.yml', import.meta.url), 'utf8')
   const prompt = patch.match(/prefix: \|-\r?\n([\s\S]*?)(?=\r?\n {14}- id: agent-instructions)/)[1]
     .split(/\r?\n/).map(line => line.trimStart()).join('\n').trimEnd()
-    .replace('{{file_rules}}', fileRules({ applyPatch: true }))
+    .replace('{{file_rules}}', FILE_RULES)
     .replace('{{shell_rules}}', shellRules()).replace('{{shell_tool}}', shellTool())
     .replace('{{dsh_rules}}', dshRules()).replace('{{channel_rules}}', '').replace('{{gui_rules}}', '')
   assert.doesNotMatch(prompt, /\{\{/)

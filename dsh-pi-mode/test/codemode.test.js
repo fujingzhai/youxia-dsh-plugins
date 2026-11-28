@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'
 import { apply } from '../codemode.js'
+import * as fileTools from '../files.js'
 
 test('DSH-Pi 插件列表显示名和导出的本地化文件', () => {
   const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url)))
@@ -24,11 +25,11 @@ test('Pi+ Code Mode 在真实 DSH 步骤中执行、筛选与取消', { skip: pr
       ['dsh-system-prompt'], ['dsh-session'], ['dsh-session-projection'], ['dsh-agent'], ['dsh-llm'],
       ['dsh-tools'], ['dsh-tool-executor-native'], ['dsh-agent-loop'], ['dsh-fs-local', { cwd: directory }],
       ['dsh-working-directory', { defaultDirectory: directory }],
-      ['dsh-tool-fs', { read: true, readImage: false, write: false, edit: false, applyPatch: false }],
     ]) {
       const module = await import('@deepseek-ai/' + name)
       await root.plugin(module.default ?? module, config ?? {})
     }
+    await root.plugin(fileTools)
     handle = await root.agents.create({ sessionId: 'pi-plus-test', agentOptions: { provider: 'test', model: 'test' } })
     const agent = handle.agent, host = agent.ctx
     await apply(host)
@@ -63,7 +64,9 @@ test('Pi+ Code Mode 在真实 DSH 步骤中执行、筛选与取消', { skip: pr
       host.tools.restrict({ deny: ['masked'] })
       host.tools.guard(exec => exec.name === 'blocked' ? { kind: 'deny', reason: 'fixture policy' } : undefined)
       const catalog = await run('return ALL_TOOLS.map(t=>t.name)')
-      for (const name of ['masked','conditional','present','ask_user_question','codemode']) assert(!JSON.parse(catalog.value).includes(name))
+      const toolNames = JSON.parse(catalog.value)
+      assert(toolNames.includes('apply_patch'))
+      for (const name of ['masked','conditional','present','ask_user_question','codemode']) assert(!toolNames.includes(name))
       enabled = true
       const result = await run('text((await describeTool("read")).parameters.required); text((await searchTools("conditional"))[0].name); return await Promise.allSettled([tools.conditional({}),tools.blocked({})]).then(x=>x.map(r=>r.status))')
       assert.match(result.value, /file_path/); assert.match(result.value, /conditional/); assert.match(result.value, /fulfilled","rejected/)

@@ -125,11 +125,19 @@ export async function apply(ctx) {
   const appendStore = sessionModule.appendPluginRecord
   const stores = typeof appendStore === 'function' ? new WeakMap() : undefined
   const storeHint = stores
-    ? ' For small JSON needed by later scripts in this session, use store(key, value) and load(key); store(key, undefined) clears a key. Return only what you need to see.'
+    ? ' For small JSON needed by later scripts in this session, use store(key, value) and load(key). Use store(key, undefined) to clear a key.'
     : ''
   ctx.tools.register(defineTool({
     name: 'codemode',
-    description: 'Run a JavaScript async function body to combine DSH tool calls and filter their structured results. The QuickJS sandbox has no Node, file system, network, or timers; use tools. Use await tools.read({file_path}), Promise.allSettled(), text(value) or return. read returns {lines:[{number,text}],totalLines,path,offset}. ' + shell + ' needs description; a foreground run returns {exitCode,stdout:{text,truncated},stderr:{text,truncated}}. write, edit, and apply_patch results include full file text; do not return them whole. ALL_TOOLS lists callable names; await describeTool(name) for input/output schemas or await searchTools(query) for matches. DSH image results are attached automatically. Await all work; completed tool effects persist even if the script fails.' + storeHint,
+    description: 'Run a JavaScript async function body to batch or chain DSH tool calls and filter their results. '
+      + 'Call tools directly for single operations. Return only the excerpts, sources, or results the task needs. '
+      + 'The QuickJS sandbox has no Node, file system, network, or timers. Use tools. '
+      + 'Use await tools.read({file_path}), Promise.allSettled(), text(value) or return. read returns {lines:[{number,text}],totalLines,path,offset}. '
+      + shell + ' needs description. A foreground run returns {exitCode,stdout:{text,truncated},stderr:{text,truncated}}. '
+      + 'write, edit, and apply_patch results include full file text. Return only relevant fields. '
+      + 'ALL_TOOLS lists callable names. Await describeTool(name) for input/output schemas or await searchTools(query) for matches. '
+      + 'DSH image results are attached automatically. Await all work. Completed tool effects persist even if the script fails.'
+      + storeHint,
     parameters: { code: { type: 'string', required: true, description: 'JavaScript function body, with top-level await and return.' } },
     output: { schema: { type: 'string' }, render: (_args, text) => [{ type: 'text', text }] },
     isConcurrencySafe: () => false,
