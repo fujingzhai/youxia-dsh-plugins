@@ -1,6 +1,6 @@
 {
   "name": "dsh-pi-mode",
-  "version": "0.5.6",
+  "version": "0.5.7",
   "author": "youxia",
   "repository": {
     "type": "git",
@@ -20,7 +20,7 @@
     "dsh": ">=0.2.2-rc.2"
   },
   "scripts": {
-    "check": "node --check index.js && node --check web.js && node --check settings.js && node --check shell.js && node --check files.js && node --check progress.js && node --check codemode.js && node --check codemode-queue.js && node --check usage.js && node --check usage-format.js && node --check client.js",
+    "check": "node --check index.js && node --check web.js && node --check settings.js && node --check shell.js && node --check files.js && node --check office.js && node --check progress.js && node --check codemode.js && node --check codemode-queue.js && node --check usage.js && node --check usage-format.js && node --check client.js",
     "test": "node --test"
   },
   "dsh": {
@@ -37,6 +37,7 @@
     "./settings.js": "./settings.js",
     "./shell.js": "./shell.js",
     "./files.js": "./files.js",
+    "./office.js": "./office.js",
     "./progress.js": "./progress.js",
     "./icon": "./icon.svg",
     "./package.json": "./package.json",
@@ -53,6 +54,7 @@
     "usage-format.js",
     "shell.js",
     "files.js",
+    "office.js",
     "progress.js",
     "codemode.js",
     "codemode-queue.js",
@@ -66,9 +68,14 @@
     "@deepseek-ai/dsh-tool-web": ">=0.2.2-rc.1",
     "@deepseek-ai/dsh-tool-fs": ">=0.2.2-rc.1",
     "@deepseek-ai/dsh-tool-office": ">=0.2.2-rc.2",
+    "@deepseek-ai/dsh-tool-document": ">=0.2.3-alpha.3",
     "@deepseek-ai/dsh-tools": ">=0.2.2-rc.2",
     "@deepseek-ai/dsh-session": ">=0.2.2-rc.2",
     "@deepseek-ai/dsh-scope": ">=0.2.2-rc.2"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-tool-office": { "optional": true },
+    "@deepseek-ai/dsh-tool-document": { "optional": true }
   },
   "keywords": [
     "deepseek-harness",

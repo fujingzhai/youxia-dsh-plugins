@@ -113,7 +113,14 @@ export async function apply(ctx) {
     import('@deepseek-ai/dsh-tools'), import('@deepseek-ai/dsh-tools/pipeline'),
     import('@deepseek-ai/dsh-llm'), import('@deepseek-ai/dsh-scope'), import('@deepseek-ai/dsh-session'),
   ])
-  const pipeline = new ToolExecutionPipeline(ctx)
+  const pipeline = typeof ctx.tools.definitions === 'function'
+    ? new ToolExecutionPipeline(ctx)
+    : new ToolExecutionPipeline(ctx, {
+      get(name, agent, step) {
+        const definition = ctx.tools.get(name, agent)
+        return definition && step?.declares(definition) ? definition : undefined
+      },
+    })
   const shell = shellTool()
   const appendStore = sessionModule.appendPluginRecord
   const stores = typeof appendStore === 'function' ? new WeakMap() : undefined
@@ -127,7 +134,8 @@ export async function apply(ctx) {
     output: { schema: { type: 'string' }, render: (_args, text) => [{ type: 'text', text }] },
     isConcurrencySafe: () => false,
     async execute({ code }, exec) {
-      if (!exec.agent || !exec.toolSet) throw new Error('codemode requires the current agent step and its admitted tools.')
+      const step = exec.toolStep
+      if (!exec.agent || (!step && !exec.toolSet)) throw new Error('codemode requires the current agent step and its admitted tools.')
       const session = exec.agent.session
       const { CodemodeSandbox, toCodemodeIdentifier, parseCodemodeSource } = await import('@earendil-works/pi-codemode')
       const parsed = parseCodemodeSource(code)
@@ -137,7 +145,9 @@ export async function apply(ctx) {
       const signal = AbortSignal.any([exec.signal, stopped.signal])
       const catalog = new Map()
       const bindings = []
-      const definitions = ctx.tools.definitions(exec.agent, exec.toolSet).filter(tool => !directOnly.has(tool.name))
+      const admitted = step ? step.declarations : ctx.tools.definitions(exec.agent, exec.toolSet)
+      const definitions = admitted.filter(tool => !directOnly.has(tool.name))
+      const executionStep = step ? { toolStep: step } : { toolSet: exec.toolSet }
       // 已经是合法标识符的名字优先，避免插件名规范化后指向另一个工具。
       definitions.sort((a, b) => Number(toCodemodeIdentifier(b.name) === b.name) - Number(toCodemodeIdentifier(a.name) === a.name))
       let calls = 0
@@ -156,7 +166,7 @@ export async function apply(ctx) {
           }
           if (!args || typeof args !== 'object' || Array.isArray(args)) throw new Error(tool.name + ' expects an arguments object.')
           const input = { callId: exec.callId + ':codemode:' + calls, rootCallId: exec.rootCallId,
-            parent: exec.token, agent: exec.agent, toolSet: exec.toolSet, name: tool.name, schema,
+            parent: exec.token, agent: exec.agent, ...executionStep, name: tool.name, schema,
             arguments: args, signal: AbortSignal.any([signal, child.signal]) }
           const record = { rootCallId: exec.rootCallId, parentCallId: exec.callId, subCallId: input.callId,
             name: tool.name, arguments: args }

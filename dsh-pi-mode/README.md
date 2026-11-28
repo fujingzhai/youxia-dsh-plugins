@@ -46,7 +46,7 @@ dsh plugin --profile desktop add dsh-pi-mode
 仅需固定 Git 版本时使用下面地址；Git 安装不提供原生 npm 更新入口：
 
 ```text
-git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.5.6&path:/dsh-pi-mode
+git+https://github.com/fujingzhai/youxia-dsh-plugins.git#dsh-pi-mode@0.5.7&path:/dsh-pi-mode
 ```
 
 ### 检查更新
@@ -139,9 +139,9 @@ globalThis[Symbol.for('dsh-pi-mode.web-tools')] = {
 
 ## Office
 
-Pi／Pi+／Pi-IM 的共用核心挂载官方 `tool-office`，沿用标准模式的按需激活，不复制工具说明、技能或引擎，也不增加常驻系统提示词。宿主需提供 Office 技能和 `office-kit`；普通 Web／Desktop 已提供，自定义 profile 须自行组合。
+Pi／Pi+／Pi-IM 通过宿主的原生 Office 工具按需处理文档。普通 Web／Desktop 提供 Office 技能和 `office-kit`，自定义 profile 需自行组合。
 
-- 平时只列出宿主的 `office`、`office-docx`、`office-xlsx`、`office-pptx` 四个技能摘要；成功加载其中任意一个后，下一步才出现 `office_render`（页面图片）、`office_convert`（格式转换）和 `office_recalculate`（公式重算）。加载失败或加载无关技能不激活。
+- 成功加载 `office`、`office-docx`、`office-xlsx` 或 `office-pptx` 后，下一步才会出现渲染、转换和公式重算工具。DSH 0.2.3-alpha.3 使用 `document_render`、`document_convert` 和 `document_recalculate`，旧版宿主使用 `office_render`、`office_convert` 和 `office_recalculate`。
 - Python 文档库仍用于创作与编辑。渲染图片直接返回模型；转换和重算返回临时文件，再由 shell 复制到目标位置。Pi-IM 沿用原 IM 文件交付，不增加 present。
 - 输入遵守文件系统读取权限；原生 LibreOffice Kit 在 Host 进程内运行，不受 shell 沙箱约束。引擎不可用时按官方工具结果说明原因，不另找系统转换器绕过。
 
@@ -226,6 +226,8 @@ DSH 的预设工具与全局工具不同。Pi 不挂某项预设能力，不代�
 
 ## 兼容性与验证范围
 
+0.5.7 在 macOS 的 DSH 0.2.2-rc.3、0.2.3-alpha.2 和 0.2.3-alpha.3 中均用隔离 profile 和模拟模型验证了三个预设。Pi+ 通过真实工具管线读取文件、跨调用保存和读取值，并用 `apply_patch` 修改了测试文件。三个预设都在加载 Office 技能后声明宿主对应的三个工具。
+
 已在 macOS、DSH 0.2.2-rc.1 隔离 profile 加载三个完整预设并核对请求；静默提醒用真实 AgentLoop 配合模拟模型、时钟和无副作用工具验证阈值、上限、开关及历史前缀。单元测试覆盖平台规则、模式复用、工具限制和提醒状态。Windows / Linux 完整 GUI 与真实供应商缓存命中率未实测。
 
 0.4.1 另在 macOS、DSH 0.2.2-rc.2 的隔离 profile 通过正式启动器加载 Pi／Pi+／Pi-IM，核对实际组装的提示词均只有一条新版读取规则；未调用模型或操作 GUI。
@@ -246,7 +248,7 @@ DSH 的预设工具与全局工具不同。Pi 不挂某项预设能力，不代�
 
 0.5.1 只改 codemode 的工具说明。在 macOS 的 DSH 0.2.2-rc.3 隔离 Web profile 安装打包产物，通过模拟模型在 Pi+ 脚本中调用 bash、write、edit、apply_patch，核对说明所写的返回结构与 bash 缺少 `description` 时的报错；与 0.5.0 相比，Pi、Pi-IM 的工具声明与提示词不变，Pi+ 只有 codemode 说明变化。Windows 的 pwsh 结构按 DSH 源码核对，未实测。
 
-源码入口：`cordis.patch.yml`（组合与提示词）、`index.js`（渠道变量与工具屏蔽）、`files.js`、`shell.js`、`web.js`（工具接入与规则）、`settings.js`（个人设置）、`progress.js`（静默提醒）、`codemode.js`（Code Mode）、`usage.js`（匿名统计与设置接口）、`client.js`（插件页设置与首次提示）。
+源码入口包括 `cordis.patch.yml`（组合与提示词）、`index.js`（渠道变量与工具屏蔽）、`files.js`、`shell.js`、`web.js`、`office.js`（工具接入与规则）、`settings.js`（个人设置）、`progress.js`（静默提醒）、`codemode.js`（Code Mode）、`usage.js`（匿名统计与设置接口）、`client.js`（插件页设置与首次提示）。
 
 ## 许可
 
